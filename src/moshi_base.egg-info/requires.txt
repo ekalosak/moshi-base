@@ -1,0 +1,11 @@
+loguru
+
+[dev]
+black
+flake8
+isort
+pyfiglet
+
+[tests]
+pytest
+pytest-cov

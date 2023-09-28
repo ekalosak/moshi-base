@@ -1,0 +1,8 @@
+README.md
+pyproject.toml
+src/moshi_base.egg-info/PKG-INFO
+src/moshi_base.egg-info/SOURCES.txt
+src/moshi_base.egg-info/dependency_links.txt
+src/moshi_base.egg-info/requires.txt
+src/moshi_base.egg-info/top_level.txt
+src/moshibase/__init__.py

@@ -1,0 +1,27 @@
+Metadata-Version: 2.1
+Name: moshi-base
+Version: 23.9.0
+Summary: Lightweight tools used across all ChatMoshi components.
+Author-email: Eric Kalosa-Kenyon <moshi.feedback@gmail.com>
+License: Proprietary
+Project-URL: Homepage, https://www.chatmoshi.com
+Project-URL: Repository, https://github.com/ekalosak/moshi-base.git
+Keywords: language,ai,moshi
+Requires-Python: <3.12,>=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: loguru
+Provides-Extra: tests
+Requires-Dist: pytest; extra == "tests"
+Requires-Dist: pytest-cov; extra == "tests"
+Provides-Extra: dev
+Requires-Dist: black; extra == "dev"
+Requires-Dist: flake8; extra == "dev"
+Requires-Dist: isort; extra == "dev"
+Requires-Dist: pyfiglet; extra == "dev"
+
+# moshi-base
+
+This Python package contains the lightweight base requirements for ChatMoshi.
+
+1. logging (loguru)
+2. types (dataclasses)
