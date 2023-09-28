@@ -1,6 +1,6 @@
 [project]
 name = "moshi-base"
-version = "23.9.1"
+version = "23.9.2"
 description = "Lightweight tools used across all ChatMoshi components."
 readme = "README.md"
 requires-python = ">=3.11,<3.12"
