@@ -5,17 +5,18 @@ import sys
 import loguru
 import pytest
 
-from moshibase import log
+from moshibase import setup_loguru
 
 def test_setup():
-    log.setup_loguru()
+    setup_loguru()
+    loguru.logger.debug("test")
 
 def _setup(fmt="", sink=print):
     print("RUN SETUP")
-    log.setup_loguru(fmt, sink)
+    setup_loguru(fmt, sink)
     print("DONE")
 
-@pytest.mark.parametrize("fmt", ["", "json", "rich"])
+@pytest.mark.parametrize("fmt", ["", "json", "rich", "pretty", "nonsense", "123"])
 def test_formatting(fmt: str):
     loguru.logger.debug("before")
     _setup(fmt=fmt)

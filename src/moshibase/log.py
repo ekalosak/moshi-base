@@ -8,6 +8,7 @@ import functools
 import json
 import os
 import time
+import warnings
 
 import loguru
 from loguru import logger
@@ -89,20 +90,20 @@ def _toGCPFormat(rec: loguru._handler.Message) -> str:
     return json.dumps(rec, default=lambda o: _jsonify(o))
 
 def setup_loguru(fmt=LOG_FORMAT, sink=print):
-    logger.debug("Adding stdout logger...")
+    print("Adding stdout logger...")
     colorize = LOG_COLORIZE
     diagnose = ENV == "dev"
     if fmt == "json":
-        logger.debug("Using JSON formatter...")
+        print("Using JSON formatter...")
         def _sink(rec):
             sink(_toGCPFormat(rec) + "\n")
     else:
-        logger.debug("Using LOGURU formatter...")
+        print("Using LOGURU formatter...")
         _sink = sink
     try:
         logger.level("TRANSCRIPT", no=15, color="<magenta>", icon="📜")
     except TypeError:
-        logger.debug("TRANSCRIPT level already defined.")
+        pass
     logger.remove()
     logger.add(_sink,
         diagnose=diagnose,
@@ -110,4 +111,3 @@ def setup_loguru(fmt=LOG_FORMAT, sink=print):
         format=LOGURU_FORMAT,
         colorize=colorize,
     )
-    logger.success("Logging configured.")

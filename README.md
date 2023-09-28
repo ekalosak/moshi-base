@@ -10,7 +10,7 @@ This Python package contains the lightweight base requirements for ChatMoshi.
 2. Install build and auth dependencies: `make setup`
 
 # Test
-No tests yet but `make test`
+`make test`
 
 # Publish
 After setting up the development environment: `make publish`

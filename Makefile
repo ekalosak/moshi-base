@@ -61,12 +61,12 @@ precheck:
 setup: precheck pip-upgrade auth-install build-install dev-install
 	@echo "🧰 Setup complete."
 
-test-basic:
+test:
 	@echo "🧪 Running tests..."
 	pytest -v --cov=moshi
-	@echo "🧪✅ Tests passed. Run `make test-cov` to view report."
+	@echo "🧪✅ Tests passed."
 
-test: test-basic
+test-cov:
 	@echo "📊 Showing test coverage report..."
-	coverage report --format=total
+	coverage report
 	@echo "📊✅ Done."
