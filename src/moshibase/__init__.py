@@ -1,3 +1,4 @@
-__version__ = "23.9.2"
-
 from .log import setup_loguru
+from .msg import Message, Role
+from .model import Model, ModelType, CompletionM, ChatM
+from .versioned import __version__, Versioned
