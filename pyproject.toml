@@ -10,6 +10,8 @@ authors = [
   {name = "Eric Kalosa-Kenyon", email = "moshi.feedback@gmail.com"}
 ]
 dependencies = [
+  "iso639",
+  "isocodes",
   "loguru",
 ]
 
