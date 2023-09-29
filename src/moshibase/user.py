@@ -4,6 +4,7 @@ from google.cloud.firestore_v1 import Client
 from loguru import logger
 
 from .exceptions import ParseError
+from .log import traced
 from .versioned import Versioned
 
 class User(Versioned):
@@ -14,6 +15,7 @@ class User(Versioned):
     native_language: str
 
     @classmethod
+    @traced
     def get(cls, uid: str, db: Client) -> "User":
         """Get the Firestore document reference for this user."""
         doc: DocumentSnapshot = db.collection("users").document(uid).get()

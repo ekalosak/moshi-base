@@ -46,7 +46,7 @@ def _gcp_log_severity_map(level: str) -> str:
         case "SUCCESS":
             return "INFO"
         case "TRACE":
-            return "DEBUG"
+            return "DEFAULT"
         case _:
             return level
 
@@ -100,10 +100,22 @@ def setup_loguru(fmt=LOG_FORMAT, sink=print):
     else:
         print("Using LOGURU formatter...")
         _sink = sink
-    try:
-        logger.level("TRANSCRIPT", no=15, color="<magenta>", icon="📜")
-    except TypeError:
-        pass
+    for level, no, color, icon in [
+        ("TRACE", 5, "<blue>", "🔍",),
+        ("DEBUG", 10, "<cyan>", "🐛",),
+        ("TRANSCRIPT", 15, "<magenta>", "📜",),
+        ("INFO", 20, "<white>", "📦",),
+        ("SUCCESS", 25, "<green>", "✅",),
+        ("WARNING", 30, "<yellow>", "⚠️",),
+        ("ERROR", 40, "<red>", "🚨",),
+        ("CRITICAL", 50, "<orange>", "💥",),
+        ("ALERT", 60, "<orange>", "💥💥",),
+        ("EMERGENCY", 70, "<orange>", "💥💥💥",),
+    ]:
+        try:
+            logger.level(level, no=no, color=color, icon=icon)
+        except TypeError as e:
+            logger.debug(f"Failed to set log level {level}: {e}")
     logger.remove()
     logger.add(_sink,
         diagnose=diagnose,
