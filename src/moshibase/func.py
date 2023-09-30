@@ -46,7 +46,7 @@ class Parameters:
     def to_json(self):
         res = {'type': self._type}
         if self.properties:
-            res['properties'] = {k: v.to_json() for k, v in self.properties.items()},
+            res['properties'] = {k: v.to_json() for k, v in self.properties.items()}
         else:
             res['properties'] = {}
         if self.required:

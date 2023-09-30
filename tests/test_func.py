@@ -28,9 +28,13 @@ def test_Parameters_to_json():
     result = params.to_json()
     assert result == expected
 
+def test_Parameters_only_required():
+    with pytest.raises(ValueError):
+        Parameters(required=['prop1'])
+
 def test_Parameters_to_json_no_properties():
-    params = Parameters(required=['prop1'])
-    expected = {'type': 'object', 'properties': {}, 'required': ['prop1']}
+    params = Parameters()
+    expected = {'type': 'object', 'properties': {}}
     assert params.to_json() == expected
 
 def test_Parameters_to_json_required_not_found():
