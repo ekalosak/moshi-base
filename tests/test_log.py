@@ -1,4 +1,5 @@
 from datetime import datetime
+import itertools
 import json
 import sys
 
@@ -27,6 +28,11 @@ def test_sink(sink):
     loguru.logger.debug("before")
     _setup(sink=sink)
     loguru.logger.debug("after")
+
+@pytest.mark.parametrize("level,fmt", itertools.product(["TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "ALERT", "CRITICAL", "EMERGENCY"], ["", "json", "rich", "sabv89732jXCGH"]))
+def test_levels(level, fmt):
+    _setup(fmt=fmt)
+    loguru.logger.log(level, "test")
 
 @pytest.mark.parametrize("serialize_me", [None, "", 1, 1.0, True, [], {}, {"foo": "bar"}, datetime.now()])
 def test_json_serialization(serialize_me):

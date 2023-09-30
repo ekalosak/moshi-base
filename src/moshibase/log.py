@@ -8,13 +8,12 @@ import functools
 import json
 import os
 import time
-import warnings
 
 import loguru
 from loguru import logger
 from loguru._defaults import LOGURU_FORMAT
 
-LOGURU_FORMAT = LOGURU_FORMAT + " | <g><d>{extra}</d></g>"
+LOGURU_FORMAT = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level.icon} {level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level> | <g><d>{extra}</d></g>"
 
 ENV = os.getenv("ENV", "prod")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG")
@@ -101,6 +100,7 @@ def setup_loguru(fmt=LOG_FORMAT, sink=print):
         print("Using LOGURU formatter...")
         _sink = sink
     for level, no, color, icon in [
+        ("DETAIL", 1, "<blue>", "🔍",),
         ("TRACE", 5, "<blue>", "🔍",),
         ("DEBUG", 10, "<cyan>", "🐛",),
         ("TRANSCRIPT", 15, "<magenta>", "📜",),
@@ -108,14 +108,14 @@ def setup_loguru(fmt=LOG_FORMAT, sink=print):
         ("SUCCESS", 25, "<green>", "✅",),
         ("WARNING", 30, "<yellow>", "⚠️",),
         ("ERROR", 40, "<red>", "🚨",),
-        ("CRITICAL", 50, "<orange>", "💥",),
-        ("ALERT", 60, "<orange>", "💥💥",),
-        ("EMERGENCY", 70, "<orange>", "💥💥💥",),
+        ("CRITICAL", 50, "<RED>", "💥",),
+        ("ALERT", 60, "<RED><bold>", "💥💥",),
+        ("EMERGENCY", 70, "<RED><bold>", "💥💥💥",),
     ]:
         try:
             logger.level(level, no=no, color=color, icon=icon)
         except TypeError as e:
-            logger.debug(f"Failed to set log level {level}: {e}")
+            logger.log("DETAIL", f"Failed to set log level {level}: {e}")
     logger.remove()
     logger.add(_sink,
         diagnose=diagnose,
