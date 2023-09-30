@@ -29,8 +29,14 @@ if ENV == "dev":
 
 def failed(exc: Exception, msg: str = None, level: str = "CRITICAL"):
     """Log an error raised to the top of the stack that caused e.g. a firebase function to fail."""
-    with logger.contextualize(traceback=traceback.format_exception(exc), err=type(exc)):
-        logger.log(level, f"{msg}: {exc}")
+    payload = f"{msg}: {exc}"
+    # with logger.contextualize(
+    #     traceback=traceback.format_exception(exc),
+    #     err=type(exc)
+    # ):
+    print(level)
+    print(payload)
+    logger.opt(depth=1, exception=exc).log(level, payload)
 
 
 def traced(f, msg: str = None, verbose = False):
