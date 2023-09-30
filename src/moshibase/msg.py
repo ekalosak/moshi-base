@@ -5,12 +5,6 @@ from enum import Enum
 from .audio import AudioStorage
 from .versioned import Versioned
 
-ROLES = {
-    'ast': 'assistant',
-    'sys': 'system',
-    'usr': 'user',
-ROLES_STR = ', '.join(ROLES.keys())
-
 OPENAI_ROLES = {
     'sys': 'system',
     'usr': 'user',
@@ -18,6 +12,15 @@ OPENAI_ROLES = {
     'func': 'function',
 }
 MOSHI_ROLES = {v: k for k, v in OPENAI_ROLES.items()}
+
+# Color codes for printing messages.
+ROLE_COLORS = {
+    'ast': '\033[95m', # magenta
+    'sys': '\033[93m', # yellow
+    'usr': '\033[96m', # cyan
+    'func': '\033[92m', # green
+    'reset': '\033[0m',  # back to default
+}
 
 class Role(str, Enum):
     SYS = 'sys'
@@ -32,61 +35,6 @@ class Role(str, Enum):
     def from_openai(cls, role: str):
         return cls(MOSHI_ROLES[role])
 
-class PType(str, Enum):
-    STRING = 'string'
-    NUMBER = 'number'
-    BOOLEAN = 'boolean'
-    OBJECT = 'object'
-    ARRAY = 'array'
-    NULL = 'null'
-
-@dataclasses.dataclass
-class Property:
-    name: str
-    ptype: str
-    description: str = ""
-    enum: list[str] = []
-
-    def to_json(self):
-        res = {'name': self.name, 'type': self.ptype}
-        if self.description:
-            res['description'] = self.description
-        if self.enum:
-            res['enum'] = self.enum
-        return res
-
-@dataclasses.dataclass
-class Parameters:
-    """ Base class for parameters for a function. """
-    properties: list[Property]
-    description: str = self.__doc__
-    _type = "object"
-
-    def to_json(self):
-        ...
-
-@dataclasses.dataclass
-class Function:
-    """ Base class for functions. """
-    name: str
-    parameters: Parameters = Parameters()
-    description: str = self.__doc__
-
-    def to_openai(self):
-        return {
-            'name': self.name,
-            'description': self.description,
-            'parameters': self.parame
-        }
-
-    @classmethod
-    def from_openai(cls, completion: dict):
-        return cls(
-            name=completion['name'],
-            params=completion['params'],
-            body=completion['body'],
-        )
-
 @dataclasses.dataclass(kw_only=True)
 class Message(Versioned):
     role: Role
@@ -94,7 +42,6 @@ class Message(Versioned):
     audio: AudioStorage | None = None
     translation: str | None = None
     vocab: list[str | dict] = []
-    _function: Function | None = None
 
     def __str__(self):
         """Print message colorized based on message 'role'."""
@@ -104,14 +51,14 @@ class Message(Versioned):
         payload = f"{color_start}[{role}] {self.body}{color_end}"
         print(payload)
 
-    def to_openai(self):
+    def to_json(self):
         return {
             'role': self.role.to_openai(),
             'content': self.body,
         }
 
     @classmethod
-    def from_openai(cls, completion: dict):
+    def from_json(cls, completion: dict):
         return cls(
             role=Role.from_openai(completion['role']),
             body=completion['content'],
