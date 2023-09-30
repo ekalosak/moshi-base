@@ -63,7 +63,7 @@ setup: precheck pip-upgrade auth-install build-install dev-install
 
 test:
 	@echo "🧪 Running tests..."
-	pytest -v --cov=moshi
+	pytest --ff --cov=moshi
 	@echo "🧪✅ Tests passed."
 
 test-cov:

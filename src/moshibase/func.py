@@ -15,7 +15,7 @@ class Property:
     """ Arguments for functions. """
     ptype: PType
     description: str = ""
-    enum: list[str] = []
+    enum: list[str] = dataclasses.field(default_factory=list)
 
     def __post_init__(self):
         if self.enum and self.ptype != PType.STRING:
@@ -33,8 +33,8 @@ class Property:
 @dataclasses.dataclass
 class Parameters:
     """ List of function arguments (properties) and which are required. """
-    properties: dict[str, Property] = {}
-    required: list[str] = []
+    properties: dict[str, Property] = dataclasses.field(default_factory=dict)
+    required: list[str] = dataclasses.field(default_factory=list)
     _type = "object"
 
     def __post_init__(self):
@@ -49,15 +49,19 @@ class Parameters:
             res['properties'] = {k: v.to_json() for k, v in self.properties.items()},
         else:
             res['properties'] = {}
+        if self.required:
+            res['required'] = self.required
+        return res
 
 @dataclasses.dataclass
 class Function:
     """ Base class for OpenAI functions. """
     name: str
-    parameters: Parameters = Parameters()
+    parameters: Parameters = dataclasses.field(default_factory=Parameters)
     description: str = ""
 
     def to_json(self):
         res = {'name': self.name, 'parameters': self.parameters.to_json()}
         if self.description:
             res['description'] = self.description
+        return res
