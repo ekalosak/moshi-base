@@ -41,7 +41,7 @@ class Message(Versioned):
     body: str
     audio: AudioStorage | None = None
     translation: str | None = None
-    vocab: list[str | dict] = []
+    vocab: list[str | dict] = dataclasses.field(default_factory=list)
 
     def __str__(self):
         """Print message colorized based on message 'role'."""

@@ -1,4 +1,5 @@
 """Common utilities for base types, functions, classes, etc."""
+
 def _toRFC3339(dt):
     """Convert a datetime to RFC3339."""
     return dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
@@ -9,11 +10,12 @@ def jsonify(obj):
         return _toRFC3339(obj)
     if hasattr(obj, "to_json"):
         return obj.to_json()
-    print(f"WARNING: unhandled type: {type(obj)}")
     return str(obj)
 
 def random_string(length: int=6) -> str:
     """ Generate a random string of ASCII letters. """
+    import random
+    import string
     return ''.join(random.choice(string.ascii_letters) for i in range(length))
 
 def confirm(msg: str, require_confirmation: bool=True) -> None:
