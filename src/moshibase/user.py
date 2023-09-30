@@ -1,4 +1,6 @@
 """This module provides a datamodel of the user profile."""
+import dataclasses
+
 from firebase_functions.firestore_fn import DocumentSnapshot
 from google.cloud.firestore_v1 import Client
 from loguru import logger
@@ -7,6 +9,7 @@ from .exceptions import ParseError
 from .log import traced
 from .versioned import Versioned
 
+@dataclasses.dataclass(kw_only=True)
 class User(Versioned):
     """Models the user profile."""
     uid: str
@@ -28,9 +31,25 @@ class User(Versioned):
             raise ParseError(f"Error parsing user: {uid}")
         return usr
 
-    def create(self, db: Client):
+    @traced
+    def create(self, db: Client, timeout: float=5.):
         """Write the user to Firestore."""
         doc = db.collection("users").document(self.uid)
-        if doc.get().exists:
+        if doc.get(timeout=timeout).exists:
             raise ValueError(f"User already exists: {self.uid}")
         doc.create(self.to_dict(exclude=["uid"]))
+
+
+@traced
+def get_user(uid: str, db) -> User:
+    """Get a user from Firestore."""
+    doc_ref = db.collection("users").document(uid)
+    doc_snap = doc_ref.get()
+    if not doc_snap.exists:
+        raise ValueError(f"User does not exist: {uid}")
+    logger.trace(f"User found: {doc_snap.to_dict()['name']}")
+    try:
+        usr = User(uid=uid, **doc_snap.to_dict())
+    except Exception as e:
+        raise ParseError("Error parsing user") from e
+    return usr

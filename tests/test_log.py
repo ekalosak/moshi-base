@@ -6,7 +6,7 @@ import sys
 import loguru
 import pytest
 
-from moshibase import setup_loguru
+from moshibase import setup_loguru, failed
 
 def test_setup():
     setup_loguru()
@@ -52,3 +52,9 @@ def test_json_serialization(serialize_me):
     else:
         payload = extra['payload']
         assert payload == serialize_me, "failed to serialize payload"
+
+def test_failed():
+    try:
+        raise Exception("test")
+    except Exception as e:
+        failed(e)

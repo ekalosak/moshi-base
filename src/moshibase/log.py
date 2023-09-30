@@ -8,10 +8,13 @@ import functools
 import json
 import os
 import time
+import traceback
 
 import loguru
 from loguru import logger
 from loguru._defaults import LOGURU_FORMAT
+
+from .utils import jsonify
 
 LOGURU_FORMAT = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level.icon} {level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level> | <g><d>{extra}</d></g>"
 
@@ -23,6 +26,12 @@ LOG_COLORIZE = (ENV == "dev" or LOG_COLORIZE or LOG_FORMAT == "rich")
 logger.info(f"ENV={ENV} LOG_LEVEL={LOG_LEVEL} LOG_FORMAT={LOG_FORMAT} LOG_COLORIZE={LOG_COLORIZE}")
 if ENV == "dev":
     logger.warning("Running in dev mode. Logs will be verbose and include sensitive diagnostic data.")
+
+def failed(exc: Exception, msg: str = None, level: str = "CRITICAL"):
+    """Log an error raised to the top of the stack that caused e.g. a firebase function to fail."""
+    with logger.contextualize(traceback=traceback.format_exception(exc), err=type(exc)):
+        logger.log(level, f"{msg}: {exc}")
+
 
 def traced(f, msg: str = None, verbose = False):
     msg = msg or f.__name__
@@ -49,22 +58,8 @@ def _gcp_log_severity_map(level: str) -> str:
         case _:
             return level
 
-
 def _format_timedelta(td) -> str:
     return f"{td.days}days{td.seconds}secs{td.microseconds}usecs"
-
-def _toRFC3339(dt):
-    """Convert a datetime to RFC3339."""
-    return dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-
-def _jsonify(obj):
-    """Convert an object to JSON serializable."""
-    if hasattr(obj, "isoformat"):
-        return _toRFC3339(obj)
-    if hasattr(obj, "to_json"):
-        return obj.to_json()
-    print(f"WARNING: unhandled type: {type(obj)}")
-    return str(obj)
 
 def _toGCPFormat(rec: loguru._handler.Message) -> str:
     """Convert a loguru record to a gcloud structured logging payload."""
@@ -86,7 +81,7 @@ def _toGCPFormat(rec: loguru._handler.Message) -> str:
     rec["thread_id"] = rec["thread"].id
     rec["thread_name"] = rec["thread"].name
     rec.pop("thread")
-    return json.dumps(rec, default=lambda o: _jsonify(o))
+    return json.dumps(rec, default=lambda o: jsonify(o))
 
 def setup_loguru(fmt=LOG_FORMAT, sink=print):
     print("Adding stdout logger...")
@@ -106,7 +101,7 @@ def setup_loguru(fmt=LOG_FORMAT, sink=print):
         ("TRANSCRIPT", 15, "<magenta>", "📜",),
         ("INFO", 20, "<white>", "📦",),
         ("SUCCESS", 25, "<green>", "✅",),
-        ("WARNING", 30, "<yellow>", "⚠️",),
+        ("WARNING", 30, "<yellow>", "⚠ ️",),
         ("ERROR", 40, "<red>", "🚨",),
         ("CRITICAL", 50, "<RED>", "💥",),
         ("ALERT", 60, "<RED><bold>", "💥💥",),
