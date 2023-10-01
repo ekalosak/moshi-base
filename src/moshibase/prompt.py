@@ -1,69 +1,42 @@
 import dataclasses
 import json
 from pathlib import Path
+from typing import Callable
 
 from loguru import logger
 
 from .msg import Message, Role
-from .func import Function, FuncCall, Parameters
+from .func import Function, FuncCall
 from . import model
 
-def _parse_parameters(params: str) -> Parameters:
-    """ Parse a string containing a json object representing parameters. """
-    params = params.strip()
-    params = json.loads(params)
-    logger.debug(f"params: {params}")
-    if not params:
-        return Parameters()
-    return Parameters.from_dict(params)
+def _get_function(func_name: str, available_functions: list[Callable]) -> Function:
+    """ Get a function from a list of available functions. """
+    for func in available_functions:
+        if func.__name__ == func_name:
+            return Function.from_callable(func)
+    raise ValueError(f"Function {func_name} not found in available functions.")
 
-def _parse_func(lines: list[str]) -> tuple[Function, int]:
-    """ Parse a multi-line block containing a function specification.
-    Note that parameters json must be one line valid json.
-    Returns:
-        - Function
-        - number of lines parsed
-    """
-    relevant_lines = []
-    for line in lines:
-        if any(line.startswith(role.value) for role in Role):
-            break
-        relevant_lines.append(line)
-    logger.debug(f"relevant_lines: {relevant_lines}")
-    kwargs = {
-        parts[0].strip(): parts[1].strip()
-        for parts in [
-            line.split(':')
-            for line in relevant_lines
-        ]
-    }
-    logger.debug(f"kwargs: {kwargs}")
-    if 'parameters' in kwargs:
-        kwargs['parameters'] = _parse_parameters(kwargs['parameters'])
-    return Function(**kwargs), len(relevant_lines)
-    
-
-def _parse_lines(lines: list[str]) -> list[Function | Message | model.ChatM]:
+def _parse_lines(lines: list[str], available_functions: list[Callable]=[]) -> list[Function | Message | model.ChatM]:
     """ Parse the next function or message from a list of lines. """
     if not lines:
         return []
     line = lines[0]
     parts = line.split(':')
     if parts[0].strip().lower() in model.ChatM.__members__:
-        return [model.ChatM(parts[0].strip().lower())] + _parse_lines(lines[1:])
-    role = Role(parts[0].strip().lower())
-    if role == Role.FUNC:
-        func, i = _parse_func(lines[1:])
-        logger.debug(f"func: {func}")
-        logger.debug(f"i: {i}")
-        logger.debug(f"remaining lines: {lines[i:]}")
-        return [func] + _parse_lines(lines[i + 1:])
+        res = model.ChatM(parts[0].strip().lower())
     else:
-        text = ':'.join(parts[1:])
-        text = text.strip()
-        return [Message(role, text)] + _parse_lines(lines[1:])
+        role = Role(parts[0].strip().lower())
+        if role == Role.FUNC:
+            assert len(parts) == 2
+            func_name = parts[1].strip()
+            res = _get_function(func_name, available_functions)
+        else:
+            text = ':'.join(parts[1:])
+            text = text.strip()
+            res = Message(role, text)
+    return [res] + _parse_lines(lines[1:])
 
-def load_lines(fp: Path) -> list[str]:
+def _load_lines(fp: Path) -> list[str]:
     """ load lines that aren't commented out with '#' """
     with open(fp, 'r') as f:
         _lines = f.readlines()
@@ -122,5 +95,5 @@ class Prompt:
         ```
         Lines starting with '#' are ignored.
         """
-        lines = load_lines(fp)
+        lines = _load_lines(fp)
         return cls.from_lines(lines)

@@ -1,5 +1,29 @@
+from enum import Enum
+
+import random
+
 import pytest
+
 from moshibase.func import PType, Property, Parameters, Function
+
+# These first dummy functions are used for testing Function.from_callable and Parameters.from_callable.
+def get_topic() -> str:
+    """ Come up with a topic to talk about. """
+    return random.choice(["sports", "politics", "the weather", "media", "science"])
+
+class SSMLGender(str, Enum):
+    MALE = '1'
+    FEMALE = '2'
+    OTHER = '3'
+
+def get_name(bcp47: str, ssml_gender: SSMLGender=SSMLGender.MALE, number: int=1) -> list[str]:
+    """ Get a random name. 
+    Args:
+        bcp47: The BCP-47 language code to use to pick the name.
+        ssml_gender: The SSML gender to use to pick the name.
+        number: The number of names to return.
+    """
+    return random.choices(["John", "Jane", "Bob", "Alice"], k=number)
 
 def test_Property_to_json():
     prop = Property(ptype=PType.STRING, description="A string property", enum=["foo", "bar"])
@@ -49,3 +73,24 @@ def test_Function_to_json():
     func = Function(name='my_function', parameters=params, description="My function description")
     expected = {'name': 'my_function', 'parameters': {'type': 'object', 'properties': {'prop1': {'type': 'string', 'description': 'A string property', 'enum': ['foo', 'bar']}, 'prop2': {'type': 'number', 'description': 'A number property'}}, 'required': ['prop1']}, 'description': 'My function description'}
     assert func.to_json() == expected 
+
+def test_Parameters_from_callable_no_args():
+    params = Parameters.from_callable(get_topic)
+    assert params.required == []
+    assert params.properties == {}
+
+def test_Parameters_from_callable():
+    params = Parameters.from_callable(get_name)
+    assert params.required == ['bcp47']
+    assert params.properties == {
+        'bcp47': Property(ptype=PType.STRING, description="The BCP-47 language code to use to pick the name."),
+        'ssml_gender': Property(ptype=PType.STRING, description='The SSML gender to use to pick the name.', enum=['1', '2', '3']),
+        'number': Property(ptype=PType.NUMBER, description='The number of names to return.')
+    }
+
+def test_Function_from_callable():
+    """ Examples for concrete instances of types and classes in this package. """
+    func = Function.from_callable(get_topic)
+    assert func.name == "get_topic"
+    assert func.description == "Come up with a topic to talk about."
+    raise NotImplementedError  # TODO check the parameters, and so on.
