@@ -18,6 +18,7 @@ def _get_function(func_name: str, available_functions: list[Callable]) -> Functi
 
 def _parse_lines(lines: list[str], available_functions: list[Callable]=[]) -> list[Function | Message | model.ChatM]:
     """ Parse the next function or message from a list of lines. """
+    logger.debug(f"a_f: {available_functions}")
     if not lines:
         return []
     line = lines[0]
@@ -34,7 +35,7 @@ def _parse_lines(lines: list[str], available_functions: list[Callable]=[]) -> li
             text = ':'.join(parts[1:])
             text = text.strip()
             res = Message(role, text)
-    return [res] + _parse_lines(lines[1:])
+    return [res] + _parse_lines(lines[1:], available_functions)
 
 def _load_lines(fp: Path) -> list[str]:
     """ load lines that aren't commented out with '#' """
@@ -59,8 +60,8 @@ class Prompt:
     function_call: FuncCall = dataclasses.field(default_factory=FuncCall)
 
     @classmethod
-    def from_lines(cls, lines: list[str]) -> 'Prompt':
-        raw_prompt = _parse_lines(lines)
+    def from_lines(cls, lines: list[str], available_functions: list[Callable]=[]) -> 'Prompt':
+        raw_prompt = _parse_lines(lines, available_functions)
         mod = None
         msgs = []
         funcs = [] 
@@ -82,7 +83,7 @@ class Prompt:
         return cls(**kwargs)
 
     @classmethod
-    def from_file(cls, fp: Path) -> 'Prompt':
+    def from_file(cls, fp: Path, available_functions: list[Callable]=[]) -> 'Prompt':
         """Parse a prompt file in this format:
         ```
         sys: Only use the functions you have been provided with.
@@ -96,4 +97,4 @@ class Prompt:
         Lines starting with '#' are ignored.
         """
         lines = _load_lines(fp)
-        return cls.from_lines(lines)
+        return cls.from_lines(lines, available_functions)

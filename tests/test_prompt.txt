@@ -1,7 +1,5 @@
 sys: Only use the functions you have been provided with.
-func:
-    name: get_topic
-    description: Get a topic to talk about.
-    parameters: {}
+func: get_topic
+# this is a comment
 sys: Be polite.
 usr: Hello.

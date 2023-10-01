@@ -1,29 +1,7 @@
-from enum import Enum
-
-import random
-
 import pytest
+from typing import Callable
 
 from moshibase.func import PType, Property, Parameters, Function
-
-# These first dummy functions are used for testing Function.from_callable and Parameters.from_callable.
-def get_topic() -> str:
-    """ Come up with a topic to talk about. """
-    return random.choice(["sports", "politics", "the weather", "media", "science"])
-
-class SSMLGender(str, Enum):
-    MALE = '1'
-    FEMALE = '2'
-    OTHER = '3'
-
-def get_name(bcp47: str, ssml_gender: SSMLGender=SSMLGender.MALE, number: int=1) -> list[str]:
-    """ Get a random name. 
-    Args:
-        bcp47: The BCP-47 language code to use to pick the name.
-        ssml_gender: The SSML gender to use to pick the name.
-        number: The number of names to return.
-    """
-    return random.choices(["John", "Jane", "Bob", "Alice"], k=number)
 
 def test_Property_to_json():
     prop = Property(ptype=PType.STRING, description="A string property", enum=["foo", "bar"])
@@ -70,16 +48,16 @@ def test_Function_to_json():
     prop1 = Property(ptype=PType.STRING, description="A string property", enum=["foo", "bar"])
     prop2 = Property(ptype=PType.NUMBER, description="A number property")
     params = Parameters(properties={'prop1': prop1, 'prop2': prop2}, required=['prop1'])
-    func = Function(name='my_function', parameters=params, description="My function description")
+    func = Function(name='my_function', func=lambda x: x, parameters=params, description="My function description")
     expected = {'name': 'my_function', 'parameters': {'type': 'object', 'properties': {'prop1': {'type': 'string', 'description': 'A string property', 'enum': ['foo', 'bar']}, 'prop2': {'type': 'number', 'description': 'A number property'}}, 'required': ['prop1']}, 'description': 'My function description'}
     assert func.to_json() == expected 
 
-def test_Parameters_from_callable_no_args():
+def test_Parameters_from_callable_no_args(get_topic: Callable):
     params = Parameters.from_callable(get_topic)
     assert params.required == []
     assert params.properties == {}
 
-def test_Parameters_from_callable():
+def test_Parameters_from_callable(get_name: Callable):
     params = Parameters.from_callable(get_name)
     assert params.required == ['bcp47']
     assert params.properties == {
@@ -88,14 +66,14 @@ def test_Parameters_from_callable():
         'number': Property(ptype=PType.NUMBER, description='The number of names to return.')
     }
 
-def test_Function_from_callable_no_args():
+def test_Function_from_callable_no_args(get_topic: Callable):
     """ Examples for concrete instances of types and classes in this package. """
     func = Function.from_callable(get_topic)
     assert func.name == "get_topic"
     assert func.description == "Come up with a topic to talk about."
     assert func() in ["sports", "politics", "the weather", "media", "science"]
 
-def test_Function_from_callable():
+def test_Function_from_callable(get_name: Callable):
     """ Examples for concrete instances of types and classes in this package. """
     func = Function.from_callable(get_name)
     assert func.name == "get_name"
