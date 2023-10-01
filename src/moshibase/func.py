@@ -2,7 +2,7 @@
 import dataclasses
 from enum import Enum, EnumType
 import inspect
-from typing import Callable
+from typing import Any, Callable
 
 class PType(str, Enum):
     """ Types allowed in functions. """
@@ -87,9 +87,12 @@ def _parse_docstring_description(docstring: str) -> str:
     lines = docstring.splitlines()
     description = ""
     for line in lines:
-        if not line.strip():
-            return description
-        description += line.strip() + " "
+        line = line.strip()
+        if not line:
+            break
+        if line.startswith("Args:"):
+            break
+        description += line + " "
     return description.strip()
 
 def _parse_docstring_arg(docstring: str, name: str) -> str:
@@ -171,6 +174,9 @@ class Function:
     func: Callable
     parameters: Parameters = dataclasses.field(default_factory=Parameters)
     description: str = ""
+
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        return self.func(*args, **kwds)
 
     def to_json(self):
         res = {'name': self.name, 'parameters': self.parameters.to_json()}

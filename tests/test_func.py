@@ -88,9 +88,17 @@ def test_Parameters_from_callable():
         'number': Property(ptype=PType.NUMBER, description='The number of names to return.')
     }
 
-def test_Function_from_callable():
+def test_Function_from_callable_no_args():
     """ Examples for concrete instances of types and classes in this package. """
     func = Function.from_callable(get_topic)
     assert func.name == "get_topic"
     assert func.description == "Come up with a topic to talk about."
-    raise NotImplementedError  # TODO check the parameters, and so on.
+    assert func() in ["sports", "politics", "the weather", "media", "science"]
+
+def test_Function_from_callable():
+    """ Examples for concrete instances of types and classes in this package. """
+    func = Function.from_callable(get_name)
+    assert func.name == "get_name"
+    assert func.description == "Get a random name."
+    for name in func(bcp47="en-US", number=3):
+        assert name in ["John", "Jane", "Bob", "Alice"]
