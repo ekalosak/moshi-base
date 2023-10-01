@@ -59,6 +59,20 @@ class Prompt:
     functions: list[Function] = dataclasses.field(default_factory=list)
     function_call: FuncCall = dataclasses.field(default_factory=FuncCall)
 
+    @property
+    def model(self) -> str:
+        """ e.g. 'gpt-3.5-turbo' """
+        return self.mod.value
+
+    def to_json(self) -> dict:
+        """ Convert to JSON. """
+        return {
+            'mod': self.mod.value,
+            'msgs': [msg.to_json() for msg in self.msgs],
+            'functions': [func.to_json() for func in self.functions],
+            'function_call': self.function_call.to_json(),
+        }
+
     @classmethod
     def from_lines(cls, lines: list[str], available_functions: list[Callable]=[]) -> 'Prompt':
         raw_prompt = _parse_lines(lines, available_functions)

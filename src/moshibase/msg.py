@@ -28,11 +28,16 @@ class Role(str, Enum):
     AST = 'ast'
     FUNC = 'func'
 
-    def to_openai(self):
+    @property
+    def color(self):
+        return ROLE_COLORS[self.value]
+
+    def to_json(self):
+        """ Convert to OpenAI role. """
         return OPENAI_ROLES[self.value]
 
     @classmethod
-    def from_openai(cls, role: str):
+    def from_json(cls, role: str):
         return cls(MOSHI_ROLES[role])
 
 @dataclasses.dataclass
@@ -52,13 +57,13 @@ class Message:
 
     def to_json(self):
         return {
-            'role': self.role.to_openai(),
+            'role': self.role.to_json(),
             'content': self.body,
         }
 
     @classmethod
     def from_json(cls, completion: dict):
         return cls(
-            role=Role.from_openai(completion['role']),
+            role=Role.from_json(completion['role']),
             body=completion['content'],
         )
