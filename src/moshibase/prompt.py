@@ -38,7 +38,8 @@ def _parse_func(lines: list[str]) -> tuple[Function, int]:
         ]
     }
     logger.debug(f"kwargs: {kwargs}")
-    kwargs['parameters'] = _parse_parameters(kwargs['parameters'])
+    if 'parameters' in kwargs:
+        kwargs['parameters'] = _parse_parameters(kwargs['parameters'])
     return Function(**kwargs), len(relevant_lines)
     
 
