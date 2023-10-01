@@ -1,3 +1,4 @@
+""" Functions for OpenAI models. https://platform.openai.com/docs/api-reference/chat/create#functions """
 import dataclasses
 from enum import Enum
 
@@ -9,6 +10,18 @@ class PType(str, Enum):
     OBJECT = 'object'
     ARRAY = 'array'
     NULL = 'null'
+
+@dataclasses.dataclass
+class FuncCall:
+    """ Controls how model calls functions. """
+    func: str = "auto"
+
+    def to_json(self):
+        if self.func in {'auto', 'none'}:
+            return self.func
+        else:
+            return {'name': self.func}
+        
 
 @dataclasses.dataclass
 class Property:
@@ -29,6 +42,14 @@ class Property:
         if self.enum:
             res['enum'] = self.enum
         return res
+
+    @classmethod
+    def from_dict(cls, d: dict):
+        """ Create a Property from a dict. """
+        ptype = PType(d['type'])
+        description = d.get('description', '')
+        enum = d.get('enum', [])
+        return cls(ptype, description, enum)
 
 @dataclasses.dataclass
 class Parameters:
@@ -52,6 +73,16 @@ class Parameters:
         if self.required:
             res['required'] = self.required
         return res
+
+    @classmethod
+    def from_dict(cls, d: dict):
+        """ Create a Parameters from a dict. """
+        properties = {
+            name: Property.from_dict(prop)
+            for name, prop in d['properties'].items()
+        }
+        required = d.get('required', [])
+        return cls(properties, required)
 
 @dataclasses.dataclass
 class Function:

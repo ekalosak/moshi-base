@@ -35,8 +35,8 @@ class Role(str, Enum):
     def from_openai(cls, role: str):
         return cls(MOSHI_ROLES[role])
 
-@dataclasses.dataclass(kw_only=True)
-class Message(Versioned):
+@dataclasses.dataclass
+class Message:
     role: Role
     body: str
     audio: AudioStorage | None = None
