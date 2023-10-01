@@ -95,22 +95,22 @@ def setup_loguru(fmt=LOG_FORMAT, sink=print, level=LOG_LEVEL, diagnose=False):
         print("Using LOGURU formatter...")
         _sink = sink
     for lvl, no, color, icon in [
-        ("DETAIL", 1, "<blue>", "🔍",),
-        ("TRACE", 5, "<blue>", "🔍",),
+        ("DETAIL", 1, "<blue>", "🔬",),
+        ("TRACE", 5, "<blue>", "⏱",),
         ("DEBUG", 10, "<cyan>", "🐛",),
         ("TRANSCRIPT", 15, "<magenta>", "📜",),
-        ("INFO", 20, "<white>", "📦",),
+        ("INFO", 20, "<white>", "💡",),
         ("SUCCESS", 25, "<green>", "✅",),
-        ("WARNING", 30, "<yellow>", "⚠ ️",),
-        ("ERROR", 40, "<red>", "🚨",),
-        ("CRITICAL", 50, "<RED>", "💥",),
-        ("ALERT", 60, "<RED><bold>", "💥💥",),
-        ("EMERGENCY", 70, "<RED><bold>", "💥💥💥",),
+        ("WARNING", 30, "<yellow>", "🚧",),
+        ("ERROR", 40, "<red>", "❌",),
+        ("CRITICAL", 50, "<RED>", "🚨",),
+        ("ALERT", 60, "<RED><bold>", "🚨🚨",),
+        ("EMERGENCY", 70, "<RED><bold>", "🚨🚨🚨",),
     ]:
         try:
             logger.level(lvl, no=no, color=color, icon=icon)
         except TypeError as e:
-            logger.log("DETAIL", f"Failed to set log level {lvl}: {e}")
+            logger.level(lvl, color=color, icon=icon)
     logger.remove()
     logger.add(_sink,
         diagnose=diagnose,

@@ -18,7 +18,7 @@ def _get_function(func_name: str, available_functions: list[Callable]) -> Functi
 
 def _parse_lines(lines: list[str], available_functions: list[Callable]=[]) -> list[Function | Message | model.ChatM]:
     """ Parse the next function or message from a list of lines. """
-    logger.debug(f"a_f: {available_functions}")
+    logger.log("DETAIL", f"a_f: {available_functions}")
     if not lines:
         return []
     line = lines[0]
