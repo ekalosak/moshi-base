@@ -45,11 +45,10 @@ class Message:
 
     def __str__(self):
         """Print message colorized based on message 'role'."""
-        role = OPENAI_ROLES[self.role.value]
+        role = self.role.value
         color_start = ROLE_COLORS[self.role.value]
         color_end = ROLE_COLORS['reset']
-        payload = f"{color_start}[{role}] {self.body}{color_end}"
-        print(payload)
+        return f"{color_start}[{role}] {self.body}{color_end}"
 
     def to_json(self):
         return {

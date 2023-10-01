@@ -30,12 +30,6 @@ if ENV == "dev":
 def failed(exc: Exception, msg: str = None, level: str = "CRITICAL"):
     """Log an error raised to the top of the stack that caused e.g. a firebase function to fail."""
     payload = f"{msg}: {exc}"
-    # with logger.contextualize(
-    #     traceback=traceback.format_exception(exc),
-    #     err=type(exc)
-    # ):
-    print(level)
-    print(payload)
     logger.opt(depth=1, exception=exc).log(level, payload)
 
 
@@ -89,10 +83,10 @@ def _toGCPFormat(rec: loguru._handler.Message) -> str:
     rec.pop("thread")
     return json.dumps(rec, default=lambda o: jsonify(o))
 
-def setup_loguru(fmt=LOG_FORMAT, sink=print):
+def setup_loguru(fmt=LOG_FORMAT, sink=print, level=LOG_LEVEL, diagnose=False):
     print("Adding stdout logger...")
     colorize = LOG_COLORIZE
-    diagnose = ENV == "dev"
+    diagnose = diagnose or ENV == "dev"
     if fmt == "json":
         print("Using JSON formatter...")
         def _sink(rec):
@@ -100,7 +94,7 @@ def setup_loguru(fmt=LOG_FORMAT, sink=print):
     else:
         print("Using LOGURU formatter...")
         _sink = sink
-    for level, no, color, icon in [
+    for lvl, no, color, icon in [
         ("DETAIL", 1, "<blue>", "🔍",),
         ("TRACE", 5, "<blue>", "🔍",),
         ("DEBUG", 10, "<cyan>", "🐛",),
@@ -114,13 +108,14 @@ def setup_loguru(fmt=LOG_FORMAT, sink=print):
         ("EMERGENCY", 70, "<RED><bold>", "💥💥💥",),
     ]:
         try:
-            logger.level(level, no=no, color=color, icon=icon)
+            logger.level(lvl, no=no, color=color, icon=icon)
         except TypeError as e:
-            logger.log("DETAIL", f"Failed to set log level {level}: {e}")
+            logger.log("DETAIL", f"Failed to set log level {lvl}: {e}")
     logger.remove()
     logger.add(_sink,
         diagnose=diagnose,
-        level=LOG_LEVEL,
+        level=level,
         format=LOGURU_FORMAT,
         colorize=colorize,
     )
+    print("Logger setup complete.")
