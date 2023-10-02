@@ -4,7 +4,7 @@ import json
 
 from .utils import jsonify
 
-__version__ = "23.9.2"
+__version__ = "23.9.3"
 
 @dataclasses.dataclass(kw_only=True)
 class Versioned:
