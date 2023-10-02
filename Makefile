@@ -7,7 +7,9 @@ auth:
 	gcloud auth login
 
 auth-install:
+	@echo "🧰 Installing auth dependencies..."
 	PIP_NO_INPUT=1 pip install twine keyring keyrings.google-artifactregistry-auth
+	@echo "🧰✅ Auth dependencies installed."
 
 build-install:
 	@echo "📦 Installing build tools..."
@@ -63,7 +65,7 @@ setup: precheck pip-upgrade auth-install build-install dev-install
 
 test:
 	@echo "🧪 Running tests..."
-	pytest --ff --cov=moshi
+	pytest --ff
 	@echo "🧪✅ Tests passed."
 
 test-cov:

@@ -12,6 +12,7 @@ authors = [
 dependencies = [
   "iso639",
   "isocodes",
+  "google-cloud-firestore",
   "loguru",
 ]
 

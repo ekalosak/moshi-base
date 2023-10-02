@@ -33,15 +33,15 @@ def failed(exc: Exception, msg: str = None, level: str = "CRITICAL"):
     logger.opt(depth=1, exception=exc).log(level, payload)
 
 
-def traced(f, msg: str = None, verbose = False):
+def traced(f, msg: str = None, verbose = False, depth=1):
     msg = msg or f.__name__
     @functools.wraps(f)
     def wrapper(*a, **k):
         with logger.contextualize(**k if verbose else {}):
             t0 = time.monotonic()
-            logger.opt(depth=1).trace(f"[START] {msg}")
+            logger.opt(depth=depth).trace(f"[START] {msg}")
             result = f(*a, **k)
-            logger.opt(depth=1).trace(f"[END] {msg} ({time.monotonic() - t0:.3f}s)")
+            logger.opt(depth=depth).trace(f"[END] {msg} ({time.monotonic() - t0:.3f}s)")
         return result
     return wrapper
 
