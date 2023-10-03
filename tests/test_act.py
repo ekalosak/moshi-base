@@ -1,6 +1,6 @@
 import pytest
 
-from moshibase.activ import MinA
+from moshi.activ import MinA
 
 @pytest.fixture
 def mina():

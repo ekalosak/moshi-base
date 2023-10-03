@@ -3,8 +3,8 @@ from typing import Callable
 
 import pytest
 
-from moshibase import Prompt, model, Message, Role, Function, FuncCall, Parameters
-from moshibase.prompt import _parse_lines, _get_function, _load_lines, Prompt
+from moshi import Prompt, model, Message, Role, Function, FuncCall, Parameters
+from moshi.prompt import _parse_lines, _get_function, _load_lines, Prompt
 
 @pytest.fixture
 def function(get_topic: Callable):

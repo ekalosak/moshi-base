@@ -6,7 +6,7 @@ import sys
 import loguru
 import pytest
 
-from moshibase import setup_loguru, failed
+from moshi import setup_loguru, failed
 
 def test_setup():
     setup_loguru()

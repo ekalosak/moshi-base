@@ -1,7 +1,7 @@
 import pytest
 from typing import Callable
 
-from moshibase.func import PType, Property, Parameters, Function
+from moshi.func import PType, Property, Parameters, Function
 
 def test_Property_to_json():
     prop = Property(ptype=PType.STRING, description="A string property", enum=["foo", "bar"])
