@@ -30,63 +30,66 @@ class Versioned(BaseModel, ABC):
         return self.model_dump(*args, mode=mode, **kwargs)
 
     def to_jsons(self, *args, **kwargs) -> str:
+        """ Stringify the json with utils.jsonify. """
         return json.dumps(self.to_json(*args, **kwargs), default=utils.jsonify)
 
-def to_docpath(docpath: str | Path | DocumentReference) -> Path:
-    if isinstance(docpath, Path):
-        docpath = docpath.with_suffix('')
-    elif isinstance(docpath, str):
-        docpath = Path(docpath)
-    elif isinstance(docpath, DocumentReference):
-        docpath = Path(docpath.id)
-    else:
-        raise TypeError(f"Invalid type for docpath: {type(docpath)}")
-    if len(docpath.parts) % 2:
-        logger.debug(f"Length of docpath is not even: {docpath}")
-        raise ValueError(f"Invalid docpath: {docpath}")
-    return docpath
+class DocPath(Path):
+    """ A path to a document in Firestore. """
+
+    def __init__(self, path: str | Path | DocumentReference):
+        if isinstance(path, Path):
+            path = path.with_suffix('')
+        elif isinstance(path, str):
+            path = Path(path)
+        elif isinstance(path, DocumentReference):
+            path = Path(path.id)
+        else:
+            raise TypeError(f"Invalid type for path: {type(path)}")
+        if len(path.parts) % 2:
+            logger.debug(f"Length of path is not even: {path}")
+            raise ValueError(f"Invalid path: {path}")
+        self._path = path
+
+    def __str__(self):
+        return self._path.as_posix()
+    
+    def to_docref(self, db: Client) -> DocumentReference:
+        return db.document(self._path.as_posix())
 
 class FB(Versioned, ABC):
-    docpath: Path
-    
-    @field_validator('docpath')
-    def coerce_docpath_to_path(cls, v) -> Path:
-        return to_docpath(v)
-    
-    def to_dict(self, *args, mode='python', **kwargs) -> dict:
-        kwargs['exclude'] = kwargs.get('exclude', []) + ['docpath']
-        return super().to_dict(*args, mode=mode, **kwargs)
-    
-    def to_json(self, *args, mode='json', **kwargs) -> dict:
-        kwargs['exclude'] = kwargs.get('exclude', []) + ['docpath']
-        return super().to_json(*args, mode=mode, **kwargs)
-    
+
+    @abstractproperty
+    def docpath(self) -> DocPath:
+        """ The path to the document in Firestore. """
+        ...
+
     def docref(self, db: Client) -> DocumentReference:
         """ Get the document reference. 
         Raises:
             AttributeError: If docpath is not set.
         """
-        print(type(self.docpath))
-        print(self.docpath)
-        return db.document(self.docpath.as_posix())
-
-    def _load(self, db: Client = None) -> dict:
-        """ Get the data from Firestore. """
-        if self.docpath and not self._docref:
-            self._docref = db.document(self.docpath.as_posix())
-        return self._docref.get()
+        return self.docpath.to_docref(db)
 
     @classmethod
-    def from_fb(cls, docpath: str | Path | DocumentReference, db: Client) -> "FB":
-        res = cls(docpath=docpath)
-        res._load(db)
+    def load(cls, docpath: str | Path | DocumentReference | DocPath, db: Client) -> "FB":
+        if not isinstance(docpath, DocPath):
+            docpath = DocPath(docpath)
+        return cls(**docpath.to_docref(db).get().to_dict())
 
-    def to_fb(self, db: Client) -> None:
+    def set(self, db: Client) -> None:
         """ db client is optional when initialized with a DocumentReference.
         Raises:
             AttributeError: If docpath is not set.
         """
         self.docref(db).set(self.to_json(mode='fb'))
 
-    def delete_fb(self, db: Client) -> None:
+    def update(self, db: Client) -> None:
+        """ db client is optional when initialized with a DocumentReference.
+        Raises:
+            AttributeError: If docpath is not set.
+        """
+        self.docref(db).set(self.to_json(mode='fb'))
+
+
+    def delete(self, db: Client) -> None:
         """ Delete the document in Firebase. """

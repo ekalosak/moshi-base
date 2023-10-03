@@ -4,7 +4,7 @@ For design terms, see: https://refactoring.guru/design-patterns/catalog
 import enum
 from abc import ABC, abstractclassmethod, abstractmethod
 from pathlib import Path
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, Literal
 
 from google.cloud.firestore import Client, DocumentReference
 from pydantic import BaseModel, field_validator, Field, ValidationInfo
@@ -13,7 +13,7 @@ from .func import Function
 from .language import Language
 from .msg import Message
 from .prompt import Prompt
-from .storage import FB
+from .storage import FB, DocPath
 
 
 class ActT(str, enum.Enum):
@@ -36,57 +36,44 @@ class State(BaseModel):
 
 class Plan(FB, Generic[T], ABC):
     """ The Plan is a strategy for a session. """
-    # _atp: ActT = Field(help="Activity type.")
-    # _lang: Language = Field(help="Language of the session.")
-    aid: str
-    pid: str
-    uid: str
+    aid: str = Field(help="Activity ID.")
+    pid: str = Field(help="Plan ID.")
+    uid: str = Field(help="User ID.")
+    atp: ActT = Field(help="Activity type.")
+    lang: Language = Field(help="Language for the session.")
     functions: list[Function] = []
     prompt: Prompt = Prompt()
     template: dict[str, str] = {}
     state: dict = {}
     vocab: list[str] = []
     
-    @field_validator('docpath')
-    def construct_docpath(cls, v, info: ValidationInfo):
-        if v:
-            return v
-        pid = info.data['pid']
-        uid = info.data['uid']
-        return Path(f'users/{uid}/plans/{pid}')
+    @property
+    def docpath(self) -> DocPath:
+        return DocPath(f'users/{self.uid}/plans/{self.pid}')
 
 class MinPl(Plan[ActT.MIN]):
     """ Most basic session plan. """
-    _type: type = ActT.MIN
+    atp: ActT = ActT.MIN
     aid: str = '000000-min'
-    docpath: Path = Path('test/test_storage')
 
 class Act(FB, Generic[T], ABC):
     """ Implement session logic. """
-    _atp: ActT
-    _source: str = None  # whether 'hand' or 'some-fb-id'
-    lang: Language | str
+    aid: str
+    atp: ActT
+    lang: Language
     prompt: Prompt
-    aid: str = None
 
-    @field_validator('lang')
+    @field_validator('lang', mode='before')
     def coerce_lang_bcp47_str(cls, v):
         if isinstance(v, str):
-            return Language.from_bcp47(v)
+            v = Language(bcp47=v)
+        elif not isinstance(v, Language):
+            raise TypeError(f"Invalid type for lang: {type(v)}")
         return v
 
-    def docref(self, db: Client) -> DocumentReference:
-        """ Where to put in Fb. """
-        if not self.aid:
-            raise ValueError("Must set aid before saving to FB.")
-        return db.collection('acts').document(self.aid).collection('plans').document(self.pid)
-
-    @classmethod
-    def from_fb(cls, db: Client) -> 'Plan':
-        ...
-
-    def to_fb(self, db: Client):
-        self.docref(db).set(self.to_json(mode='fb'))
+    @property
+    def docpath(self) -> DocPath:
+        return DocPath(f'acts/{self.atp.value}/{self.lang.bcp47}/{self.aid}')
 
     @abstractmethod
     def reply(self, usr_msg: Message, plan: Plan[T]) -> str:
@@ -95,9 +82,17 @@ class Act(FB, Generic[T], ABC):
 
 class MinA(Act[ActT.MIN]):
     """ Most basic activity implementation. """
-    _atp: ActT = ActT.MIN
+    atp: ActT = ActT.MIN
     aid: str = '000000-min'
     prompt: Prompt = Prompt(msgs=[Message.from_string("Hello, world!", 'sys')])
+
+    def __init__(self, bcp47: str, **kwargs):
+        lang = Language(bcp47)
+        super().__init__(lang=lang, **kwargs)
+
+    def reply(self, usr_msg: Message, plan: Plan[ActT.MIN]) -> str:
+        """ This is to be called when a user message arrives. """
+        return "Hello, world!"
 
 # EOF
 # FUTURE
