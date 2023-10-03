@@ -13,7 +13,6 @@ from .__version__ import __version__
 
 
 class Versioned(BaseModel, ABC):
-    created_at: datetime = Field(default_factory=lambda: datetime.now())
     base_version: str = __version__
 
     @field_validator('base_version')
