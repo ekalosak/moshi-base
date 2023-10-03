@@ -33,10 +33,11 @@ class Versioned(BaseModel, ABC):
         """ Stringify the json with utils.jsonify. """
         return json.dumps(self.to_json(*args, **kwargs), default=utils.jsonify)
 
-class DocPath(Path):
+class DocPath:
     """ A path to a document in Firestore. """
 
     def __init__(self, path: str | Path | DocumentReference):
+        logger.debug(f"Path: {path}")
         if isinstance(path, Path):
             path = path.with_suffix('')
         elif isinstance(path, str):
@@ -48,6 +49,7 @@ class DocPath(Path):
         if len(path.parts) % 2:
             logger.debug(f"Length of path is not even: {path}")
             raise ValueError(f"Invalid path: {path}")
+        logger.debug(f"Path: {path}")
         self._path = path
 
     def __str__(self):
@@ -71,10 +73,14 @@ class FB(Versioned, ABC):
         return self.docpath.to_docref(db)
 
     @classmethod
-    def load(cls, docpath: str | Path | DocumentReference | DocPath, db: Client) -> "FB":
+    def load(cls, docpath: DocPath, db: Client) -> "FB":
         if not isinstance(docpath, DocPath):
             docpath = DocPath(docpath)
-        return cls(**docpath.to_docref(db).get().to_dict())
+        dr = docpath.to_docref(db)
+        ds = dr.get()
+        dat = ds.to_dict()
+        logger.debug(f"Got data from Fb: {dat}")
+        return cls(**dat)
 
     def set(self, db: Client) -> None:
         """ db client is optional when initialized with a DocumentReference.
@@ -83,13 +89,13 @@ class FB(Versioned, ABC):
         """
         self.docref(db).set(self.to_json(mode='fb'))
 
-    def update(self, db: Client) -> None:
+    def update(self, db: Client):
         """ db client is optional when initialized with a DocumentReference.
         Raises:
             AttributeError: If docpath is not set.
         """
-        self.docref(db).set(self.to_json(mode='fb'))
+        return self.docref(db).set(self.to_json(mode='fb'))
 
-
-    def delete(self, db: Client) -> None:
+    def delete(self, db: Client):
         """ Delete the document in Firebase. """
+        return self.docref(db).delete()
