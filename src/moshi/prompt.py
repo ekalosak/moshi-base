@@ -15,13 +15,10 @@ import openai
 import tiktoken
 from loguru import logger
 
-from moshibase import MOSHI_ROLES, OPENAI_ROLES, Message, Role
-from moshibase.prompt import Prompt
-
 from . import model
 from .exceptions import CompletionError
 from .func import FuncCall, Function
-from .msg import Message, Role
+from .msg import Message, Role, MOSHI_ROLES, OPENAI_ROLES
 
 enc: tiktoken.Encoding
 
