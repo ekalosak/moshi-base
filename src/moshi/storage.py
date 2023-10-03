@@ -41,6 +41,10 @@ class FBBase(Versioned, ABC):
         kwargs['exclude'] = kwargs.get('exclude', []) + ['docpath']
         return super().to_dict(*args, mode=mode, **kwargs)
     
+    def to_json(self, *args, mode='json', **kwargs) -> dict:
+        kwargs['exclude'] = kwargs.get('exclude', []) + ['docpath']
+        return super().to_json(*args, mode=mode, **kwargs)
+    
     def docref(self, db: Client) -> DocumentReference:
         """ Get the document reference. 
         Raises:
