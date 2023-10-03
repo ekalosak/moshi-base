@@ -33,7 +33,11 @@ class PType(str, Enum):
 
 @dataclasses.dataclass
 class FuncCall:
-    """ Controls how model calls functions. """
+    """ Allowed values are either 'auto', 'none', or '<function_name>'.
+    When 'auto', the function is chosen automatically based on the prompt.
+    When 'none', no function is called.
+    When '<function_name>', the function with that name is called.
+    """
     func: str = "auto"
 
     def to_json(self):
