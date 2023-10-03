@@ -65,8 +65,13 @@ setup: precheck pip-upgrade auth-install build-install dev-install
 
 test:
 	@echo "🧪 Running tests..."
-	pytest --ff
+	@echo "👋 Expects emulator running "
+	ENV='dev' LOG_LEVEL='DETAIL' LOG_FORMAT='rich' \
+		GCLOUD_PROJECT='demo-test' \
+		FIRESTORE_EMULATOR_HOST='localhost:8090' \
+		pytest --ff
 	@echo "🧪✅ Tests passed."
+
 
 test-cov:
 	@echo "📊 Showing test coverage report..."

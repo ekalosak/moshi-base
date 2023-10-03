@@ -12,7 +12,6 @@ from . import utils
 from .__version__ import __version__
 
 
-# TODO refactor merge to FBBase
 class Versioned(BaseModel, ABC):
     created_at: datetime = Field(default_factory=lambda: datetime.now())
     base_version: str = __version__
@@ -34,7 +33,7 @@ class Versioned(BaseModel, ABC):
     def to_jsons(self, *args, **kwargs) -> str:
         return json.dumps(self.to_json(*args, **kwargs), default=utils.jsonify)
 
-class FBBase(Versioned, ABC):
+class FB(Versioned, ABC):
     docpath: Path = None
     
     def to_dict(self, *args, mode='python', **kwargs) -> dict:
@@ -69,9 +68,6 @@ class FBBase(Versioned, ABC):
             raise ValueError(f"Invalid docpath: {v}")
         return v
 
-class FromFB(FBBase, ABC):
-    """Load from Firestore."""
-
     def _load(self, db: Client = None) -> dict:
         """ Get the data from Firestore. """
         if self.docpath and not self._docref:
@@ -83,20 +79,12 @@ class FromFB(FBBase, ABC):
         res = cls(docpath=docpath)
         res._load(db)
 
-class ToFB(FBBase, ABC):
-    """Save to Firestore."""
-
-    def to_fb(self, db: Client = None) -> None:
+    def to_fb(self, db: Client) -> None:
         """ db client is optional when initialized with a DocumentReference.
         Raises:
-            Exception: If docpath is not set.
+            AttributeError: If docpath is not set.
         """
-        if self.docpath and not self._docref:
-            self._docref = db.document(self.docpath.as_posix())
-        self._docref.set(self.to_json(mode='fb'))
+        self.docref(db).set(self.to_json(mode='fb'))
 
-
-class FB(FromFB, ToFB, ABC):
-    """Load from and save to Firestore."""
-
-    ...
+    def delete_fb(self, db: Client) -> None:
+        """ Delete the document in Firebase. """

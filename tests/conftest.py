@@ -1,8 +1,14 @@
 from enum import Enum
+import os
 import random
 from typing import Callable
 
+from google.cloud import firestore
+from loguru import logger
 import pytest
+
+GCLOUD_PROJECT = os.getenv("GCLOUD_PROJECT", "demo-test")
+logger.info(f"GCLOUD_PROJECT={GCLOUD_PROJECT}")
 
 @pytest.fixture
 def get_topic() -> Callable:
@@ -28,3 +34,10 @@ def get_name() -> Callable:
         """
         return random.choices(["John", "Jane", "Bob", "Alice"], k=number)
     return get_name
+
+@pytest.fixture(scope="module")
+def db():
+    """Create a firestore client."""
+    db = firestore.Client(GCLOUD_PROJECT)
+    print(f"Created db client, project={db.project}, database={db._database}, target={db._target}")
+    return db

@@ -38,6 +38,7 @@ Repository = "https://github.com/ekalosak/moshi-base.git"
 [tool.pytest.ini_options]
 markers = [
   "slow: runs more than a second or two to run",
+  "fb: requires an emulated firebase instance to run",
 ]
 addopts = [
   "--cov=moshi"

@@ -8,19 +8,17 @@ from moshi.storage import FB
 from moshi.utils import similar
 
 class TestFB(FB):
-    dummy: str = "test"
-
-    def to_fb(self, db: Client) -> None:
-        db.collection("test").document("test").set(self.to_dict())
-
-    @classmethod
-    def from_fb(cls, db: Client) -> "TestFB":
-        doc = db.collection("test").document("test").get()
-        return cls(**doc.to_dict())
+    docpath: str = "test/test_storage"
+    test_key: str = "test_value"
 
 @pytest.fixture
-def fb():
-    return TestFB()
+def fb(db):
+    res = TestFB()
+    res.delete_fb(db)
+    return res
+
+def test_fb_fixture(fb: FB, db: Client):
+    assert fb.docref(db).get().exists == False
 
 def test_fb_created_at(fb: TestFB):
     assert isinstance(fb.created_at, datetime.datetime)
@@ -47,3 +45,14 @@ def test_fb_to_json(fb: TestFB):
 def test_fb_to_json_exclude(fb: TestFB):
     expected_json = {"base_version": fb.base_version, "dummy": fb.dummy}
     assert fb.to_json(exclude=["created_at"]) == expected_json
+
+@pytest.mark.fb
+def test_fb_to_fb(fb: TestFB, db: Client):
+    fb.to_fb(db)
+    dsnap = fb.docref(db).get()
+    assert dsnap.exists
+    assert dsnap.to_dict() == fb.to_json()
+
+@pytest.mark.fb
+def test_fb_from_fb(fb: TestFB, db: Client):
+    ...
