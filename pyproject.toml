@@ -16,6 +16,7 @@ dependencies = [
   "langcodes[data]",
   "loguru",
   "openai",
+  "pydantic",
 ]
 
 [project.optional-dependencies]

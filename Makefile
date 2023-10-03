@@ -63,14 +63,23 @@ precheck:
 setup: precheck pip-upgrade auth-install build-install dev-install
 	@echo "🧰 Setup complete."
 
-test:
-	@echo "🧪 Running tests..."
+test-unit:
+	@echo "🧪🖐 Running unit tests..."
+	ENV='dev' LOG_LEVEL='DETAIL' LOG_FORMAT='rich' \
+		GCLOUD_PROJECT='demo-test' \
+		FIRESTORE_EMULATOR_HOST='localhost:8090' \
+		pytest -m 'not fb'
+	@echo "🧪✊✅ Tests passed."
+
+test-integration:
+	@echo "🧪🫱🫲 Running itegration tests..."
 	@echo "👋 Expects emulator running "
 	ENV='dev' LOG_LEVEL='DETAIL' LOG_FORMAT='rich' \
 		GCLOUD_PROJECT='demo-test' \
 		FIRESTORE_EMULATOR_HOST='localhost:8090' \
-		pytest
-	@echo "🧪✅ Tests passed."
+		pytest -m 'fb'
+	@echo "🧪🤝✅ Integration tests passed."
+
 
 test-cov:
 	@echo "📊 Showing test coverage report..."
