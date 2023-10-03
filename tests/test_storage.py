@@ -2,8 +2,9 @@ import datetime
 
 import pytest
 
-from moshibase.versioned import Versioned
-from moshibase.language import similar
+from moshi import __version__
+from moshi.storage import FromFB, ToFB, FB, Versioned
+from moshi.language import similar
 
 @pytest.fixture
 def versioned():

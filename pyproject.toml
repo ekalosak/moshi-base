@@ -1,11 +1,11 @@
 [project]
-name = "moshi-base"
+name = "com-chatmoshi-base"
 version = "23.10.0"
 description = "Lightweight tools used across all ChatMoshi components."
 readme = "README.md"
 requires-python = ">=3.11,<3.12"
 license = {text = "Proprietary"}
-keywords = ["language", "ai", "moshi"]
+keywords = ["language", "ai", "moshi", "base", "types", "storage"]
 authors = [
   {name = "Eric Kalosa-Kenyon", email = "moshi.feedback@gmail.com"}
 ]
@@ -39,5 +39,5 @@ markers = [
   "slow: runs more than a second or two to run",
 ]
 addopts = [
-  "--cov=moshibase"
+  "--cov=moshi"
 ]
