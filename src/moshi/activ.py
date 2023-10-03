@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Generic, TypeVar
 
 from google.cloud.firestore import Client, DocumentReference
-from pydantic import BaseModel, field_validator, Field
+from pydantic import BaseModel, field_validator, Field, ValidationInfo
 
 from .func import Function
 from .language import Language
@@ -39,18 +39,27 @@ class Plan(FB, Generic[T], ABC):
     # _atp: ActT = Field(help="Activity type.")
     # _lang: Language = Field(help="Language of the session.")
     aid: str
+    pid: str
+    uid: str
     functions: list[Function] = []
     prompt: Prompt = Prompt()
     template: dict[str, str] = {}
     state: dict = {}
     vocab: list[str] = []
-    pid: str = None
-    uid: str = None
+    
+    @field_validator('docpath')
+    def construct_docpath(cls, v, info: ValidationInfo):
+        if v:
+            return v
+        pid = info.data['pid']
+        uid = info.data['uid']
+        return Path(f'users/{uid}/plans/{pid}')
 
 class MinPl(Plan[ActT.MIN]):
     """ Most basic session plan. """
     _type: type = ActT.MIN
     aid: str = '000000-min'
+    docpath: Path = Path('test/test_storage')
 
 class Act(FB, Generic[T], ABC):
     """ Implement session logic. """
@@ -58,7 +67,6 @@ class Act(FB, Generic[T], ABC):
     _source: str = None  # whether 'hand' or 'some-fb-id'
     lang: Language | str
     prompt: Prompt
-    plan: Plan[T]
     aid: str = None
 
     @field_validator('lang')
@@ -80,16 +88,16 @@ class Act(FB, Generic[T], ABC):
     def to_fb(self, db: Client):
         self.docref(db).set(self.to_json(mode='fb'))
 
-    def reply(self, usr_msg: Message) -> str:
+    @abstractmethod
+    def reply(self, usr_msg: Message, plan: Plan[T]) -> str:
         """ This is to be called when a user message arrives. """
-        raise NotImplementedError
+        ...
 
 class MinA(Act[ActT.MIN]):
     """ Most basic activity implementation. """
     _atp: ActT = ActT.MIN
     aid: str = '000000-min'
     prompt: Prompt = Prompt(msgs=[Message.from_string("Hello, world!", 'sys')])
-    plan: MinPl = MinPl()
 
 # EOF
 # FUTURE

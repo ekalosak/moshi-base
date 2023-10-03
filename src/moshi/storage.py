@@ -47,12 +47,10 @@ def to_docpath(docpath: str | Path | DocumentReference) -> Path:
     return docpath
 
 class FB(Versioned, ABC):
-    docpath: Path = None
+    docpath: Path
     
     @field_validator('docpath')
-    def coerce_docpath_to_path(cls, v) -> Path | None:
-        if not v:
-            return None
+    def coerce_docpath_to_path(cls, v) -> Path:
         return to_docpath(v)
     
     def to_dict(self, *args, mode='python', **kwargs) -> dict:
@@ -79,7 +77,7 @@ class FB(Versioned, ABC):
         return self._docref.get()
 
     @classmethod
-    def from_fb(cls, docpath: str | Path | DocumentReference, db: Client = None) -> "FromFB":
+    def from_fb(cls, docpath: str | Path | DocumentReference, db: Client) -> "FB":
         res = cls(docpath=docpath)
         res._load(db)
 
