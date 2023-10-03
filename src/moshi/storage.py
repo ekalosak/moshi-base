@@ -1,16 +1,18 @@
 """ Firebase storage models. """
-from datetime import datetime, timezone
 import json
-from abc import ABC, abstractclassmethod, abstractmethod
-from datetime import datetime
+from abc import ABC, abstractclassmethod, abstractmethod, abstractproperty
+from datetime import datetime, timezone
+from pathlib import Path
 
-from google.cloud.firestore import Client
+from google.cloud.firestore import Client, DocumentReference
 from loguru import logger
-from pydantic import BaseModel, field_validator, Field
+from pydantic import BaseModel, Field, field_validator
 
-from .__version__ import __version__
 from . import utils
+from .__version__ import __version__
 
+
+# TODO refactor merge to FBBase
 class Versioned(BaseModel, ABC):
     created_at: datetime = Field(default_factory=lambda: datetime.now())
     base_version: str = __version__
@@ -32,20 +34,58 @@ class Versioned(BaseModel, ABC):
     def to_jsons(self, *args, **kwargs) -> str:
         return json.dumps(self.to_json(*args, **kwargs), default=utils.jsonify)
 
-class FromFB(Versioned, ABC):
+class FBBase(Versioned, ABC):
+    docpath: Path = None
+    
+    def docref(self, db: Client) -> DocumentReference:
+        """ Get the document reference. 
+        Raises:
+            AttributeError: If docpath is not set.
+        """
+        return db.document(self.docpath.as_posix())
+    
+    @field_validator('docpath', mode='before')
+    def coerce_docpath_to_path(cls, v) -> Path | None:
+        if not v:
+            return None
+        if isinstance(v, Path):
+            v = v.with_suffix('')
+        elif isinstance(v, str):
+            v = Path(v)
+        elif isinstance(v, DocumentReference):
+            v = Path(v.id)
+        else:
+            raise TypeError(f"Invalid type for docpath: {type(v)}")
+        if len(v.parts) % 2:
+            logger.debug(f"Length of docpath is not even: {v}")
+            raise ValueError(f"Invalid docpath: {v}")
+        return v
+
+class FromFB(FBBase, ABC):
     """Load from Firestore."""
 
-    @abstractclassmethod
-    def from_fb(cls, db: Client) -> "FromFB":
-        ...
+    def _load(self, db: Client = None) -> dict:
+        """ Get the data from Firestore. """
+        if self.docpath and not self._docref:
+            self._docref = db.document(self.docpath.as_posix())
+        return self._docref.get()
 
+    @classmethod
+    def from_fb(cls, docpath: str | Path | DocumentReference, db: Client = None) -> "FromFB":
+        res = cls(docpath=docpath)
+        res._load(db)
 
-class ToFB(Versioned, ABC):
+class ToFB(FBBase, ABC):
     """Save to Firestore."""
 
-    @abstractmethod
-    def to_fb(self, db: Client) -> None:
-        ...
+    def to_fb(self, db: Client = None) -> None:
+        """ db client is optional when initialized with a DocumentReference.
+        Raises:
+            Exception: If docpath is not set.
+        """
+        if self.docpath and not self._docref:
+            self._docref = db.document(self.docpath.as_posix())
+        self._docref.set(self.to_json(mode='fb'))
 
 
 class FB(FromFB, ToFB, ABC):

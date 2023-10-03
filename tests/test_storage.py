@@ -5,7 +5,7 @@ import pytest
 
 from moshi import __version__
 from moshi.storage import FB
-from moshi.language import similar
+from moshi.utils import similar
 
 class TestFB(FB):
     dummy: str = "test"

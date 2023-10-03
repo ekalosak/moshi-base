@@ -1,5 +1,6 @@
 """Common utilities for base types, functions, classes, etc."""
 from datetime import datetime, timezone
+from difflib import SequenceMatcher
 
 def _toRFC3339(dt: datetime):
     """Convert a datetime to RFC3339."""
@@ -33,3 +34,10 @@ def confirm(msg: str, require_confirmation: bool=True) -> None:
         exit(1)
     else:
         logger.debug(f"Confirmed {msg}.")
+
+def similar(a: str, b: str) -> float:
+    """Return similarity of two strings.
+    Source:
+        - https://stackoverflow.com/a/17388505/5298555
+    """
+    return SequenceMatcher(None, a, b).ratio()

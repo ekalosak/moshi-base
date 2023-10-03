@@ -13,6 +13,7 @@ dependencies = [
   "iso639",
   "isocodes",
   "google-cloud-firestore",
+  "langcodes[data]",
   "loguru",
   "openai",
 ]

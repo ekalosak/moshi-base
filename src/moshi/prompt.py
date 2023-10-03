@@ -10,15 +10,18 @@ import dataclasses
 import time
 from pathlib import Path
 from typing import Callable
+from google.cloud.firestore import Client
 
 import openai
 import tiktoken
 from loguru import logger
+from pydantic import field_validator, ValidationInfo
 
 from . import model
 from .exceptions import CompletionError
 from .func import FuncCall, Function
 from .msg import Message, Role, MOSHI_ROLES, OPENAI_ROLES
+from .storage import Versioned
 
 enc: tiktoken.Encoding
 
@@ -35,7 +38,7 @@ def _parse_lines(
     lines: list[str], available_functions: list[Callable] = []
 ) -> list[Function | Message | model.ChatM]:
     """Parse the next function or message from a list of lines."""
-    logger.log("DETAIL", f"a_f: {available_functions}")
+    logger.debug(f"a_f: {available_functions}")
     if not lines:
         return []
     line = lines[0]
@@ -70,28 +73,39 @@ def _load_lines(fp: Path) -> list[str]:
     return lines
 
 
-@dataclasses.dataclass
-class Prompt:
+class Prompt(Versioned):
     """A prompt for OpenAI's API."""
 
+    msgs: list[Message] = []
+    functions: list[Function] = []
+    function_call: FuncCall = FuncCall()
     mod: model.ChatM = model.ChatM.GPT35TURBO
-    msgs: list[Message] = dataclasses.field(default_factory=list)
-    functions: list[Function] = dataclasses.field(default_factory=list)
-    function_call: FuncCall = dataclasses.field(default_factory=FuncCall)
+
+    @field_validator("msgs", mode='before')
+    def coerce_string_msgs(cls, v):
+        """Coerce string messages to Message objects."""
+        return [Message.from_string(msg) if isinstance(msg, str) else msg for msg in v]
+
+    @field_validator("function_call")
+    def func_call_in_functions(cls, v, info: ValidationInfo):
+        if v:
+            if not info.data.get("functions"):
+                raise ValueError("Must provide functions to use function_call.")
+        return v
 
     @property
     def model(self) -> str:
         """e.g. 'gpt-3.5-turbo'"""
         return self.mod.value
 
-    def to_json(self) -> dict:
-        """Convert to JSON."""
-        return {
-            "mod": self.model,
-            "msgs": [msg.to_json() for msg in self.msgs],
-            "functions": [func.to_json() for func in self.functions],
-            "function_call": self.function_call.to_json(),
-        }
+    # def to_json(self) -> dict:
+    #     """Convert to JSON."""
+    #     return {
+    #         "mod": self.model,
+    #         "msgs": [msg.to_json() for msg in self.msgs],
+    #         "functions": [func.to_json() for func in self.functions],
+    #         "function_call": self.function_call.to_json(),
+    #     }
 
     @classmethod
     def from_lines(

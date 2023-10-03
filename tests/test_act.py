@@ -4,7 +4,7 @@ from moshi.activ import MinA
 
 @pytest.fixture
 def mina():
-    return MinA()
+    return MinA(lang='en-US')
 
 def test_mina(mina: MinA):
     assert 1

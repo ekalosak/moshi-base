@@ -2,7 +2,7 @@
 import dataclasses
 from enum import Enum, EnumType
 import inspect
-from typing import Any, Callable
+from typing import Any, Callable, Literal
 
 class PType(str, Enum):
     """ Types allowed in functions. """
@@ -38,13 +38,15 @@ class FuncCall:
     When 'none', no function is called.
     When '<function_name>', the function with that name is called.
     """
-    func: str = "auto"
+    func: Literal['auto', 'none'] | str | Callable = 'auto'
 
     def to_json(self):
         if self.func in {'auto', 'none'}:
             return self.func
-        else:
+        elif isinstance(self.func, str):
             return {'name': self.func}
+        else:
+            return {'name': self.func.__name__}
         
 
 @dataclasses.dataclass

@@ -54,6 +54,10 @@ class Message:
         color_end = ROLE_COLORS['reset']
         return f"{color_start}[{role}] {self.body}{color_end}"
 
+    @classmethod
+    def from_string(cls, body: str, role: Role=Role.USR):
+        return cls(role, body)
+
     def to_json(self):
         return {
             'role': self.role.to_json(),
