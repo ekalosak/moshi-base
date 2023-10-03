@@ -1,8 +1,11 @@
 """Common utilities for base types, functions, classes, etc."""
+from datetime import datetime, timezone
 
-def _toRFC3339(dt):
+def _toRFC3339(dt: datetime):
     """Convert a datetime to RFC3339."""
-    return dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    if not dt.tzinfo:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.isoformat()
 
 def jsonify(obj):
     """Convert an object to JSON serializable."""

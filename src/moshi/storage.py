@@ -1,34 +1,38 @@
 """ Firebase storage models. """
-import datetime
+from datetime import datetime, timezone
 import json
 from abc import ABC, abstractclassmethod, abstractmethod
 from datetime import datetime
 
 from google.cloud.firestore import Client
-from pydantic import BaseModel, validator
+from loguru import logger
+from pydantic import BaseModel, field_validator, Field
 
 from .__version__ import __version__
-# from .utils import jsonify
-
+from . import utils
 
 class Versioned(BaseModel, ABC):
-    created_at: datetime
+    created_at: datetime = Field(default_factory=lambda: datetime.now())
     base_version: str = __version__
 
-    @validator("created_at", pre=True, always=True)
-    def set_created_at(cls, v):
-        return v or datetime.now()
+    @field_validator('base_version')
+    def check_version(cls, v):
+        if v != __version__:
+            logger.warning(f"Version mismatch: got {v} != base {__version__}")
+        return v
 
-    def to_jsons(self, exclude: list[str] = None) -> str:
-        """Dump the model as a JSON string."""
-        return self.model_dump_json(exclude=exclude) #json.dumps(..., default=lambda o: jsonify(o))
+    def to_dict(self, *args, mode='python', **kwargs) -> dict:
+        """ Alias for BaseModel's model_dump. """
+        return self.model_dump(*args, mode=mode, **kwargs)
 
-    def to_json(self, exclude: list[str] = None) -> dict:
-        """Dump the model as a JSON object."""
-        return json.loads(self.to_jsons(exclude=exclude))
+    def to_json(self, *args, mode='json', **kwargs) -> dict:
+        """ Alias for BaseModel's json-mode model_dump. """
+        return self.model_dump(*args, mode=mode, **kwargs)
 
+    def to_jsons(self, *args, **kwargs) -> str:
+        return json.dumps(self.to_json(*args, **kwargs), default=utils.jsonify)
 
-class FromFB(ABC):
+class FromFB(Versioned, ABC):
     """Load from Firestore."""
 
     @abstractclassmethod
@@ -36,7 +40,7 @@ class FromFB(ABC):
         ...
 
 
-class ToFB(ABC):
+class ToFB(Versioned, ABC):
     """Save to Firestore."""
 
     @abstractmethod
@@ -44,7 +48,7 @@ class ToFB(ABC):
         ...
 
 
-class FB(FromFB, ToFB):
+class FB(FromFB, ToFB, ABC):
     """Load from and save to Firestore."""
 
     ...

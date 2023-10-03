@@ -1,7 +1,7 @@
 """Models of audio data."""
-from .versioned import Versioned
+from .storage import FB
 
-class AudioStorage(Versioned):
+class AudioStorage(FB):
     """Where the audio for a message is stored."""
     path: str
     bucket: str = None

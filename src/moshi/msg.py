@@ -3,7 +3,6 @@ import dataclasses
 from enum import Enum
 
 from .audio import AudioStorage
-from .versioned import Versioned
 
 OPENAI_ROLES = {
     'sys': 'system',

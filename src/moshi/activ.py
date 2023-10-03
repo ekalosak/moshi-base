@@ -32,7 +32,7 @@ class State(BaseModel):
     user: dict = None  # user name, pronouns, interests, etc.
     characters: list[str] = None  #
 
-class Plan(BaseModel, Generic[T], FB, ABC):
+class Plan(FB, Generic[T], ABC):
     """ The Plan is a strategy for a session. """
     _pid: str = None
     _aid: str = None
@@ -51,7 +51,7 @@ class Plan(BaseModel, Generic[T], FB, ABC):
         return self._aid
     
 
-class Act(BaseModel, Generic[T], FB, ABC):
+class Act(FB, Generic[T], ABC):
     """ Implement session logic. """
     _aid: str = None
     prompt: Prompt
@@ -98,6 +98,6 @@ class GuidedA(Act[ActType.GUIDED]):
     """ Guided activity implementation. Curriculum and learning goals.
     Examples:
         - Moshi will use colors and nouns. Describe the color of the object.
+            - template = {'level': 'novice', 'combine': 'colors and nouns'}
     """
-    templ = {'level': 'novice', 'combine': 'colors and nouns'}
     ...
