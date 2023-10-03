@@ -37,6 +37,10 @@ class Versioned(BaseModel, ABC):
 class FBBase(Versioned, ABC):
     docpath: Path = None
     
+    def to_dict(self, *args, mode='python', **kwargs) -> dict:
+        kwargs['exclude'] = kwargs.get('exclude', []) + ['docpath']
+        return super().to_dict(*args, mode=mode, **kwargs)
+    
     def docref(self, db: Client) -> DocumentReference:
         """ Get the document reference. 
         Raises:
