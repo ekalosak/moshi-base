@@ -69,9 +69,8 @@ test:
 	ENV='dev' LOG_LEVEL='DETAIL' LOG_FORMAT='rich' \
 		GCLOUD_PROJECT='demo-test' \
 		FIRESTORE_EMULATOR_HOST='localhost:8090' \
-		pytest --ff
+		pytest
 	@echo "🧪✅ Tests passed."
-
 
 test-cov:
 	@echo "📊 Showing test coverage report..."

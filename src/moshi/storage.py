@@ -33,8 +33,28 @@ class Versioned(BaseModel, ABC):
     def to_jsons(self, *args, **kwargs) -> str:
         return json.dumps(self.to_json(*args, **kwargs), default=utils.jsonify)
 
+def to_docpath(docpath: str | Path | DocumentReference) -> Path:
+    if isinstance(docpath, Path):
+        docpath = docpath.with_suffix('')
+    elif isinstance(docpath, str):
+        docpath = Path(docpath)
+    elif isinstance(docpath, DocumentReference):
+        docpath = Path(docpath.id)
+    else:
+        raise TypeError(f"Invalid type for docpath: {type(docpath)}")
+    if len(docpath.parts) % 2:
+        logger.debug(f"Length of docpath is not even: {docpath}")
+        raise ValueError(f"Invalid docpath: {docpath}")
+    return docpath
+
 class FB(Versioned, ABC):
     docpath: Path = None
+    
+    @field_validator('docpath')
+    def coerce_docpath_to_path(cls, v) -> Path | None:
+        if not v:
+            return None
+        return to_docpath(v)
     
     def to_dict(self, *args, mode='python', **kwargs) -> dict:
         kwargs['exclude'] = kwargs.get('exclude', []) + ['docpath']
@@ -49,24 +69,9 @@ class FB(Versioned, ABC):
         Raises:
             AttributeError: If docpath is not set.
         """
+        print(type(self.docpath))
+        print(self.docpath)
         return db.document(self.docpath.as_posix())
-    
-    @field_validator('docpath', mode='before')
-    def coerce_docpath_to_path(cls, v) -> Path | None:
-        if not v:
-            return None
-        if isinstance(v, Path):
-            v = v.with_suffix('')
-        elif isinstance(v, str):
-            v = Path(v)
-        elif isinstance(v, DocumentReference):
-            v = Path(v.id)
-        else:
-            raise TypeError(f"Invalid type for docpath: {type(v)}")
-        if len(v.parts) % 2:
-            logger.debug(f"Length of docpath is not even: {v}")
-            raise ValueError(f"Invalid docpath: {v}")
-        return v
 
     def _load(self, db: Client = None) -> dict:
         """ Get the data from Firestore. """

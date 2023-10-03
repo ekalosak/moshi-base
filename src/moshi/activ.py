@@ -3,6 +3,7 @@ For design terms, see: https://refactoring.guru/design-patterns/catalog
 """
 import enum
 from abc import ABC, abstractclassmethod, abstractmethod
+from pathlib import Path
 from typing import Generic, TypeVar
 
 from google.cloud.firestore import Client, DocumentReference
@@ -45,15 +46,6 @@ class Plan(FB, Generic[T], ABC):
     vocab: list[str] = []
     pid: str = None
     uid: str = None
-
-    def docref(self, db: Client) -> DocumentReference:
-        """ Where to put in Fb. """
-        if not all((self.aid, self.pid, self.uid)):
-            raise ValueError("Must set all aid, pid, uid before saving to FB.")
-        return db.collection('users').document(self.uid).collection('plans').document(self.pid)
-
-    def to_fb(self, db: Client):
-        self.docref(db).set(self.to_json(mode='fb'))
 
 class MinPl(Plan[ActT.MIN]):
     """ Most basic session plan. """
