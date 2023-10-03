@@ -63,6 +63,8 @@ precheck:
 setup: precheck pip-upgrade auth-install build-install dev-install
 	@echo "🧰 Setup complete."
 
+test: test-unit test-integration
+
 test-unit:
 	@echo "🧪🖐 Running unit tests..."
 	ENV='dev' LOG_LEVEL='DETAIL' LOG_FORMAT='rich' \
