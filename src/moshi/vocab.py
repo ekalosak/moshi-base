@@ -1,19 +1,9 @@
-import dataclasses
-
-from . import utils
-from .versioned import Versioned
+from pydantic import BaseModel
 
 
-@dataclasses.dataclass(kw_only=True)
-class Vocab(Versioned):
+class Vocab(BaseModel):
     term: str
     term_translation: str
     part_of_speech: str = "missing"
     definition: str = "missing"
     definition_translation: str = "missing"
-
-    def to_dict(self) -> dict:
-        return dataclasses.asdict(self)
-
-    def to_json(self) -> dict:
-        return utils.jsonify(self.to_dict())
