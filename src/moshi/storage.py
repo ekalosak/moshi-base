@@ -78,6 +78,8 @@ class FB(Versioned, ABC):
         ds = dr.get()
         dat = ds.to_dict()
         logger.debug(f"Got data from Fb: {dat}")
+        if dat is None:
+            raise ValueError(f"Document {docpath} does not exist in Firebase.")
         return cls(**dat)
 
     def set(self, db: Client) -> None:
