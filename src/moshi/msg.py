@@ -1,6 +1,8 @@
 """Models for messages."""
-import dataclasses
+from datetime import datetime
 from enum import Enum
+
+from pydantic import Field
 
 from .audio import AudioStorage
 from .storage import Mappable
@@ -41,6 +43,7 @@ class Role(str, Enum):
         return cls(MOSHI_ROLES[role])
 
 class Message(Mappable):
+    created_at: datetime = Field(default_factory=datetime.utcnow)
     role: Role
     body: str
     audio: AudioStorage = None

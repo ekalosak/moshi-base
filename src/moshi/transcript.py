@@ -1,6 +1,24 @@
-from datetime import datetime
+""" The Transcript holds the live session state object.
+It is stored in Firestore at /users/<uid>/transcripts/<tid>.
+In comparison:
+    - the Activity[T] (T bound by ActT) has the session state machine logic.
+    - the Plan[T] (T bound by ActT) has the activity configuration.
+Note that the Transcript is generic across ActT.
 
-from google.cloud import firestore
+When a session is 'live', the Transcript is stored in Firestore at: /users/<uid>/live/<tid>
+In this state, the messages are stored in subcollections:
+    - /users/<uid>/live/<tid>/amsgs
+    - /users/<uid>/live/<tid>/umsgs
+This complexity allows different message types to trigger different Functions, and different functionality is indeed required for different message roles in a session.
+
+After the session terminates, the umsgs and amsgs are merged into the Transcript document
+    under the 'msgs' attribute, and the document is 'moved' (copied and deleted) to /users/<uid>/final/<tid>.
+This complexity allows different enrichment functionality to be applied to the messages after the session terminates e.g. translation, summarization, subsequent lesson planning, etc. Moreover, it allows the avoidance of unnecessarily loading the live-session functionality when the session is not live and updates are made.
+"""
+from typing import Literal
+from itertools import chain
+
+from google.cloud.firestore import Client, WriteOption, CollectionReference
 from loguru import logger
 from pydantic import Field
 
@@ -21,17 +39,22 @@ def _transcript_id(bcp47: str) -> str:
     return f"{id_prefix()}-{bcp47}"
 
 class Transcript(FB):
+    _messages: list[Message] = None
     aid: str = Field(help='Activity ID.')
     atp: ActT = Field(help='Activity type.')
     pid: str = Field(help='Plan ID.')
     tid: str = Field(help='Transcript ID.', default_factory=_transcript_id)
     uid: str = Field(help='User ID.')
     bcp47: str = Field(help='User language e.g. "en-US".')
-    messages: list[Message] = Field(help='Content of the conversation.')
+    status: Literal['live', 'final'] = 'live'
+
+    @property
+    def messages(self) -> list[Message]:
+        return self._messages
 
     @property
     def docpath(self) -> DocPath:
-        return DocPath(f'users/{self.uid}/transcripts/{self.tid}')
+        return DocPath(f'users/{self.uid}/{self.status}/{self.tid}')
 
     @classmethod
     def from_plan(cls, plan: Plan) -> 'Transcript':
@@ -41,7 +64,6 @@ class Transcript(FB):
             pid=plan.pid,
             uid=plan.uid,
             bcp47=plan.bcp47,
-            messages=[],
         )
 
     @classmethod
@@ -51,7 +73,7 @@ class Transcript(FB):
             raise ValueError(f"Invalid docpath for plan, must have 4 parts: {docpath}")
         if docpath.parts[0] != 'users':
             raise ValueError(f"Invalid docpath for plan, first part must be 'users': {docpath}")
-        if docpath.parts[2] != 'transcripts':
+        if docpath.parts[2] not in {'live', 'final'}:
             raise ValueError(f"Invalid docpath for plan, third part must be 'transcripts': {docpath}")
         return {
             'uid': docpath.parts[1],
@@ -61,6 +83,100 @@ class Transcript(FB):
     def to_json(self, *args, exclude=['tid', 'uid'], **kwargs) -> dict:
         return super().to_json(*args, exclude=exclude, **kwargs)
 
-    def add_msg(self, msg: Message) -> None:
-        """Add a message to the transcript."""
-        self.messages.append(msg)
+    def _send_msg_to_subcollection(self, msg: Message, db: Client) -> None:
+        match msg.role:
+            case 'usr':
+                colnm = 'umsgs'
+            case 'ast':
+                colnm = 'amsgs'
+            case _:
+                raise ValueError(f"Invalid role, only 'ast' and 'usr' are valid in transcript, got: {msg.role}")
+        with logger.contextualize(collection_name=colnm):
+            logger.debug(f"Adding message to transcript: {msg}")
+        col: CollectionReference = self.docref(db).collection(colnm)
+        msg_id = msg.role.value.upper() + str(len(self._messages))
+        with logger.contextualize(msg_id=msg_id):
+            logger.debug(f"Adding message to transcript...")
+            col.document(msg_id).set(msg.to_json())
+            logger.debug(f"Added message to transcript.")
+
+    @traced
+    def add_msg(self, msg: Message, db: Client) -> None:
+        """ Add a message to the transcript. """
+        if self.status == 'final':
+            raise ValueError(f"Cannot add message to final transcript: {self.docpath}")
+        assert self.status == 'live', f"Invalid status for transcript: {self.status}"
+        self._messages.append(msg)
+        self._send_msg_to_subcollection(msg, db)
+
+    def _read_subcollections(self, db: Client) -> None:
+        """ Read the subcollections from Firestore. Use this when the status is live. """
+        umsgs = self.docref(db).collection('umsgs').stream()  # NOTE should be no more than 50
+        amsgs = self.docref(db).collection('amsgs').stream()  # NOTE should be no more than 50
+        for msg in chain(umsgs, amsgs):
+            logger.debug(f"Got message from Fb: {msg.to_dict()}")
+            self._messages.append(Message(**msg.to_dict()))
+        self._messages = sorted(self._messages, key=lambda msg: msg.created_at)
+    
+    def _read_messages(self, db: Client) -> None:
+        """ Read the messages from Firestore. Use this when the transcript is final. """
+        doc = self.docref(db).get()
+        if not doc.exists:
+            raise ValueError(f"selfript document {self.docpath} does not exist in Firebase.")
+        dat = doc.to_dict()
+        msgs = [Message(**msg) for msg in dat['msgs']]
+        self._messages = sorted(msgs, key=lambda msg: msg.created_at)
+    
+    # TODO implement CRUD methods to accommodate the structure:
+    # /users/<uid>/transcripts/<tid>
+    #   When the status is 'live', messages are stored in:
+    #       - /users/<uid>/live/<tid>/amsgs
+    #           for msgs with role 'ast', and
+    #       - /users/<uid>/live/<tid>/umsgs
+    #           for msgs with role 'usr'.
+    #   When the status is 'final', the messages are merged into the Transcript document as an attribute 'msgs'.
+    @classmethod
+    def read(cls, docpath: DocPath, db: Client) -> "Transcript":
+        """ Read the document from Firestore. """
+        tdoc = db.document(docpath).get()
+        if not tdoc.exists:
+            raise ValueError(f"Document {docpath} does not exist in Firebase.")
+        kwargs = cls._kwargs_from_docpath(docpath)
+        kwargs.update(tdoc.to_dict())
+        transc = Transcript(**kwargs)
+        if docpath.parts[2] == 'final':
+            transc._read_messages(db)
+        elif docpath.parts[2] == 'live':
+            transc._read_subcollections(db)
+        else:
+            raise ValueError(f"Invalid docpath for transcript, third part must be 'live' or 'final': {docpath}")
+        return transc
+
+    def create(self, db: Client, **kwargs) -> None:
+        """ Create the document in Firestore if it doesn't exist.
+        Raises:
+            AttributeError: If docpath is not set.
+            AlreadyExists: If the document already exists.
+        """
+        match self.status:
+            case 'live':
+                self.docref(db).create(self.to_json(), **kwargs)
+                for msg in self._messages:
+                    self._send_msg_to_subcollection(msg, db)
+            case 'final':
+                msgs = [msg.to_json() for msg in self._messages]
+                payload = self.to_json()
+                payload.update({'msgs': msgs})
+                self.docref(db).create(payload, **kwargs)
+        
+
+    def delete(self, db: Client, **kwargs) -> None:
+        """ Delete the document in Firestore. """
+        if self.status == 'live':
+            # delete the subcollections as well
+            for colnm in ('amsgs', 'umsgs'):
+                col: CollectionReference = self.docref(db).collection(colnm)
+                for msgdoc in col.stream():
+                    logger.debug(f"Deleting message from transcript: {msgdoc.id}")
+                    msgdoc.reference.delete()
+        return self.docref(db).delete(**kwargs)
