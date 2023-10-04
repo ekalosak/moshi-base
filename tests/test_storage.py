@@ -37,7 +37,7 @@ def test_fb_to_dict(fb: DummyFb):
     assert fb.to_dict() == expected_dict
 
 def test_fb_to_jsons(fb: DummyFb):
-    expected_jsons = '{"base_version": "%s", "test_key": "test_value"}' % (fb.created_at.isoformat(), fb.base_version)
+    expected_jsons = '{"base_version": "' + fb.base_version + '", "test_key": "test_value"}'
     assert similar(fb.to_jsons(), expected_jsons) > 0.99
 
 def test_fb_to_json(fb: DummyFb):
