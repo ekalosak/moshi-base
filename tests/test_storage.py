@@ -51,5 +51,20 @@ def test_fb_set(fb: DummyFb, db: Client):
     assert dsnap.to_dict() == fb.to_dict()
 
 @pytest.mark.fb
-def test_fb_from_fb(fb: DummyFb, db: Client):
-    ...
+def test_fb_read(fb: DummyFb, db: Client):
+    fb.set(db)
+    fb2 = DummyFb.read(fb.docpath, db)
+    assert fb2.to_dict() == fb.to_dict()
+
+@pytest.mark.fb
+def test_fb_delete(fb: DummyFb, db: Client):
+    fb.set(db)
+    fb.delete(db)
+    assert fb.docref(db).get().exists == False
+
+@pytest.mark.fb
+def test_fb_update(fb: DummyFb, db: Client):
+    fb.set(db)
+    fb.test_key = "updated_value"
+    fb.update(db)
+    assert fb.docref(db).get().to_dict() == fb.to_dict()
