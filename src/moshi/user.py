@@ -11,7 +11,7 @@ class User(FB):
     native_language: str
 
     @classmethod
-    def read(cls, uid: str, db: Client) -> 'User':
+    def from_uid(cls, uid: str, db: Client) -> 'User':
         return super().read(DocPath(f'users/{uid}'), db)
 
     @property

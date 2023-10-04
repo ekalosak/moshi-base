@@ -16,7 +16,7 @@ def test_user_fb(usr: User, db):
     assert usr == usr2
     usr.name = "test2"
     usr.update(db)
-    usr3 = User.read(usr.docpath, db)
+    usr3 = User.from_uid(usr.uid, db)  # NOTE to test from_uid; equiv to read
     assert usr3.name == "test2"
     usr.delete(db)
     with pytest.raises(ValueError):
