@@ -8,8 +8,14 @@ from google.cloud import firestore
 from loguru import logger
 import pytest
 
+from moshi.activ import MinA
+
 GCLOUD_PROJECT = os.getenv("GCLOUD_PROJECT", "demo-test")
 logger.info(f"GCLOUD_PROJECT={GCLOUD_PROJECT}")
+
+@pytest.fixture
+def mina():
+    return MinA('en-US')
 
 @pytest.fixture
 def get_topic() -> Callable:

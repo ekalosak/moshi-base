@@ -52,6 +52,9 @@ class Plan(FB, Generic[T], ABC):
     state: State = None
     vocab: list[str] = None
 
+    def __init__(self, uid, bcp47, **kwargs):
+        super().__init__(uid=uid, bcp47=bcp47, **kwargs)
+
     def _kwargs_from_docpath(cls, docpath: DocPath) -> dict:
         if len(docpath.parts) != 4:
             raise ValueError(f"Invalid docpath for plan, must have 4 parts: {docpath}")
@@ -185,9 +188,19 @@ def pid2plan(pid: str, uid: str, db: Client) -> Plan:
         raise KeyError(f"Plan {pid} has an invalid activity type. Only {ACTIVITIES.keys()} are supported at the moment.")
     return act(**dat)
 
+PLAN_OF_TYPE = {
+    ActT.MIN: MinPl
+}
+
+ACT_OF_TYPE = {
+    ActT.MIN: MinA
+}
+
 # EOF
 # FUTURE
 
+
+'''
 class UnstrP(Plan[ActT.UNSTRUCTURED]):
     """ Most basic session plan. """
     ...
@@ -213,11 +226,4 @@ class GuidedA(Act[ActT.GUIDED]):
             - template = {'level': 'novice', 'combine': 'colors and nouns'}
     """
     ...
-
-PLAN_OF_TYPE = {
-    ActT.MIN: MinPl
-}
-
-ACT_OF_TYPE = {
-    ActT.MIN: MinA
-}
+'''
