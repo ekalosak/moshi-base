@@ -21,9 +21,8 @@ def fb(db):
     res.delete(db)
     return res
 
-def test_docpath():
-    dp = DocPath('test_col/test_doc')
-    assert dp.to_docref(None).id == 'test_doc'
+def test_docpath(db):
+    assert DocPath('test_col/test_doc').to_docref(db).id == 'test_doc'
 
 def test_fb_fixture(fb: FB, db: Client):
     dr = fb.docref(db)
