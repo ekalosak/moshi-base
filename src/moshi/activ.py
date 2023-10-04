@@ -52,6 +52,18 @@ class Plan(FB, Generic[T], ABC):
     state: State = None
     vocab: list[str] = None
 
+    def _kwargs_from_docpath(cls, docpath: DocPath) -> dict:
+        if len(docpath.parts) != 4:
+            raise ValueError(f"Invalid docpath for plan, must have 4 parts: {docpath}")
+        if docpath.parts[0] != 'users':
+            raise ValueError(f"Invalid docpath for plan, first part must be 'users': {docpath}")
+        if docpath.parts[2] != 'plans':
+            raise ValueError(f"Invalid docpath for plan, third part must be 'plans': {docpath}")
+        return {
+            'uid': docpath.parts[1],
+            'pid': docpath.parts[3],
+        }
+
     @classmethod
     def from_act(cls, act: 'Act[T]', uid: str, **kwargs) -> 'Plan[T]':
         """ Create a plan from an activity. """
@@ -103,10 +115,18 @@ class Act(FB, Generic[T], ABC):
 
     @classmethod
     def _kwargs_from_docpath(cls, docpath: DocPath) -> dict:
-        if docpath.parts[0] != 'acts':
-            raise ValueError(f"Invalid docpath for activity, first part must be 'acts': {docpath}")
         if len(docpath.parts) != 4:
             raise ValueError(f"Invalid docpath for activity, must have 4 parts: {docpath}")
+        if docpath.parts[0] != 'acts':
+            raise ValueError(f"Invalid docpath for activity, first part must be 'acts': {docpath}")
+        try:
+            ActT(docpath.parts[1])
+        except ValueError:
+            raise ValueError(f"Invalid docpath for activity, second part must be a valid activity type, got: {docpath.parts[1]} from {docpath}")
+        try:
+            Language(docpath.parts[2])
+        except ValueError:
+            raise ValueError(f"Invalid docpath for activity, third part must be a valid bcp47 language code, got: {docpath.parts[2]} from {docpath}")
         return {
             'atp': ActT(docpath.parts[1]),
             'bcp47': docpath.parts[2],
@@ -156,9 +176,9 @@ def pid2plan(pid: str, uid: str, db: Client) -> Plan:
     try:
         atp = ActT(dat['atp'])
     except KeyError:
-        raise KeyError(f"Plan {pid} does not have an activity type.")
+        raise KeyError(f"Plan {pid} does not have an activity type ('atp') attribute.")
     except ValueError:
-        raise ValueError(f"Plan {pid} has an invalid activity type.")
+        raise ValueError(f"Plan {pid} has an invalid activity type ('atp') attribute.")
     try:
         act = ACTIVITIES[atp]
     except KeyError:

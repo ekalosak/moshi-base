@@ -9,9 +9,15 @@ def _toRFC3339(dt: datetime):
         dt = dt.replace(tzinfo=timezone.utc)
     return dt.isoformat()
 
-def id_prefix() -> str:
+def random_string(length: int=6) -> str:
+    """ Generate a random string of ASCII letters. """
+    import random
+    import string
+    return ''.join(random.choice(string.ascii_letters + string.digits) for i in range(length))
+
+def id_prefix(uidlen = 12) -> str:
     """ Generate a unique ID prefix. """
-    prefix = uuid.uuid4()[0:6]
+    prefix = random_string(uidlen)
     date = datetime.now().strftime("%y%m%d-%H%M%S")
     return f"{prefix}-{date}"
 
@@ -22,12 +28,6 @@ def jsonify(obj):
     if hasattr(obj, "to_json"):
         return obj.to_json()
     return str(obj)
-
-def random_string(length: int=6) -> str:
-    """ Generate a random string of ASCII letters. """
-    import random
-    import string
-    return ''.join(random.choice(string.ascii_letters) for i in range(length))
 
 def confirm(msg: str, require_confirmation: bool=True) -> None:
     """ Confirm an action with the user. Used in interactive sessions on the CLI. """

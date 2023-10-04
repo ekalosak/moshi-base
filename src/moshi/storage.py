@@ -21,11 +21,15 @@ class DocPath:
             path = Path(path)
         elif isinstance(path, DocumentReference):
             path = Path(path.id)
+        elif isinstance(path, DocPath):
+            logger.warning(f"DocPath({path}) is redundant. Returning {path}.")
+            path = path._path
         else:
             raise TypeError(f"Invalid type for path: {type(path)}")
         if len(path.parts) % 2:
-            logger.debug(f"Length of path is not even: {path}")
-            raise ValueError(f"Invalid path: {path}")
+            raise ValueError(f"Invalid path: Length of path is not even: {path}")
+        if any(part == 'None' or not part for part in path.parts):
+            raise ValueError(f"Invalid path: Empty parts in path: {path}")
         self._path = path
 
     def __repr__(self) -> str:
