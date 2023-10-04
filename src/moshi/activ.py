@@ -3,6 +3,7 @@ For design terms, see: https://refactoring.guru/design-patterns/catalog
 """
 import enum
 from abc import ABC, abstractclassmethod, abstractmethod
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Generic, TypeVar, Literal
 
@@ -14,6 +15,7 @@ from .language import Language
 from .msg import Message
 from .prompt import Prompt
 from .storage import FB, DocPath
+from .utils import random_string
 
 
 class ActT(str, enum.Enum):
@@ -34,27 +36,46 @@ class State(BaseModel):
     user: dict = None  # user name, pronouns, interests, etc.
     characters: list[str] = None  #
 
+def default_pid(atp: ActT) -> str:
+    tod = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    return random_string(12) + '-' + atp.value + '-' + tod
+
 class Plan(FB, Generic[T], ABC):
     """ The Plan is a strategy for a session. """
-    aid: str = Field(help="Activity ID.")
-    pid: str = Field(help="Plan ID.")
-    uid: str = Field(help="User ID.")
     atp: ActT = Field(help="Activity type.")
+    aid: str = Field(help="Activity ID.")
+    pid: str = Field(help="Plan ID.", default_factory=default_pid)
+    uid: str = Field(help="User ID.", default=None)
     lang: Language = Field(help="Language for the session.")
-    functions: list[Function] = []
-    prompt: Prompt = Prompt()
+    functions: list[Function] = Field(default=[], help="Functions to allow LLM to select.")
+    prompt: Prompt = Field(default=Prompt(), help="Extra prompt for the session.")
     template: dict[str, str] = {}
     state: dict = {}
     vocab: list[str] = []
+    
+    @classmethod
+    def from_act(cls, act: 'Act[T]', **kwargs) -> 'Plan[T]':
+        """ Create a plan from an activity. """
+        return cls(
+            atp=act.atp,
+            aid=act.aid,
+            lang=act.lang,
+            **kwargs 
+        )
     
     @property
     def docpath(self) -> DocPath:
         return DocPath(f'users/{self.uid}/plans/{self.pid}')
 
+    def write_to_user(self, uid: str):
+        """ Write the plan to the user's document. """
+        ...
+
 class MinPl(Plan[ActT.MIN]):
     """ Most basic session plan. """
     atp: ActT = ActT.MIN
-    aid: str = '000000-min'
+    aid: str = '000000-min'  # a singular min activity
+    pid: str = '000000-min'  # a singular min plan
 
 class Act(FB, Generic[T], ABC):
     """ Implement session logic. """
