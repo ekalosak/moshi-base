@@ -3,6 +3,7 @@ import dataclasses
 from enum import Enum
 
 from .audio import AudioStorage
+from .storage import Mappable
 
 OPENAI_ROLES = {
     'sys': 'system',
@@ -39,13 +40,15 @@ class Role(str, Enum):
     def from_json(cls, role: str):
         return cls(MOSHI_ROLES[role])
 
-@dataclasses.dataclass
-class Message:
+class Message(Mappable):
     role: Role
     body: str
-    audio: AudioStorage | None = None
-    translation: str | None = None
-    vocab: list[str | dict] = dataclasses.field(default_factory=list)
+    audio: AudioStorage = None
+    translation: str = None
+    vocab: list[str | dict] = None
+
+    def __init__(self, role: Role, body: str, **kwargs):
+        super().__init__(role=role, body=body, **kwargs)
 
     def __str__(self):
         """Print message colorized based on message 'role'."""
@@ -58,15 +61,15 @@ class Message:
     def from_string(cls, body: str, role: Role=Role.USR):
         return cls(role, body)
 
-    def to_json(self):
-        return {
-            'role': self.role.to_json(),
-            'content': self.body,
-        }
+    # def to_json(self):
+    #     return {
+    #         'role': self.role.to_json(),
+    #         'content': self.body,
+    #     }
 
-    @classmethod
-    def from_json(cls, completion: dict):
-        return cls(
-            role=Role.from_json(completion['role']),
-            body=completion['content'],
-        )
+    # @classmethod
+    # def from_json(cls, completion: dict):
+    #     return cls(
+    #         role=Role.from_json(completion['role']),
+    #         body=completion['content'],
+    #     )

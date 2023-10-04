@@ -38,7 +38,6 @@ def _parse_lines(
     lines: list[str], available_functions: list[Callable] = []
 ) -> list[Function | Message | model.ChatM]:
     """Parse the next function or message from a list of lines."""
-    logger.debug(f"a_f: {available_functions}")
     if not lines:
         return []
     line = lines[0]
@@ -73,12 +72,12 @@ def _load_lines(fp: Path) -> list[str]:
     return lines
 
 
-class Prompt(Versioned):
+class Prompt(Mappable):
     """A prompt for OpenAI's API."""
 
     msgs: list[Message] = []
-    functions: list[Function] = []
-    function_call: FuncCall = FuncCall()
+    functions: list[Function] = None
+    function_call: FuncCall = None
     mod: model.ChatM = model.ChatM.GPT35TURBO
 
     @field_validator("msgs", mode='before')

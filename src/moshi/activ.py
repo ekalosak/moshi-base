@@ -47,10 +47,10 @@ class Plan(FB, Generic[T], ABC):
     uid: str = Field(help="User ID.")
     pid: str = Field(help="Plan ID.", default_factory=default_pid)
     bcp47: str = Field(help="Language for the session.")
-    prompt: Prompt = Field(default=Prompt(), help="Extra prompt for the session.")
-    template: dict[str, str] = {}
-    state: dict = {}
-    vocab: list[str] = []
+    prompt: Prompt = Field(default=None, help="Extra prompt for the session.")
+    template: dict[str, str] = None
+    state: State = None
+    vocab: list[str] = None
 
     @classmethod
     def from_act(cls, act: 'Act[T]', uid: str, **kwargs) -> 'Plan[T]':
@@ -71,13 +71,12 @@ class Plan(FB, Generic[T], ABC):
             raise ValueError("Cannot get docpath for plan without pid.")
         return DocPath(f'users/{self.uid}/plans/{self.pid}')
 
-    def to_json(self, *args, exclude=['pid', 'uid'], **kwargs) -> dict:
+    def to_json(self, *args, exclude=['pid', 'uid'], exclude_unset=True, **kwargs) -> dict:
         """ Get the data to write to Firestore.
         Args:
             exclude: Fields to exclude from the returned dict. Defaults to those attributes in the docpath (pid, uid).
         """
-        kwargs['exclude_unset'] = kwargs.get('exclude_unset', True)
-        return super().to_json(*args, exclude=exclude, **kwargs)
+        return super().to_json(*args, exclude=exclude, exclude_unset=exclude_unset, **kwargs)
 
 class MinPl(Plan[ActT.MIN]):
     """ Most basic session plan. """
@@ -91,21 +90,22 @@ class Act(FB, Generic[T], ABC):
     atp: ActT
     bcp47: str
     prompt: Prompt
-    source: str
-
-    # @field_validator('language', mode='before')
-    # def coerce_lang_bcp47_str(cls, v):
-    #     if isinstance(v, str):
-    #         v = Language(bcp47=v)
-    #     elif isinstance(v, dict):
-    #         v = Language(**v)
-    #     elif not isinstance(v, Language):
-    #         raise TypeError(f"Invalid type for lang: {type(v)}")
-    #     return v
+    source: str = "builtin"
 
     @property
     def docpath(self) -> DocPath:
         return DocPath(f'acts/{self.atp.value}/{self.bcp47}/{self.aid}')
+
+    @classmethod
+    def _kwargs_from_docpath(cls, docpath: DocPath) -> dict:
+        """ Get kwargs from the docpath. For example, /users/<uid> should return {'uid': <uid>}. """
+        assert docpath.parts[0] == 'acts'
+        assert len(docpath.parts) == 4
+        return {
+            'atp': ActT(docpath.parts[1]),
+            'bcp47': docpath.parts[2],
+            'aid': docpath.parts[3],
+        }
 
     def to_json(self, *args, exclude=['aid', 'atp'], exclude_none=True, **kwargs) -> dict:
         """ Get the data to write to Firestore.

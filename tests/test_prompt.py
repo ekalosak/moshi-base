@@ -72,4 +72,4 @@ def test_from_file(prompt: Prompt, prompt_file: Path, get_topic: Callable, get_n
         func=lambda x: x,
         description= "Come up with a topic to talk about.",
     ).to_json()
-    assert prompt.function_call == FuncCall()
+    assert prompt.function_call == None

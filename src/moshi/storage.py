@@ -37,6 +37,10 @@ class DocPath:
     def to_docref(self, db: Client) -> DocumentReference:
         return db.document(self._path.as_posix())
 
+    @property
+    def parts(self) -> list[str]:
+        return self._path.parts
+
 
 class Mappable(BaseModel, ABC):
 
@@ -76,6 +80,11 @@ class FB(Versioned, ABC):
         """ The path to the document in Firestore. """
         ...
 
+    @classmethod
+    def _kwargs_from_docpath(cls, docpath: DocPath) -> dict:
+        """ Get kwargs from the docpath. For example, /users/<uid> should return {'uid': <uid>}. """
+        return {}
+
     def docref(self, db: Client) -> DocumentReference:
         """ Get the document reference. 
         Raises:
@@ -97,11 +106,14 @@ class FB(Versioned, ABC):
             docpath = DocPath(docpath)
         dr = docpath.to_docref(db)
         ds = dr.get()
+        if not ds.exists:
+            raise ValueError(f"Document {docpath} does not exist in Firebase.")
         dat = ds.to_dict()
         with logger.contextualize(dbpath=docpath, dbproject=db.project):
             logger.debug(f"Got data from Fb: {dat}")
-        if dat is None:
-            raise ValueError(f"Document {docpath} does not exist in Firebase.")
+            if dbpath_kwargs := cls._kwargs_from_docpath(docpath):
+                dat.update(dbpath_kwargs)
+                logger.debug(f"Updated with kwargs derived from {docpath}: {dat}")
         return cls(**dat)
 
     def create(self, db: Client, **kwargs) -> None:
