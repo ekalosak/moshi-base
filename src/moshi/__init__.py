@@ -5,5 +5,6 @@ from .log import setup_loguru, failed, traced
 from .prompt import Prompt
 from .msg import Message, Role, OPENAI_ROLES, MOSHI_ROLES, ROLE_COLORS
 from .model import CompletionM, ChatM
+from .user import User
 from .utils import confirm, random_string, jsonify
 from .vocab import Vocab

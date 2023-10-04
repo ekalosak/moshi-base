@@ -52,7 +52,7 @@ class Plan(FB, Generic[T], ABC):
     template: dict[str, str] = {}
     state: dict = {}
     vocab: list[str] = []
-    
+
     @classmethod
     def from_act(cls, act: 'Act[T]', **kwargs) -> 'Plan[T]':
         """ Create a plan from an activity. """
@@ -62,7 +62,7 @@ class Plan(FB, Generic[T], ABC):
             lang=act.lang,
             **kwargs 
         )
-    
+
     @property
     def docpath(self) -> DocPath:
         return DocPath(f'users/{self.uid}/plans/{self.pid}')
@@ -74,10 +74,10 @@ class Plan(FB, Generic[T], ABC):
 class MinPl(Plan[ActT.MIN]):
     """ Most basic session plan. """
     atp: ActT = ActT.MIN
-    aid: str = '000000-min'  # a singular min activity
-    pid: str = '000000-min'  # a singular min plan
+    aid: str = '000000-mina'  # a singular min activity
+    pid: str = '000000-minp'  # a singular min plan
 
-class Act(FB, Generic[T], ABC):
+class ActBase(FB, Generic[T], ABC):
     """ Implement session logic. """
     aid: str
     atp: ActT
@@ -101,7 +101,7 @@ class Act(FB, Generic[T], ABC):
         """ This is to be called when a user message arrives. """
         ...
 
-class MinA(Act[ActT.MIN]):
+class MinA(ActBase[ActT.MIN]):
     """ Most basic activity implementation. """
     atp: ActT = ActT.MIN
     aid: str = '000000-min'
@@ -114,6 +114,28 @@ class MinA(Act[ActT.MIN]):
     def reply(self, usr_msg: Message, plan: Plan[ActT.MIN]) -> str:
         """ This is to be called when a user message arrives. """
         return "Hello, world!"
+
+ACTIVITIES = {
+    ActT.MIN: MinA,
+}
+
+def pid2plan(pid: str, uid: str, db: Client) -> Plan:
+    """ From the data in a Plan doc, determine the type of the plan and load it. """
+    ds = DocPath(f'users/{uid}/plans/{pid}').to_docref(db).get()
+    if not ds.exists:
+        raise KeyError(f"Plan {pid} does not exist.")
+    dat = ds.to_dict()
+    try:
+        atp = ActT(dat['atp'])
+    except KeyError:
+        raise KeyError(f"Plan {pid} does not have an activity type.")
+    except ValueError:
+        raise ValueError(f"Plan {pid} has an invalid activity type.")
+    try:
+        act = ACTIVITIES[atp]
+    except KeyError:
+        raise KeyError(f"Plan {pid} has an invalid activity type. Only {ACTIVITIES.keys()} are supported at the moment.")
+    return act(**dat)
 
 # EOF
 # FUTURE
@@ -143,3 +165,11 @@ class GuidedA(Act[ActT.GUIDED]):
             - template = {'level': 'novice', 'combine': 'colors and nouns'}
     """
     ...
+
+PLAN_OF_TYPE = {
+    ActT.MIN: MinPl
+}
+
+ACT_OF_TYPE = {
+    ActT.MIN: MinA
+}

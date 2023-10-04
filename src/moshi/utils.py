@@ -1,12 +1,19 @@
 """Common utilities for base types, functions, classes, etc."""
 from datetime import datetime, timezone
 from difflib import SequenceMatcher
+import uuid
 
 def _toRFC3339(dt: datetime):
     """Convert a datetime to RFC3339."""
     if not dt.tzinfo:
         dt = dt.replace(tzinfo=timezone.utc)
     return dt.isoformat()
+
+def id_prefix() -> str:
+    """ Generate a unique ID prefix. """
+    prefix = uuid.uuid4()[0:6]
+    date = datetime.now().strftime("%y%m%d-%H%M%S")
+    return f"{prefix}-{date}"
 
 def jsonify(obj):
     """Convert an object to JSON serializable."""
