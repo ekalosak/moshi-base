@@ -27,11 +27,15 @@ def match(language: str) -> str:
 class Language(FB):
     _language: langcodes.Language
     _country: dict[str, str]
+    _bcp47: str
 
     def __init__(self, bcp47: str, **kwargs):
+        lang: langcodes.Language = langcodes.Language.get(bcp47.strip())
+        logger.debug(f"Matched bcp47={bcp47} to {lang.language_name()}")
         super().__init__(**kwargs)
-        self._language: langcodes.Language = langcodes.Language.get(bcp47.strip())
+        self._language = lang
         self._country: dict[str, str] = isocodes.countries.get(alpha_2=self._language.territory)
+        self._bcp47 = self._language.to_tag()
 
     @property
     def docpath(self) -> DocPath:
@@ -39,7 +43,7 @@ class Language(FB):
 
     @property
     def bcp47(self) -> str:
-        return self._language.to_tag()
+        return self._bcp47
     
     @property
     def name(self) -> str:
@@ -52,7 +56,7 @@ class Language(FB):
 class Voice(FB):
     """ A voice supported by Google's Text-to-Speech API. """
     name: str
-    lang: Language
+    language: Language
     model: dict[str, str]
 
     def __str__(self):

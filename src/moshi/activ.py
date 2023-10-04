@@ -44,72 +44,91 @@ class Plan(FB, Generic[T], ABC):
     """ The Plan is a strategy for a session. """
     atp: ActT = Field(help="Activity type.")
     aid: str = Field(help="Activity ID.")
+    uid: str = Field(help="User ID.")
     pid: str = Field(help="Plan ID.", default_factory=default_pid)
-    uid: str = Field(help="User ID.", default=None)
-    lang: Language = Field(help="Language for the session.")
-    functions: list[Function] = Field(default=[], help="Functions to allow LLM to select.")
+    bcp47: str = Field(help="Language for the session.")
     prompt: Prompt = Field(default=Prompt(), help="Extra prompt for the session.")
     template: dict[str, str] = {}
     state: dict = {}
     vocab: list[str] = []
 
     @classmethod
-    def from_act(cls, act: 'Act[T]', **kwargs) -> 'Plan[T]':
+    def from_act(cls, act: 'Act[T]', uid: str, **kwargs) -> 'Plan[T]':
         """ Create a plan from an activity. """
         return cls(
             atp=act.atp,
             aid=act.aid,
-            lang=act.lang,
+            uid=uid,
+            bcp47=act.bcp47,
             **kwargs 
         )
 
     @property
     def docpath(self) -> DocPath:
+        if not self.uid:
+            raise ValueError("Cannot get docpath for plan without uid.")
+        elif not self.pid:
+            raise ValueError("Cannot get docpath for plan without pid.")
         return DocPath(f'users/{self.uid}/plans/{self.pid}')
 
-    def write_to_user(self, uid: str):
-        """ Write the plan to the user's document. """
-        ...
+    def to_json(self, *args, exclude=['pid', 'uid'], **kwargs) -> dict:
+        """ Get the data to write to Firestore.
+        Args:
+            exclude: Fields to exclude from the returned dict. Defaults to those attributes in the docpath (pid, uid).
+        """
+        kwargs['exclude_unset'] = kwargs.get('exclude_unset', True)
+        return super().to_json(*args, exclude=exclude, **kwargs)
 
 class MinPl(Plan[ActT.MIN]):
     """ Most basic session plan. """
     atp: ActT = ActT.MIN
     aid: str = '000000-mina'  # a singular min activity
-    pid: str = '000000-minp'  # a singular min plan
+    pid: str = '000000-minp'  # a singular min plan for each user subscribed
 
-class ActBase(FB, Generic[T], ABC):
+class Act(FB, Generic[T], ABC):
     """ Implement session logic. """
     aid: str
     atp: ActT
-    lang: Language
+    bcp47: str
     prompt: Prompt
+    source: str
 
-    @field_validator('lang', mode='before')
-    def coerce_lang_bcp47_str(cls, v):
-        if isinstance(v, str):
-            v = Language(bcp47=v)
-        elif not isinstance(v, Language):
-            raise TypeError(f"Invalid type for lang: {type(v)}")
-        return v
+    # @field_validator('language', mode='before')
+    # def coerce_lang_bcp47_str(cls, v):
+    #     if isinstance(v, str):
+    #         v = Language(bcp47=v)
+    #     elif isinstance(v, dict):
+    #         v = Language(**v)
+    #     elif not isinstance(v, Language):
+    #         raise TypeError(f"Invalid type for lang: {type(v)}")
+    #     return v
 
     @property
     def docpath(self) -> DocPath:
-        return DocPath(f'acts/{self.atp.value}/{self.lang.bcp47}/{self.aid}')
+        return DocPath(f'acts/{self.atp.value}/{self.bcp47}/{self.aid}')
+
+    def to_json(self, *args, exclude=['aid', 'atp'], exclude_none=True, **kwargs) -> dict:
+        """ Get the data to write to Firestore.
+        Args:
+            exclude: Fields to exclude from the returned dict. Defaults to those attributes in the docpath (aid).
+        """
+        return super().to_json(*args, exclude=exclude, exclude_none=exclude_none, **kwargs)
+
 
     @abstractmethod
     def reply(self, usr_msg: Message, plan: Plan[T]) -> str:
         """ This is to be called when a user message arrives. """
         ...
 
-class MinA(ActBase[ActT.MIN]):
+class MinA(Act[ActT.MIN]):
     """ Most basic activity implementation. """
     atp: ActT = ActT.MIN
-    aid: str = '000000-min'
-    prompt: Prompt = Prompt(msgs=[Message.from_string("Hello, world!", 'sys')])
+    aid: str = '000000-mina'  # a singular min activity
+    prompt: Prompt = Prompt(msgs=[Message.from_string("Hello, world!", 'ast')])
+    source: str = "builtin"
 
-    def __init__(self, bcp47: str, **kwargs):
-        lang = Language(bcp47)
-        super().__init__(lang=lang, **kwargs)
+    def __init__(self, bcp47: str=None, **kwargs):
+        super().__init__(bcp47=bcp47, **kwargs)
 
     def reply(self, usr_msg: Message, plan: Plan[ActT.MIN]) -> str:
         """ This is to be called when a user message arrives. """

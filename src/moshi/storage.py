@@ -11,28 +11,6 @@ from pydantic import BaseModel, Field, field_validator
 from . import utils
 from .__version__ import __version__
 
-
-class Versioned(BaseModel, ABC):
-    base_version: str = __version__
-
-    @field_validator('base_version')
-    def check_version(cls, v):
-        if v != __version__:
-            logger.warning(f"Version mismatch: got {v} != base {__version__}")
-        return v
-
-    def to_dict(self, *args, mode='python', **kwargs) -> dict:
-        """ Alias for BaseModel's model_dump. """
-        return self.model_dump(*args, mode=mode, **kwargs)
-
-    def to_json(self, *args, mode='json', **kwargs) -> dict:
-        """ Alias for BaseModel's json-mode model_dump. """
-        return self.model_dump(*args, mode=mode, **kwargs)
-
-    def to_jsons(self, *args, **kwargs) -> str:
-        """ Stringify the json with utils.jsonify. """
-        return json.dumps(self.to_json(*args, **kwargs), default=utils.jsonify)
-
 class DocPath:
     """ A path to a document in Firestore. """
 
@@ -50,11 +28,46 @@ class DocPath:
             raise ValueError(f"Invalid path: {path}")
         self._path = path
 
+    def __repr__(self) -> str:
+        return f"DocPath({self._path.as_posix()})"
+
     def __str__(self):
         return self._path.as_posix()
     
     def to_docref(self, db: Client) -> DocumentReference:
         return db.document(self._path.as_posix())
+
+
+class Mappable(BaseModel, ABC):
+
+    def to_dict(self, *args, **kwargs) -> dict:
+        """ Alias for BaseModel's model_dump. """
+        if 'mode' in kwargs:
+            logger.warning(f"mode={kwargs['mode']} will be ignored. Overriding to mode=python.")
+            kwargs.pop('mode')
+        return self.model_dump(*args, mode='python', **kwargs)
+
+    def to_json(self, *args, exclude_none=True, **kwargs) -> dict:
+        """ Alias for BaseModel's json-mode model_dump. """
+        if 'mode' in kwargs:
+            logger.warning(f"mode={kwargs['mode']} will be ignored. Overriding to mode=json.")
+            kwargs.pop('mode')
+        return self.model_dump(*args, mode='json', exclude_none=exclude_none, **kwargs)
+
+    def to_jsons(self, *args, **kwargs) -> str:
+        """ Stringify the json with utils.jsonify. """
+        return json.dumps(self.to_json(*args, **kwargs), default=utils.jsonify)
+
+
+class Versioned(Mappable, ABC):
+    base_version: str = __version__
+
+    @field_validator('base_version')
+    def check_version(cls, v):
+        if v != __version__:
+            logger.warning(f"Version mismatch: got {v} != base {__version__}")
+        return v
+
 
 class FB(Versioned, ABC):
 
@@ -68,6 +81,10 @@ class FB(Versioned, ABC):
         Raises:
             AttributeError: If docpath is not set.
         """
+        docpath = self.docpath
+        for part in docpath._path.parts:
+            if part == 'None' or not part:
+                raise ValueError(f"Invalid path, no empty parts allowed: {docpath}")
         return self.docpath.to_docref(db)
 
     @classmethod
@@ -81,7 +98,8 @@ class FB(Versioned, ABC):
         dr = docpath.to_docref(db)
         ds = dr.get()
         dat = ds.to_dict()
-        logger.debug(f"Got data from Fb: {dat}")
+        with logger.contextualize(dbpath=docpath, dbproject=db.project):
+            logger.debug(f"Got data from Fb: {dat}")
         if dat is None:
             raise ValueError(f"Document {docpath} does not exist in Firebase.")
         return cls(**dat)
@@ -92,21 +110,31 @@ class FB(Versioned, ABC):
             AttributeError: If docpath is not set.
             AlreadyExists: If the document already exists.
         """
-        self.docref(db).create(self.to_json(mode='fb'), **kwargs)
+        return self.docref(db).create(self.to_json(), **kwargs)
 
-    def set(self, db: Client, **kwargs) -> None:
+    def set(self, db: Client, **kwargs):
         """ Set the document in FirestoreFirebase.
         Raises:
             AttributeError: If docpath is not set.
         """
-        self.docref(db).set(self.to_json(mode='fb'), **kwargs)
+        return self.docref(db).set(self.to_json(), **kwargs)
 
-    def update(self, db: Client, **kwargs) -> None:
+    def merge(self, db: Client, **kwargs):
+        """ Set the document in Firestore using the merge option.
+        Raises:
+            AttributeError: If docpath is not set.
+        """
+        if kwargs.get('merge') is False:
+            logger.warning("merge=False is not allowed. Overriding to merge=True.")
+        kwargs['merge'] = True
+        return self.docref(db).set(self.to_json(), **kwargs)
+
+    def update(self, db: Client, **kwargs):
         """ Update the document in Firestore.
         Raises:
             AttributeError: If docpath is not set.
         """
-        return self.docref(db).set(self.to_json(mode='fb'), **kwargs)
+        return self.docref(db).update(self.to_json(), **kwargs)
 
     def delete(self, db: Client, **kwargs) -> None:
         """ Delete the document in Firestore. """

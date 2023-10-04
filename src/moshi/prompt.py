@@ -21,7 +21,7 @@ from . import model
 from .exceptions import CompletionError
 from .func import FuncCall, Function
 from .msg import Message, Role, MOSHI_ROLES, OPENAI_ROLES
-from .storage import Versioned
+from .storage import Mappable, Versioned
 
 enc: tiktoken.Encoding
 
@@ -98,14 +98,14 @@ class Prompt(Versioned):
         """e.g. 'gpt-3.5-turbo'"""
         return self.mod.value
 
-    # def to_json(self) -> dict:
-    #     """Convert to JSON."""
-    #     return {
-    #         "mod": self.model,
-    #         "msgs": [msg.to_json() for msg in self.msgs],
-    #         "functions": [func.to_json() for func in self.functions],
-    #         "function_call": self.function_call.to_json(),
-    #     }
+    def to_json(self, *args, exclude_unset_functions=True, **kwargs) -> dict:
+        """ Get the data to write to Firestore. """
+        kwargs["exclude"] = kwargs.get("exclude", [])
+        if exclude_unset_functions:
+            if not self.functions:
+                logger.debug("Excluding functions from json.")
+                kwargs["exclude"].extend(["functions", "function_call"])
+        return super().to_json(*args, **kwargs)
 
     @classmethod
     def from_lines(
