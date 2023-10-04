@@ -3,6 +3,7 @@ import os
 import random
 from typing import Callable
 
+from google.auth.exceptions import DefaultCredentialsError
 from google.cloud import firestore
 from loguru import logger
 import pytest
@@ -38,6 +39,10 @@ def get_name() -> Callable:
 @pytest.fixture(scope="module")
 def db():
     """Create a firestore client."""
-    db = firestore.Client(GCLOUD_PROJECT)
+    try:
+        db = firestore.Client(GCLOUD_PROJECT)
+    except DefaultCredentialsError:
+        logger.warning("Could not find default credentials")
+        db = firestore.Client()
     print(f"Created db client, project={db.project}, database={db._database}, target={db._target}")
     return db
