@@ -74,6 +74,10 @@ class Versioned(Mappable, ABC):
 
 
 class FB(Versioned, ABC):
+    """ Support for Firebase storage.
+    Child classes must implement the docpath property.
+    Optionally implement _kwargs_from_docpath to get kwargs from the docpath. For example, /users/<uid> should return {'uid': <uid>}.
+    """
 
     @abstractproperty
     def docpath(self) -> DocPath:

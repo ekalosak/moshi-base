@@ -9,11 +9,12 @@ from moshi.storage import FB, DocPath
 from moshi.utils import similar
 
 class DummyFb(FB):
+    _doc_name: str = "test_doc"
     test_key: str = "test_value"
     
     @property
     def docpath(self) -> DocPath:
-        dp = DocPath(f'test/{self.test_key}')
+        dp = DocPath(f'test/{self._doc_name}')
         return dp
 
 @pytest.fixture
