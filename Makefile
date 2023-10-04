@@ -68,8 +68,6 @@ test: test-unit test-integration
 test-unit:
 	@echo "🧪🖐 Running unit tests..."
 	ENV='dev' LOG_LEVEL='DETAIL' LOG_FORMAT='rich' \
-		GCLOUD_PROJECT='demo-test' \
-		FIRESTORE_EMULATOR_HOST='localhost:8090' \
 		pytest -m 'not fb'
 	@echo "🧪✊✅ Tests passed."
 

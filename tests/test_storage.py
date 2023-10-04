@@ -1,3 +1,4 @@
+from google.api_core.exceptions import PermissionDenied
 from google.cloud.firestore import Client
 
 from loguru import logger
@@ -18,12 +19,16 @@ class DummyFb(FB):
 @pytest.fixture
 def fb(db):
     res = DummyFb()
-    res.delete(db)
+    try:
+        res.delete(db)
+    except PermissionDenied:
+        logger.warning("Permission denied when deleting test doc")
     return res
 
 def test_docpath(db):
     assert DocPath('test_col/test_doc').to_docref(db).id == 'test_doc'
 
+@pytest.mark.fb
 def test_fb_fixture(fb: FB, db: Client):
     dr = fb.docref(db)
     assert fb.docref(db).get().exists == False
