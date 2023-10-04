@@ -85,6 +85,13 @@ class FB(Versioned, ABC):
         """ Get kwargs from the docpath. For example, /users/<uid> should return {'uid': <uid>}. """
         return {}
 
+    def to_fb(self, *args, **kwargs) -> dict:
+        """ Coerce self.to_json output into the format expected by Firestore.
+        Examples:
+            {'foo': {'bar': 1}} -> {'foo.bar': 1}
+        """
+        return utils.flatten(self.to_json(*args, **kwargs))
+
     def docref(self, db: Client) -> DocumentReference:
         """ Get the document reference. 
         Raises:
@@ -146,7 +153,7 @@ class FB(Versioned, ABC):
         Raises:
             AttributeError: If docpath is not set.
         """
-        return self.docref(db).update(self.to_json(), **kwargs)
+        return self.docref(db).update(self.to_fb(), **kwargs)
 
     def delete(self, db: Client, **kwargs) -> None:
         """ Delete the document in Firestore. """

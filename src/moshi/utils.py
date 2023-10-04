@@ -48,3 +48,17 @@ def similar(a: str, b: str) -> float:
         - https://stackoverflow.com/a/17388505/5298555
     """
     return SequenceMatcher(None, a, b).ratio()
+
+def flatten(dat: dict) -> dict:
+    """ Flatten a nested dict.
+    Examples:
+        {'foo': {'bar': 1}} -> {'foo.bar': 1}
+    """
+    res = {}
+    for k, v in dat.items():
+        if isinstance(v, dict):
+            for k2, v2 in flatten(v).items():
+                res[f"{k}.{k2}"] = v2
+        else:
+            res[k] = v
+    return res

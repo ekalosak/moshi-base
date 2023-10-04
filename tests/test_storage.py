@@ -70,6 +70,8 @@ def test_fb_delete(fb: DummyFb, db: Client):
 @pytest.mark.fb
 def test_fb_update(fb: DummyFb, db: Client):
     fb.set(db)
+    doc = fb.docref(db).get()
+    assert doc.exists, "Failed to write test doc"
     fb.test_key = "updated_value"
     fb.update(db)
     assert fb.docref(db).get().to_dict() == fb.to_dict()
