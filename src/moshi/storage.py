@@ -72,6 +72,10 @@ class FB(Versioned, ABC):
 
     @classmethod
     def read(cls, docpath: DocPath, db: Client) -> "FB":
+        """ Read the document from Firestore.
+        Raises:
+            ValueError: If the document does not exist.
+        """
         if not isinstance(docpath, DocPath):
             docpath = DocPath(docpath)
         dr = docpath.to_docref(db)
@@ -82,20 +86,28 @@ class FB(Versioned, ABC):
             raise ValueError(f"Document {docpath} does not exist in Firebase.")
         return cls(**dat)
 
-    def set(self, db: Client) -> None:
-        """ db client is optional when initialized with a DocumentReference.
+    def create(self, db: Client, **kwargs) -> None:
+        """ Create the document in Firestore if it doesn't exist.
+        Raises:
+            AttributeError: If docpath is not set.
+            AlreadyExists: If the document already exists.
+        """
+        self.docref(db).create(self.to_json(mode='fb'), **kwargs)
+
+    def set(self, db: Client, **kwargs) -> None:
+        """ Set the document in FirestoreFirebase.
         Raises:
             AttributeError: If docpath is not set.
         """
-        self.docref(db).set(self.to_json(mode='fb'))
+        self.docref(db).set(self.to_json(mode='fb'), **kwargs)
 
-    def update(self, db: Client):
-        """ db client is optional when initialized with a DocumentReference.
+    def update(self, db: Client, **kwargs) -> None:
+        """ Update the document in Firestore.
         Raises:
             AttributeError: If docpath is not set.
         """
-        return self.docref(db).set(self.to_json(mode='fb'))
+        return self.docref(db).set(self.to_json(mode='fb'), **kwargs)
 
-    def delete(self, db: Client):
-        """ Delete the document in Firebase. """
-        return self.docref(db).delete()
+    def delete(self, db: Client, **kwargs) -> None:
+        """ Delete the document in Firestore. """
+        return self.docref(db).delete(**kwargs)

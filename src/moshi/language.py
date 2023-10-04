@@ -3,6 +3,7 @@ from pathlib import Path
 
 from google.cloud.firestore import DocumentSnapshot, Client, DocumentReference
 
+# TODO import iso639
 import isocodes  # for country annotation
 import langcodes  # for language matching
 from loguru import logger

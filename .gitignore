@@ -4,4 +4,4 @@ build/
 dist/
 venv/
 
-src/moshi_base.egg-info/
+src/*.egg-info/
