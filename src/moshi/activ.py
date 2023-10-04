@@ -86,11 +86,16 @@ class MinPl(Plan[ActT.MIN]):
 
 class Act(FB, Generic[T], ABC):
     """ Implement session logic. """
+    _lang: Language
     aid: str
     atp: ActT
     bcp47: str
     prompt: Prompt
     source: str = "builtin"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._lang = Language(self.bcp47)
 
     @property
     def docpath(self) -> DocPath:
@@ -98,9 +103,10 @@ class Act(FB, Generic[T], ABC):
 
     @classmethod
     def _kwargs_from_docpath(cls, docpath: DocPath) -> dict:
-        """ Get kwargs from the docpath. For example, /users/<uid> should return {'uid': <uid>}. """
-        assert docpath.parts[0] == 'acts'
-        assert len(docpath.parts) == 4
+        if docpath.parts[0] != 'acts':
+            raise ValueError(f"Invalid docpath for activity, first part must be 'acts': {docpath}")
+        if len(docpath.parts) != 4:
+            raise ValueError(f"Invalid docpath for activity, must have 4 parts: {docpath}")
         return {
             'atp': ActT(docpath.parts[1]),
             'bcp47': docpath.parts[2],
@@ -114,6 +120,9 @@ class Act(FB, Generic[T], ABC):
         """
         return super().to_json(*args, exclude=exclude, exclude_none=exclude_none, **kwargs)
 
+    @property
+    def lang(self) -> Language:
+        return self._lang
 
     @abstractmethod
     def reply(self, usr_msg: Message, plan: Plan[T]) -> str:
