@@ -44,8 +44,8 @@ def test_fb_to_json(fb: DummyFb):
     assert fb.to_json() == expected_json
 
 @pytest.mark.fb
-def test_fb_to_fb(fb: DummyFb, db: Client):
-    fb.to_fb(db)
+def test_fb_set(fb: DummyFb, db: Client):
+    fb.set(db)
     dsnap = fb.docref(db).get()
     assert dsnap.exists
     assert dsnap.to_dict() == fb.to_dict()

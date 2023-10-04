@@ -37,7 +37,6 @@ class DocPath:
     """ A path to a document in Firestore. """
 
     def __init__(self, path: str | Path | DocumentReference):
-        logger.debug(f"Path: {path}")
         if isinstance(path, Path):
             path = path.with_suffix('')
         elif isinstance(path, str):
@@ -49,7 +48,6 @@ class DocPath:
         if len(path.parts) % 2:
             logger.debug(f"Length of path is not even: {path}")
             raise ValueError(f"Invalid path: {path}")
-        logger.debug(f"Path: {path}")
         self._path = path
 
     def __str__(self):
@@ -73,7 +71,7 @@ class FB(Versioned, ABC):
         return self.docpath.to_docref(db)
 
     @classmethod
-    def load(cls, docpath: DocPath, db: Client) -> "FB":
+    def read(cls, docpath: DocPath, db: Client) -> "FB":
         if not isinstance(docpath, DocPath):
             docpath = DocPath(docpath)
         dr = docpath.to_docref(db)
