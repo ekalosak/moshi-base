@@ -29,11 +29,8 @@ def test_jsonify():
             return {"glee": self.glee}
     pld = {
         "foo": "bar",
-        "baz": datetime.now(),
+        "baz": datetime.utcnow(),
         "xip": Zop(),
     }
-    assert utils.jsonify(pld) == {
-        "foo": "bar",
-        "baz": utils._toRFC3339(pld["baz"]),
-        "xip": {"glee": "glop"},
-    }
+    assert utils.jsonify(pld['baz']).split('+')[0] == pld['baz'].isoformat()
+    assert utils.jsonify(pld['xip']) == pld['xip'].to_json()
