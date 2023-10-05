@@ -10,13 +10,13 @@ def status(request) -> str:
     return request.param
 
 @pytest.fixture
-def tra(status: str) -> Transcript:
+def tra(status: str, uid: str, bcp47: str) -> Transcript:
     return Transcript(
         aid='aid',
         atp=ActT.MIN,
         pid='pid',
-        uid='uid',
-        bcp47='en-US',
+        uid=uid,
+        bcp47=bcp47,
         status=status,
     )
 
@@ -29,10 +29,10 @@ def test_add_msg(tra: Transcript, db):
         with pytest.raises(ValueError):
             tra.add_msg(msg, db)
     else:
-        tra.add_msg(msg, db)
-        doc = tra.docref(db).collection('umsgs').document(msg.mid)
+        mid = tra.add_msg(msg, db)
+        doc = tra.docref(db).collection('umsgs').document(mid)
         dat = doc.get().to_dict()
-        assert Message.from_json(dat) == msg
+        assert Message(**dat) == msg
 
 # def test_read(transcript, db):
 #     docpath = DocPath('users/uid/live/tid')

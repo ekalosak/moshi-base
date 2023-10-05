@@ -14,6 +14,14 @@ GCLOUD_PROJECT = os.getenv("GCLOUD_PROJECT", "demo-test")
 logger.info(f"GCLOUD_PROJECT={GCLOUD_PROJECT}")
 
 @pytest.fixture
+def uid() -> str:
+    return 'test-user'
+
+@pytest.fixture
+def bcp47() -> str:
+    return 'en-US'
+
+@pytest.fixture
 def mina():
     return MinA('en-US')
 

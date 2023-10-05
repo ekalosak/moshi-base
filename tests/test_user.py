@@ -3,8 +3,8 @@ import pytest
 from moshi.user import User
 
 @pytest.fixture
-def usr():
-    return User(uid="test", name="test", language="test", native_language="test")
+def usr(uid: str, bcp47: str):
+    return User(uid=uid, name="test", language=bcp47, native_language="test")
 
 def test_user(usr: User):
     assert 1

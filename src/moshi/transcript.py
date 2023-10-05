@@ -89,7 +89,12 @@ class Transcript(FB):
     def to_json(self, *args, exclude=['tid', 'uid'], **kwargs) -> dict:
         return super().to_json(*args, exclude=exclude, **kwargs)
 
-    def _send_msg_to_subcollection(self, msg: Message, db: Client) -> None:
+    def _send_msg_to_subcollection(self, msg: Message, db: Client) -> str:
+        """ Add a message to the appropriate subcollection.
+        The only allowd roles are 'usr' and 'ast'.
+        Returns:
+            The message ID.
+        """
         match msg.role:
             case 'usr':
                 colnm = 'umsgs'
@@ -105,6 +110,7 @@ class Transcript(FB):
             logger.debug(f"Adding message to transcript...")
             col.document(msg_id).set(msg.to_json())
             logger.debug(f"Added message to transcript.")
+        return msg_id
 
     @traced
     def add_msg(self, msg: Message, db: Client) -> None:
@@ -113,7 +119,7 @@ class Transcript(FB):
             raise ValueError(f"Cannot add message to final transcript: {self.docpath}")
         assert self.status == 'live', f"Invalid status for transcript: {self.status}"
         self._messages.append(msg)
-        self._send_msg_to_subcollection(msg, db)
+        return self._send_msg_to_subcollection(msg, db)
 
     def _read_subcollections(self, db: Client) -> None:
         """ Read the subcollections from Firestore. Use this when the status is live. """

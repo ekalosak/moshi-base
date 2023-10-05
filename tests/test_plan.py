@@ -6,14 +6,6 @@ from loguru import logger
 from moshi.activ import MinPl, MinA
 
 @pytest.fixture
-def uid() -> str:
-    return 'test-user'
-
-@pytest.fixture
-def bcp47() -> str:
-    return 'en-US'
-
-@pytest.fixture
 def minpl(mina: MinA, uid: str) -> MinPl:
     # Most common method for creating Plan is from Activity. 
     return MinPl.from_act(mina, uid)
