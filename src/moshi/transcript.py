@@ -39,7 +39,7 @@ def _transcript_id(bcp47: str) -> str:
     return f"{id_prefix()}-{bcp47}"
 
 class Transcript(FB):
-    _messages: list[Message] = []
+    messages: list[Message] = None
     aid: str = Field(help='Activity ID.')
     atp: ActT = Field(help='Activity type.')
     pid: str = Field(help='Plan ID.')
@@ -53,10 +53,6 @@ class Transcript(FB):
             bcp47 = kwargs['bcp47']
             kwargs['tid'] = _transcript_id(bcp47)
         super().__init__(*args, **kwargs)
-
-    @property
-    def messages(self) -> list[Message]:
-        return self._messages
 
     @property
     def docpath(self) -> DocPath:
@@ -89,7 +85,7 @@ class Transcript(FB):
     def to_json(self, *args, exclude=['tid', 'uid'], **kwargs) -> dict:
         return super().to_json(*args, exclude=exclude, **kwargs)
 
-    def _send_msg_to_subcollection(self, msg: Message, db: Client) -> str:
+    def _send_msg_to_subcollection(self, msg: Message, msg_id: str, db: Client):
         """ Add a message to the appropriate subcollection.
         The only allowd roles are 'usr' and 'ast'.
         Returns:
@@ -105,26 +101,28 @@ class Transcript(FB):
         with logger.contextualize(collection_name=colnm):
             logger.debug(f"Adding message to transcript: {msg}")
         col: CollectionReference = self.docref(db).collection(colnm)
-        msg_id = msg.role.value.upper() + str(len(self._messages))
         with logger.contextualize(msg_id=msg_id):
             logger.debug(f"Adding message to transcript...")
             col.document(msg_id).set(msg.to_json())
             logger.debug(f"Added message to transcript.")
-        return msg_id
-
-    @traced
-    def add_msg(self, msg: Message, db: Client) -> None:
-        """ Add a message to the transcript. """
-        if self.status == 'final':
-            raise ValueError(f"Cannot add message to final transcript: {self.docpath}")
-        assert self.status == 'live', f"Invalid status for transcript: {self.status}"
-        self._messages.append(msg)
-        return self._send_msg_to_subcollection(msg, db)
+    
+    # @traced
+    # def add_msg(self, msg: Message, db: Client) -> None:
+    #     """ Add a message to the transcript. """
+    #     if self.status == 'final':
+    #         raise ValueError(f"Cannot add message to final transcript: {self.docpath}")
+    #     assert self.status == 'live', f"Invalid status for transcript: {self.status}"
+    #     if self.messages is None:
+    #         self.messages = []
+    #     msg_id = msg.role.value.upper() + str(len(self.messages))
+    #     self.messages.append(msg)
+    #     self._send_msg_to_subcollection(msg, msg_id, db)
 
     def _read_subcollections(self, db: Client) -> None:
-        """ Read the subcollections from Firestore. Use this when the status is live. """
-        umsgs = self.docref(db).collection('umsgs').stream()  # NOTE should be no more than 50
-        amsgs = self.docref(db).collection('amsgs').stream()  # NOTE should be no more than 50
+        """ Read the subcollections from Firestore. You can use this only when the status is live. """
+        logger.warning("Using _read_subcollections results in up to 50x the number of reads per transcript load event.")
+        umsgs = self.docref(db).collection('umsgs').stream()
+        amsgs = self.docref(db).collection('amsgs').stream()
         for msg in chain(umsgs, amsgs):
             logger.debug(f"Got message from Fb: {msg.to_dict()}")
             self._messages.append(Message(**msg.to_dict()))
@@ -139,14 +137,6 @@ class Transcript(FB):
         msgs = [Message(**msg) for msg in dat['msgs']]
         self._messages = sorted(msgs, key=lambda msg: msg.created_at)
     
-    # TODO implement CRUD methods to accommodate the structure:
-    # /users/<uid>/transcripts/<tid>
-    #   When the status is 'live', messages are stored in:
-    #       - /users/<uid>/live/<tid>/amsgs
-    #           for msgs with role 'ast', and
-    #       - /users/<uid>/live/<tid>/umsgs
-    #           for msgs with role 'usr'.
-    #   When the status is 'final', the messages are merged into the Transcript document as an attribute 'msgs'.
     @classmethod
     def read(cls, docpath: DocPath, db: Client) -> "Transcript":
         """ Read the document from Firestore. """
@@ -156,12 +146,7 @@ class Transcript(FB):
         kwargs = cls._kwargs_from_docpath(docpath)
         kwargs.update(tdoc.to_dict())
         transc = Transcript(**kwargs)
-        if docpath.parts[2] == 'final':
-            transc._read_messages(db)
-        elif docpath.parts[2] == 'live':
-            transc._read_subcollections(db)
-        else:
-            raise ValueError(f"Invalid docpath for transcript, third part must be 'live' or 'final': {docpath}")
+        transc._read_messages(db)
         return transc
 
     def create(self, db: Client, **kwargs) -> None:
