@@ -1,5 +1,5 @@
 [project]
-name = "com-chatmoshi-base"
+name = "moshi-base"
 version = "23.10.0"
 description = "Lightweight tools used across all ChatMoshi components."
 readme = "README.md"

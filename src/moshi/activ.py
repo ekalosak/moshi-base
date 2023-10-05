@@ -2,15 +2,14 @@
 For design terms, see: https://refactoring.guru/design-patterns/catalog
 """
 import enum
-from abc import ABC, abstractclassmethod, abstractmethod
+from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-from pathlib import Path
-from typing import Generic, TypeVar, Literal
+from typing import Generic, TypeVar
 
 from google.cloud.firestore import Client, DocumentReference
+from loguru import logger
 from pydantic import BaseModel, field_validator, Field, ValidationInfo
 
-from .func import Function
 from .language import Language
 from .msg import Message
 from .prompt import Prompt
@@ -167,9 +166,15 @@ class MinA(Act[ActT.MIN]):
         """ This is to be called when a user message arrives. """
         return "Hello, world!"
 
-ACTIVITIES = {
-    ActT.MIN: MinA,
+
+PLAN_OF_TYPE = {
+    ActT.MIN: MinPl
 }
+
+ACT_OF_TYPE = {
+    ActT.MIN: MinA
+}
+
 
 def pid2plan(pid: str, uid: str, db: Client) -> Plan:
     """ From the data in a Plan doc, determine the type of the plan and load it. """
@@ -184,18 +189,13 @@ def pid2plan(pid: str, uid: str, db: Client) -> Plan:
     except ValueError:
         raise ValueError(f"Plan {pid} has an invalid activity type ('atp') attribute.")
     try:
-        act = ACTIVITIES[atp]
+        P = PLAN_OF_TYPE[atp]
+        logger.debug(f"Found plan type {P} for plan {pid}.")
     except KeyError:
-        raise KeyError(f"Plan {pid} has an invalid activity type. Only {ACTIVITIES.keys()} are supported at the moment.")
-    return act(**dat)
-
-PLAN_OF_TYPE = {
-    ActT.MIN: MinPl
-}
-
-ACT_OF_TYPE = {
-    ActT.MIN: MinA
-}
+        raise KeyError(f"Plan {pid} has an invalid activity type. Only {PLAN_OF_TYPE.keys()} are supported at the moment.")
+    dat['uid'] = uid
+    dat['pid'] = pid
+    return P(**dat)  # NOTE could use P.read() but this would incur an extra db read, so why not use the dat already here.
 
 # EOF
 # FUTURE
