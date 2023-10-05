@@ -55,6 +55,7 @@ class Plan(FB, Generic[T], ABC):
     def __init__(self, uid, bcp47, **kwargs):
         super().__init__(uid=uid, bcp47=bcp47, **kwargs)
 
+    @classmethod
     def _kwargs_from_docpath(cls, docpath: DocPath) -> dict:
         if len(docpath.parts) != 4:
             raise ValueError(f"Invalid docpath for plan, must have 4 parts: {docpath}")
