@@ -23,9 +23,16 @@ def tra(status: str) -> Transcript:
 def test_tra_fixture(tra):
     assert tra.status in {'live', 'final'}
 
-# def test_add_msg(tra: Transcript, db):
-#     msg = Message(role='usr', text='hello')
-    
+def test_add_msg(tra: Transcript, db):
+    msg = Message('usr', 'hello')
+    if tra.status == 'final':
+        with pytest.raises(ValueError):
+            tra.add_msg(msg, db)
+    else:
+        tra.add_msg(msg, db)
+        doc = tra.docref(db).collection('umsgs').document(msg.mid)
+        dat = doc.get().to_dict()
+        assert Message.from_json(dat) == msg
 
 # def test_read(transcript, db):
 #     docpath = DocPath('users/uid/live/tid')

@@ -39,7 +39,7 @@ def _transcript_id(bcp47: str) -> str:
     return f"{id_prefix()}-{bcp47}"
 
 class Transcript(FB):
-    _messages: list[Message] = None
+    _messages: list[Message] = []
     aid: str = Field(help='Activity ID.')
     atp: ActT = Field(help='Activity type.')
     pid: str = Field(help='Plan ID.')
