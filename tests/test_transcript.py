@@ -2,6 +2,7 @@
 import pytest
 from google.cloud.firestore import Client
 
+from moshi.activ import MinPl
 from moshi.transcript import Transcript, Message, Plan
 from moshi.storage import DocPath
 
