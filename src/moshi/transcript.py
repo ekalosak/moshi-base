@@ -47,6 +47,7 @@ class Transcript(FB):
     uid: str = Field(help='User ID.')
     bcp47: str = Field(help='User language e.g. "en-US".')
     status: Literal['live', 'final'] = 'live'
+    first_speaker: Literal['usr', 'ast'] = 'ast'
 
     def __init__(self, *args, **kwargs):
         if 'tid' not in kwargs:
