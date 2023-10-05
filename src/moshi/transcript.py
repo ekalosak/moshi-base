@@ -43,10 +43,16 @@ class Transcript(FB):
     aid: str = Field(help='Activity ID.')
     atp: ActT = Field(help='Activity type.')
     pid: str = Field(help='Plan ID.')
-    tid: str = Field(help='Transcript ID.', default_factory=_transcript_id)
+    tid: str = Field(help='Transcript ID.')
     uid: str = Field(help='User ID.')
     bcp47: str = Field(help='User language e.g. "en-US".')
     status: Literal['live', 'final'] = 'live'
+
+    def __init__(self, *args, **kwargs):
+        if 'tid' not in kwargs:
+            bcp47 = kwargs['bcp47']
+            kwargs['tid'] = _transcript_id(bcp47)
+        super().__init__(*args, **kwargs)
 
     @property
     def messages(self) -> list[Message]:
