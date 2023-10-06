@@ -112,9 +112,14 @@ class Act(FB, Generic[T], ABC):
         super().__init__(*args, **kwargs)
         self._lang = Language(self.bcp47)
 
+    @classmethod
+    def get_docpath(cls, atp: ActT | str, bcp47: str, aid: str) -> DocPath:
+        atp = ActT(atp)
+        return DocPath(f'acts/{atp.value}/{bcp47}/{aid}')
+
     @property
     def docpath(self) -> DocPath:
-        return DocPath(f'acts/{self.atp.value}/{self.bcp47}/{self.aid}')
+        return Act.get_docpath(self.atp, self.bcp47, self.aid)
 
     @classmethod
     def _kwargs_from_docpath(cls, docpath: DocPath) -> dict:
@@ -196,6 +201,15 @@ def pid2plan(pid: str, uid: str, db: Client) -> Plan:
     dat['uid'] = uid
     dat['pid'] = pid
     return P(**dat)  # NOTE could use P.read() but this would incur an extra db read, so why not use the dat already here.
+
+def plan2act(plan: Plan, db: Client) -> Act:
+    """ Using the data in a Plan doc, determine the type of the activity and load it. """
+    try:
+        A = ACT_OF_TYPE[plan.atp]
+        logger.debug(f"Found activity type {A} for plan {plan.pid}.")
+    except KeyError:
+        raise KeyError(f"Plan {plan.pid} has an invalid activity type. Only {ACT_OF_TYPE.keys()} are supported at the moment. Got: {plan.atp}")
+    return A.read
 
 # EOF
 # FUTURE

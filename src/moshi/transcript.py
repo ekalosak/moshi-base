@@ -55,9 +55,13 @@ class Transcript(FB):
             kwargs['tid'] = _transcript_id(bcp47)
         super().__init__(*args, **kwargs)
 
+    @classmethod
+    def get_docpath(cls, uid, tid) -> DocPath:
+        return DocPath(f'users/{uid}/transcripts/{tid}')
+
     @property
     def docpath(self) -> DocPath:
-        return DocPath(f'users/{self.uid}/{self.status}/{self.tid}')
+        return Transcript.get_docpath(self.uid, self.tid)
 
     @classmethod
     def from_plan(cls, plan: Plan) -> 'Transcript':
@@ -70,13 +74,19 @@ class Transcript(FB):
         )
 
     @classmethod
+    def from_ids(cls, uid, tid, db) -> 'Transcript':
+        """ Get a transcript from Firestore. """
+        docpath = cls.get_docpath(uid, tid)
+        return cls.read(docpath, db)
+
+    @classmethod
     def _kwargs_from_docpath(cls, docpath: DocPath) -> dict:
         """ Get kwargs from the docpath. For example, /users/<uid> should return {'uid': <uid>}. """
         if len(docpath.parts) != 4:
             raise ValueError(f"Invalid docpath for plan, must have 4 parts: {docpath}")
         if docpath.parts[0] != 'users':
             raise ValueError(f"Invalid docpath for plan, first part must be 'users': {docpath}")
-        if docpath.parts[2] not in {'live', 'final'}:
+        if docpath.parts[2] != 'transcripts':
             raise ValueError(f"Invalid docpath for plan, third part must be 'transcripts': {docpath}")
         return {
             'uid': docpath.parts[1],
