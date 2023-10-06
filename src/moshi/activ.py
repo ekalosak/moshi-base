@@ -209,7 +209,7 @@ def plan2act(plan: Plan, db: Client) -> Act:
         logger.debug(f"Found activity type {A} for plan {plan.pid}.")
     except KeyError:
         raise KeyError(f"Plan {plan.pid} has an invalid activity type. Only {ACT_OF_TYPE.keys()} are supported at the moment. Got: {plan.atp}")
-    return A.read
+    return A.read(A.get_docpath(plan.atp, plan.bcp47, plan.aid), db)
 
 # EOF
 # FUTURE
