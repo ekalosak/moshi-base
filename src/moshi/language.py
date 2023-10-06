@@ -7,7 +7,6 @@ from google.cloud.firestore import DocumentSnapshot, Client, DocumentReference
 import isocodes  # for country annotation
 import langcodes  # for language matching
 from loguru import logger
-from pydantic import field_validator, Field, ValidationInfo
 
 from .storage import FB, DocPath
 
@@ -52,13 +51,3 @@ class Language(FB):
     def __str__(self):
         res = f"{self.name} ({self.bcp47})"
         return f"L<{res}>"
-
-class Voice(FB):
-    """ A voice supported by Google's Text-to-Speech API. """
-    name: str
-    language: Language
-    model: dict[str, str]
-
-    def __str__(self):
-        res = f"{self.name} ({self.lang.bcp47})"
-        return f"V<{res}>"

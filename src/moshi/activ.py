@@ -15,6 +15,7 @@ from .msg import Message
 from .prompt import Prompt
 from .storage import FB, DocPath
 from .utils import random_string
+from .voice import Voice
 
 
 class ActT(str, enum.Enum):
@@ -31,10 +32,6 @@ class ActT(str, enum.Enum):
 
 T = TypeVar('T', bound=ActT)
 
-class State(BaseModel):
-    user: dict = None  # user name, pronouns, interests, etc.
-    characters: list[str] = None  #
-
 def default_pid(atp: ActT) -> str:
     tod = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     return random_string(12) + '-' + atp.value + '-' + tod
@@ -47,9 +44,10 @@ class Plan(FB, Generic[T], ABC):
     pid: str = Field(help="Plan ID.", default_factory=default_pid)
     bcp47: str = Field(help="Language for the session.")
     prompt: Prompt = Field(default=None, help="Extra prompt for the session.")
-    template: dict[str, str] = None
-    state: State = None
+    template: dict[str, str] = Field(default=None, help="Template for the activity prompt.")
+    state: dict = None
     vocab: list[str] = None
+    voice: Field(help="Voice for the session.", default_factory=Voice)
 
     def __init__(self, uid, bcp47, **kwargs):
         super().__init__(uid=uid, bcp47=bcp47, **kwargs)
