@@ -18,9 +18,9 @@ This complexity allows different enrichment functionality to be applied to the m
 from typing import Literal
 from itertools import chain
 
-from google.cloud.firestore import Client, WriteOption, CollectionReference
+from google.cloud.firestore import Client, CollectionReference
 from loguru import logger
-from pydantic import Field
+from pydantic import Field, field_validator, ValidationInfo
 
 from .activ import ActT, Plan
 from .log import traced
@@ -43,17 +43,18 @@ class Transcript(FB):
     aid: str = Field(help='Activity ID.')
     atp: ActT = Field(help='Activity type.')
     pid: str = Field(help='Plan ID.')
-    tid: str = Field(help='Transcript ID.')
     uid: str = Field(help='User ID.')
     bcp47: str = Field(help='User language e.g. "en-US".')
+    tid: str = Field(help='Transcript ID.', default=None, validate_default=True)
     status: Literal['live', 'final'] = 'live'
     first_speaker: Literal['usr', 'ast'] = 'ast'
 
-    def __init__(self, *args, **kwargs):
-        if 'tid' not in kwargs:
-            bcp47 = kwargs['bcp47']
-            kwargs['tid'] = _transcript_id(bcp47)
-        super().__init__(*args, **kwargs)
+    @field_validator('tid', mode='before')
+    @classmethod
+    def provide_tid(cls, v, values: ValidationInfo):
+        if v is None:
+            return _transcript_id(values.data['bcp47'])
+        return v
 
     @classmethod
     def get_docpath(cls, uid, tid) -> DocPath:
@@ -94,7 +95,13 @@ class Transcript(FB):
         }
 
     def to_json(self, *args, exclude=['tid', 'uid'], **kwargs) -> dict:
-        return super().to_json(*args, exclude=exclude, **kwargs)
+        js = super().to_json(*args, exclude=exclude, **kwargs)
+        if 'messages' in js:
+            js['messages'] = {
+                msg.role.value.upper() + str(i): msg.to_json()
+                for i, msg in enumerate(self.messages)
+            }
+        return js
 
     def _send_msg_to_subcollection(self, msg: Message, msg_id: str, db: Client):
         """ Add a message to the appropriate subcollection.
@@ -138,8 +145,8 @@ class Transcript(FB):
         amsgs = self.docref(db).collection('amsgs').stream()
         for msg in chain(umsgs, amsgs):
             logger.debug(f"Got message from Fb: {msg.to_dict()}")
-            self._messages.append(Message(**msg.to_dict()))
-        self._messages = sorted(self._messages, key=lambda msg: msg.created_at)
+            self.messages.append(Message(**msg.to_dict()))
+        self.messages = sorted(self.messages, key=lambda msg: msg.created_at)
     
     def _read_messages(self, db: Client) -> None:
         """ Read the messages from Firestore. Use this when the transcript is final. """
@@ -152,7 +159,7 @@ class Transcript(FB):
         except KeyError:
             logger.debug(f"Transcript {self.docpath} has no messages.")
             msgs = []
-        self._messages = sorted(msgs, key=lambda msg: msg.created_at)
+        self.messages = sorted(msgs, key=lambda msg: msg.created_at)
     
     @classmethod
     def read(cls, docpath: DocPath, db: Client) -> "Transcript":
@@ -168,21 +175,18 @@ class Transcript(FB):
 
     def create(self, db: Client, **kwargs) -> None:
         """ Create the document in Firestore if it doesn't exist.
+        If status is live, also create the messages in the subcollections.
         Raises:
             AttributeError: If docpath is not set.
             AlreadyExists: If the document already exists.
         """
-        match self.status:
-            case 'live':
-                self.docref(db).create(self.to_json(), **kwargs)
-                for msg in self._messages:
-                    self._send_msg_to_subcollection(msg, db)
-            case 'final':
-                msgs = [msg.to_json() for msg in self._messages]
-                payload = self.to_json()
-                payload.update({'msgs': msgs})
-                self.docref(db).create(payload, **kwargs)
-        
+        payload = self.to_json()
+        self.docref(db).create(payload, **kwargs)
+        logger.debug(f"Created transcript: {self.docpath}")
+        if self.messages and self.status == 'live':
+            for i, msg in enumerate(self.messages):
+                msg_id = msg.role.value.upper() + str(i)
+                self._send_msg_to_subcollection(msg, msg_id, db)
 
     def delete(self, db: Client, **kwargs) -> None:
         """ Delete the document in Firestore. """

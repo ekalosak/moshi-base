@@ -10,8 +10,8 @@ def status(request) -> str:
     return request.param
 
 @pytest.fixture
-def tra(status: str, uid: str, bcp47: str) -> Transcript:
-    return Transcript(
+def tra(status: str, uid: str, bcp47: str, db: Client) -> Transcript:
+    tra = Transcript(
         aid='aid',
         atp=ActT.MIN,
         pid='pid',
@@ -19,9 +19,29 @@ def tra(status: str, uid: str, bcp47: str) -> Transcript:
         bcp47=bcp47,
         status=status,
     )
+    try:
+        tra.delete(db)
+    except Exception as e:
+        print(f"Error deleting transcript: {e}")
+    return tra
 
-def test_tra_fixture(tra):
+def test_fixture(tra):
     assert tra.status in {'live', 'final'}
+
+def test_create_no_msg(tra: Transcript, db: Client):
+    tra.create(db)
+    doc = tra.docref(db).get()
+    assert doc.exists
+    from pprint import pprint; pprint(doc.to_dict())
+    print(doc.id)
+
+def test_create_with_msg(tra: Transcript, db: Client):
+    tra.messages = [Message('usr', 'hello')]
+    tra.create(db)
+    doc = tra.docref(db).get()
+    assert doc.exists
+    from pprint import pprint; pprint(doc.to_dict())
+    print(doc.id)
 
 # def test_add_msg(tra: Transcript, db):
 #     msg = Message('usr', 'hello')
