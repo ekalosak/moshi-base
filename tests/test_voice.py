@@ -2,9 +2,12 @@ from moshi.voice import Voice
 
 def test_init():
     _ = Voice(
-        name='en-US-Wavenet-A',
-        # bcp47='en-US',
-        # language_name = 'English (United States)',
-        ssml_gender = 1,
-        # type = 'Wavenet'
+        model_name='en-US-Wavenet-A',
+        bcp47='en-US',
+        language_name = 'English (United States)',
+        gender = 1,
+        type = 'Wavenet'
     )
+
+def test_init_fast():
+    _ = Voice('en-US-Wavenet-A', 2)

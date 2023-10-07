@@ -47,9 +47,11 @@ class Plan(FB, Generic[T], ABC):
     template: dict[str, str] = Field(default=None, help="Template for the activity prompt.")
     state: dict = None
     vocab: list[str] = None
-    voice: Field(help="Voice for the session.", default_factory=Voice)
+    voice: str | Voice
 
     def __init__(self, uid, bcp47, **kwargs):
+        if not kwargs.get('voice'):
+            kwargs['voice'] = f"{bcp47}-Standard-A"
         super().__init__(uid=uid, bcp47=bcp47, **kwargs)
 
     @classmethod
