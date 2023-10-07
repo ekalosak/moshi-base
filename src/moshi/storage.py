@@ -160,7 +160,10 @@ class FB(Versioned, ABC):
         Raises:
             AttributeError: If docpath is not set.
         """
-        return self.docref(db).update(self.to_fb(), **kwargs)
+        payload = self.to_fb()
+        with logger.contextualize(dbpath=self.docpath, dbproject=db.project):
+            logger.debug(f"Updating with payload: {payload}")
+        return self.docref(db).update(payload, **kwargs)
 
     def delete(self, db: Client, **kwargs) -> None:
         """ Delete the document in Firestore. """

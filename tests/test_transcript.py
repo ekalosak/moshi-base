@@ -12,9 +12,9 @@ def status(request) -> str:
 @pytest.fixture
 def tra(status: str, uid: str, bcp47: str, db: Client) -> Transcript:
     tra = Transcript(
-        aid='aid',
+        aid='doesn\'t exist',
         atp=ActT.MIN,
-        pid='pid',
+        pid='doesn\'t exist',
         uid=uid,
         bcp47=bcp47,
         status=status,
@@ -43,13 +43,14 @@ def test_create_with_msg(tra: Transcript, db: Client):
     from pprint import pprint; pprint(doc.to_dict())
     print(doc.id)
 
-# def test_add_msg(tra: Transcript, db):
-#     msg = Message('usr', 'hello')
-#     if tra.status == 'final':
-#         with pytest.raises(ValueError):
-#             tra.add_msg(msg, db)
-#     else:
-#         mid = tra.add_msg(msg, db)
-#         doc = tra.docref(db).collection('umsgs').document(mid)
-#         dat = doc.get().to_dict()
-#         assert Message(**dat) == msg
+def test_add_msg(tra: Transcript, db):
+    tra.create(db)
+    msg = Message('usr', 'hello')
+    if tra.status == 'final':
+        with pytest.raises(ValueError):
+            tra.add_msg(msg, db)
+    else:
+        mid = tra.add_msg(msg, db)
+        doc = tra.docref(db).collection('umsgs').document(mid).get()
+        dat = doc.to_dict()
+        assert Message(**dat) == msg

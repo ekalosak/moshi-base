@@ -125,8 +125,11 @@ class Transcript(FB):
             logger.debug(f"Added message to transcript.")
     
     @traced
-    def add_msg(self, msg: Message, db: Client) -> None:
-        """ Add a message to the transcript. """
+    def add_msg(self, msg: Message, db: Client) -> str:
+        """ Add a message to the transcript.
+        Returns:
+            The message ID.
+        """
         logger.debug(f"Adding message to transcript: {msg}")
         if self.status == 'final':
             raise ValueError(f"Cannot add message to final transcript: {self.docpath}")
@@ -137,6 +140,7 @@ class Transcript(FB):
         self.messages.append(msg)
         self._send_msg_to_subcollection(msg, msg_id, db)
         self.update(db)
+        return msg_id
 
     def _read_subcollections(self, db: Client) -> None:
         """ Read the subcollections from Firestore. You can use this only when the status is live. """
