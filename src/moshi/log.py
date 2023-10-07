@@ -8,7 +8,7 @@ import functools
 import json
 import os
 import time
-import traceback
+from typing import Callable, TypeVar, ParamSpec
 
 import loguru
 from loguru import logger
@@ -32,11 +32,13 @@ def failed(exc: Exception, msg: str = None, level: str = "CRITICAL"):
     payload = f"{msg}: {exc}"
     logger.opt(depth=1, exception=exc).log(level, payload)
 
+P = ParamSpec("P")  # required to retain type hints for decorated functions
+T = TypeVar("T")
 
-def traced(f, msg: str = None, verbose = False, depth=1):
+def traced(f: Callable[P, T], msg: str = None, verbose = False, depth=1) -> Callable[P, T]:
     msg = msg or f.__name__
     @functools.wraps(f)
-    def wrapper(*a, **k):
+    def wrapper(*a: P.args, **k: P.kwargs):
         with logger.contextualize(**k if verbose else {}):
             t0 = time.monotonic()
             logger.opt(depth=depth).trace(f"[START] {msg}")

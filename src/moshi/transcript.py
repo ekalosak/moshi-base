@@ -117,17 +117,19 @@ class Transcript(FB):
             col.document(msg_id).set(msg.to_json())
             logger.debug(f"Added message to transcript.")
     
-    # @traced
-    # def add_msg(self, msg: Message, db: Client) -> None:
-    #     """ Add a message to the transcript. """
-    #     if self.status == 'final':
-    #         raise ValueError(f"Cannot add message to final transcript: {self.docpath}")
-    #     assert self.status == 'live', f"Invalid status for transcript: {self.status}"
-    #     if self.messages is None:
-    #         self.messages = []
-    #     msg_id = msg.role.value.upper() + str(len(self.messages))
-    #     self.messages.append(msg)
-    #     self._send_msg_to_subcollection(msg, msg_id, db)
+    @traced
+    def add_msg(self, msg: Message, db: Client) -> None:
+        """ Add a message to the transcript. """
+        logger.debug(f"Adding message to transcript: {msg}")
+        if self.status == 'final':
+            raise ValueError(f"Cannot add message to final transcript: {self.docpath}")
+        assert self.status == 'live', f"Invalid status for transcript: {self.status}"
+        if self.messages is None:
+            self.messages = []
+        msg_id = msg.role.value.upper() + str(len(self.messages))
+        self.messages.append(msg)
+        self._send_msg_to_subcollection(msg, msg_id, db)
+        self.update(db)
 
     def _read_subcollections(self, db: Client) -> None:
         """ Read the subcollections from Firestore. You can use this only when the status is live. """
@@ -145,13 +147,17 @@ class Transcript(FB):
         if not doc.exists:
             raise ValueError(f"selfript document {self.docpath} does not exist in Firebase.")
         dat = doc.to_dict()
-        msgs = [Message(**msg) for msg in dat['msgs']]
+        try:
+            msgs = [Message(**msg) for msg in dat['msgs']]
+        except KeyError:
+            logger.debug(f"Transcript {self.docpath} has no messages.")
+            msgs = []
         self._messages = sorted(msgs, key=lambda msg: msg.created_at)
     
     @classmethod
     def read(cls, docpath: DocPath, db: Client) -> "Transcript":
         """ Read the document from Firestore. """
-        tdoc = db.document(docpath).get()
+        tdoc = docpath.to_docref(db).get()
         if not tdoc.exists:
             raise ValueError(f"Document {docpath} does not exist in Firebase.")
         kwargs = cls._kwargs_from_docpath(docpath)
