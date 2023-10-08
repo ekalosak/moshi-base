@@ -56,6 +56,21 @@ class Transcript(FB):
             return _transcript_id(values.data['bcp47'])
         return v
 
+    @field_validator('messages', mode='before')
+    @classmethod
+    def parse_msg_dict(cls, v: list[Message] | list[dict[str, str]] | dict[str, dict[str, str]] , values: ValidationInfo):
+        if not v:
+            return []
+        if isinstance(v, dict):
+            return [Message(**msg) for msg in v.values()]
+        elif isinstance(v, list):
+            if isinstance(v[0], dict):
+                return [Message(**msg) for msg in v]
+            else:
+                return v
+        else:
+            raise ValueError(f"Invalid type for messages: {type(v)}")
+
     @classmethod
     def get_docpath(cls, uid, tid) -> DocPath:
         return DocPath(f'users/{uid}/transcripts/{tid}')
@@ -138,8 +153,8 @@ class Transcript(FB):
             self.messages = []
         msg_id = msg.role.value.upper() + str(len(self.messages))
         self.messages.append(msg)
-        self._send_msg_to_subcollection(msg, msg_id, db)
         self.update(db)
+        self._send_msg_to_subcollection(msg, msg_id, db)
         return msg_id
 
     def _read_subcollections(self, db: Client) -> None:
@@ -151,20 +166,23 @@ class Transcript(FB):
             logger.debug(f"Got message from Fb: {msg.to_dict()}")
             self.messages.append(Message(**msg.to_dict()))
         self.messages = sorted(self.messages, key=lambda msg: msg.created_at)
-    
+
     def _read_messages(self, db: Client) -> None:
         """ Read the messages from Firestore. Use this when the transcript is final. """
         doc = self.docref(db).get()
         if not doc.exists:
             raise ValueError(f"selfript document {self.docpath} does not exist in Firebase.")
         dat = doc.to_dict()
+        logger.debug(f"Got transcript {doc.id} from Fb: {dat}")
         try:
-            msgs = [Message(**msg) for msg in dat['msgs']]
+            raw_msgs: dict[str, dict[str, str]] = dat['messages']
         except KeyError:
             logger.debug(f"Transcript {self.docpath} has no messages.")
             msgs = []
+        else:
+            msgs = [Message(**msg) for msg in raw_msgs.values()]
         self.messages = sorted(msgs, key=lambda msg: msg.created_at)
-    
+
     @classmethod
     def read(cls, docpath: DocPath, db: Client) -> "Transcript":
         """ Read the document from Firestore. """
@@ -179,7 +197,7 @@ class Transcript(FB):
 
     def create(self, db: Client, **kwargs) -> None:
         """ Create the document in Firestore if it doesn't exist.
-        If status is live, also create the messages in the subcollections.
+        Does NOT create the messages in the subcollections.
         Raises:
             AttributeError: If docpath is not set.
             AlreadyExists: If the document already exists.
@@ -187,18 +205,12 @@ class Transcript(FB):
         payload = self.to_json()
         self.docref(db).create(payload, **kwargs)
         logger.debug(f"Created transcript: {self.docpath}")
-        if self.messages and self.status == 'live':
-            for i, msg in enumerate(self.messages):
-                msg_id = msg.role.value.upper() + str(i)
-                self._send_msg_to_subcollection(msg, msg_id, db)
 
     def delete(self, db: Client, **kwargs) -> None:
         """ Delete the document in Firestore. """
-        if self.status == 'live':
-            # delete the subcollections as well
-            for colnm in ('amsgs', 'umsgs'):
-                col: CollectionReference = self.docref(db).collection(colnm)
-                for msgdoc in col.stream():
-                    logger.debug(f"Deleting message from transcript: {msgdoc.id}")
-                    msgdoc.reference.delete()
+        for colnm in ('amsgs', 'umsgs'):
+            col: CollectionReference = self.docref(db).collection(colnm)
+            for msgdoc in col.stream():
+                logger.debug(f"Deleting message from transcript: {msgdoc.id}")
+                msgdoc.reference.delete()
         return self.docref(db).delete(**kwargs)

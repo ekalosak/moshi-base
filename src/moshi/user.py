@@ -10,6 +10,10 @@ class User(FB):
     language: str
     native_language: str
 
+    @property
+    def bcp47(self) -> str:
+        return self.language
+
     @classmethod
     def from_uid(cls, uid: str, db: Client) -> 'User':
         return super().read(DocPath(f'users/{uid}'), db)

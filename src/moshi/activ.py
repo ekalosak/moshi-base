@@ -4,11 +4,11 @@ For design terms, see: https://refactoring.guru/design-patterns/catalog
 import enum
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, ParamSpec
 
 from google.cloud.firestore import Client, DocumentReference
 from loguru import logger
-from pydantic import BaseModel, field_validator, Field, ValidationInfo
+from pydantic import BaseModel, field_validator, Field, ValidationInfo, computed_field
 
 from .language import Language
 from .msg import Message
@@ -101,16 +101,16 @@ class MinPl(Plan[ActT.MIN]):
 
 class Act(FB, Generic[T], ABC):
     """ Implement session logic. """
-    _lang: Language
     aid: str
     atp: ActT
     bcp47: str
     prompt: Prompt
     source: str = "builtin"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._lang = Language(self.bcp47)
+    @computed_field
+    @property
+    def lang(self) -> Language:
+        return Language(self.bcp47)
 
     @classmethod
     def get_docpath(cls, atp: ActT | str, bcp47: str, aid: str) -> DocPath:
@@ -148,12 +148,8 @@ class Act(FB, Generic[T], ABC):
         """
         return super().to_json(*args, exclude=exclude, exclude_none=exclude_none, **kwargs)
 
-    @property
-    def lang(self) -> Language:
-        return self._lang
-
     @abstractmethod
-    def reply(self, usr_msg: Message, plan: Plan[T]) -> str:
+    def reply(self, msgs: list[Message], plan: Plan[T]) -> str:
         """ This is to be called when a user message arrives. """
         ...
 
@@ -164,12 +160,12 @@ class MinA(Act[ActT.MIN]):
     prompt: Prompt = Prompt(msgs=[Message.from_string("Hello, world!", 'ast')])
     source: str = "builtin"
 
-    def __init__(self, bcp47: str=None, **kwargs):
+    def __init__(self, bcp47, **kwargs):
         super().__init__(bcp47=bcp47, **kwargs)
 
-    def reply(self, usr_msg: Message, plan: Plan[ActT.MIN]) -> str:
+    def reply(self, msgs: list[Message], plan: Plan[ActT.MIN]) -> str:
         """ This is to be called when a user message arrives. """
-        return "Hello, world!"
+        return Message('ast', "Hello, world!")
 
 
 PLAN_OF_TYPE = {
