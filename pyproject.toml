@@ -14,6 +14,7 @@ dependencies = [
   "isocodes",
   "google-cloud-firestore",
   "google-cloud-storage",
+  "google-cloud-translate",
   "langcodes[data]",
   "loguru",
   "openai",
