@@ -47,12 +47,18 @@ class Plan(FB, Generic[T], ABC):
     template: dict[str, str] = Field(default=None, help="Template for the activity prompt.")
     state: dict = None
     vocab: list[str] = None
-    voice: str | Voice
+    voice: Voice
 
     def __init__(self, uid, bcp47, **kwargs):
-        if not kwargs.get('voice'):
-            kwargs['voice'] = f"{bcp47}-Standard-A"
         super().__init__(uid=uid, bcp47=bcp47, **kwargs)
+
+    @field_validator('voice', mode='before')
+    def convert_string_to_voice(cls, v: str) -> Voice:
+        logger.debug(f"Got: {v}")
+        if isinstance(v, str):
+            logger.debug(f"Converting string to voice: {v}")
+            v = Voice(v)
+        return v
 
     @classmethod
     def _kwargs_from_docpath(cls, docpath: DocPath) -> dict:

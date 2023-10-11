@@ -47,7 +47,7 @@ class Transcript(FB):
     bcp47: str = Field(help='User language e.g. "en-US".')
     tid: str = Field(help='Transcript ID.', default=None, validate_default=True)
     status: Literal['live', 'final'] = 'live'
-    first_speaker: Literal['usr', 'ast'] = 'ast'
+    # first_speaker: Literal['usr', 'ast'] = 'ast'
 
     @field_validator('tid', mode='before')
     @classmethod
