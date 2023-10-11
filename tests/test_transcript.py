@@ -25,9 +25,11 @@ def tra(status: str, uid: str, bcp47: str, db: Client) -> Transcript:
         print(f"Error deleting transcript: {e}")
     return tra
 
+@pytest.mark.fb
 def test_fixture(tra):
     assert tra.status in {'live', 'final'}
 
+@pytest.mark.fb
 def test_create_no_msg(tra: Transcript, db: Client):
     tra.create(db)
     doc = tra.docref(db).get()
@@ -35,6 +37,7 @@ def test_create_no_msg(tra: Transcript, db: Client):
     from pprint import pprint; pprint(doc.to_dict())
     print(doc.id)
 
+@pytest.mark.fb
 def test_create_with_msg(tra: Transcript, db: Client):
     tra.messages = [Message('usr', 'hello')]
     tra.create(db)
@@ -43,6 +46,7 @@ def test_create_with_msg(tra: Transcript, db: Client):
     from pprint import pprint; pprint(doc.to_dict())
     print(doc.id)
 
+@pytest.mark.fb
 def test_add_msg(tra: Transcript, db):
     tra.create(db)
     msg = Message('usr', 'hello')

@@ -2,7 +2,7 @@ from moshi.voice import Voice
 
 def test_init():
     _ = Voice(
-        model_name='en-US-Wavenet-A',
+        model='en-US-Wavenet-A',
         bcp47='en-US',
         language_name = 'English (United States)',
         gender = 1,
