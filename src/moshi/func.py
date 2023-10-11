@@ -151,7 +151,7 @@ class Parameters(BaseModel):
             for name, prop in d['properties'].items()
         }
         required = d.get('required', [])
-        return cls(properties, required)
+        return cls(properties=properties, required=required)
 
     @classmethod
     def from_callable(cls, func: callable):
@@ -169,8 +169,8 @@ class Parameters(BaseModel):
             if isinstance(param.annotation, EnumType):
                 enums = [e.value for e in param.annotation]
             prop_description = _parse_docstring_arg(func.__doc__, name)
-            properties[name] = Property(ptype, description=prop_description, enum=enums)
-        return cls(properties, required)
+            properties[name] = Property(ptype=ptype, description=prop_description, enum=enums)
+        return cls(properties=properties, required=required)
             
 
 class Function(BaseModel):
@@ -195,4 +195,4 @@ class Function(BaseModel):
         name = func.__name__
         description = _parse_docstring_description(func.__doc__)
         parameters = Parameters.from_callable(func)
-        return cls(name, func, parameters, description)
+        return cls(name=name, func=func, parameters=parameters, description=description)
