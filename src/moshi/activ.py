@@ -52,9 +52,6 @@ class Plan(FB, Generic[T], ABC):
     vocab: list[str] = None
     voice: Voice
 
-    def __init__(self, uid, bcp47, **kwargs):
-        super().__init__(uid=uid, bcp47=bcp47, **kwargs)
-
     @field_validator('voice', mode='before')
     def convert_string_to_voice(cls, v: str) -> Voice:
         logger.debug(f"Got: {v}")
@@ -172,9 +169,6 @@ class MinA(Act[ActT.MIN]):
     aid: str = '000000-mina'  # a singular min activity
     prompt: Prompt = Prompt(msgs=[Message.from_string("Hello, world!", 'ast')])
     source: str = "builtin"
-
-    def __init__(self, bcp47, **kwargs):
-        super().__init__(bcp47=bcp47, **kwargs)
 
     def reply(self, msgs: list[Message], plan: Plan[ActT.MIN]) -> str:
         """ This is to be called when a user message arrives. """

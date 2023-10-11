@@ -27,4 +27,4 @@ def test_unstra(bcp47: str, prompt: Prompt, db: Client):
     act.set(db)
     doc = act.docref(db).get()
     assert doc.exists
-    assert doc.to_dict() == act.to_dict()
+    assert UnstrA.read(act.docpath, db) == act

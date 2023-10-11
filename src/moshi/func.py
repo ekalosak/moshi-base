@@ -2,6 +2,7 @@
 from enum import Enum, EnumType
 import inspect
 from typing import Any, Callable, Literal
+from typing_extensions import Literal
 
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
 
@@ -175,13 +176,13 @@ class Parameters(BaseModel):
 
 class Function(BaseModel):
     """ Base class for OpenAI functions. """
+    _func: Callable
     name: str
-    func: Callable
     parameters: Parameters = Field(default_factory=Parameters)
     description: str = ""
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:
-        return self.func(*args, **kwds)
+        return self._func(*args, **kwds)
 
     def to_json(self):
         res = {'name': self.name, 'parameters': self.parameters.to_json()}
@@ -195,4 +196,4 @@ class Function(BaseModel):
         name = func.__name__
         description = _parse_docstring_description(func.__doc__)
         parameters = Parameters.from_callable(func)
-        return cls(name=name, func=func, parameters=parameters, description=description)
+        return cls(name=name, _func=func, parameters=parameters, description=description)

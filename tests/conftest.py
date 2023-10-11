@@ -25,7 +25,7 @@ def bcp47() -> str:
 
 @pytest.fixture
 def mina(bcp47: str) -> MinA:
-    return MinA(bcp47)
+    return MinA(bcp47=bcp47)
 
 @pytest.fixture
 def unstra(bcp47: str, prompt: Prompt) -> UnstrA:
@@ -74,7 +74,7 @@ def prompt(function):
             Message(Role.USR, "Hello."),
         ],
         functions=[function],
-        function_call=FuncCall("get_topic"),
+        function_call=FuncCall(func="get_topic"),
     )
 
 @pytest.fixture
