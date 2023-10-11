@@ -1,5 +1,6 @@
 from enum import Enum
 import os
+from pathlib import Path
 import random
 from typing import Callable
 
@@ -8,6 +9,7 @@ from google.cloud import firestore
 from loguru import logger
 import pytest
 
+from moshi import model, Message, Role, Prompt, Function, FuncCall
 from moshi.activ import MinA
 
 GCLOUD_PROJECT = os.getenv("GCLOUD_PROJECT", "demo-test")
@@ -49,6 +51,31 @@ def get_name() -> Callable:
         """
         return random.choices(["John", "Jane", "Bob", "Alice"], k=number)
     return get_name
+
+@pytest.fixture
+def function(get_topic: Callable):
+    return Function(
+        name="get_topic",
+        func=get_topic,
+        description= "Come up with a topic to talk about.",
+    )
+
+@pytest.fixture
+def prompt(function):
+    return Prompt(
+        mod=model.ChatM.GPT35TURBO,
+        msgs=[
+            Message(Role.SYS, "Only use the functions you have been provided with."),
+            Message(Role.SYS, "Be polite."),
+            Message(Role.USR, "Hello."),
+        ],
+        functions=[function],
+        function_call=FuncCall("get_topic"),
+    )
+
+@pytest.fixture
+def prompt_file():
+    return Path(__file__).parent / "data" / "test_prompt.txt"
 
 @pytest.fixture(scope="module")
 def db():

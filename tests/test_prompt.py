@@ -3,33 +3,8 @@ from typing import Callable
 
 import pytest
 
-from moshi import Prompt, model, Message, Role, Function, FuncCall, Parameters
+from moshi import Prompt, model, Message, Role, Function, Parameters
 from moshi.prompt import _parse_lines, _get_function, _load_lines, Prompt
-
-@pytest.fixture
-def function(get_topic: Callable):
-    return Function(
-        name="get_topic",
-        func=get_topic,
-        description= "Come up with a topic to talk about.",
-    )
-
-@pytest.fixture
-def prompt(function):
-    return Prompt(
-        mod=model.ChatM.GPT35TURBO,
-        msgs=[
-            Message(Role.SYS, "Only use the functions you have been provided with."),
-            Message(Role.SYS, "Be polite."),
-            Message(Role.USR, "Hello."),
-        ],
-        functions=[function],
-        function_call=FuncCall("get_topic"),
-    )
-
-@pytest.fixture
-def prompt_file():
-    return Path(__file__).parent / "test_prompt.txt"
 
 def test_load_lines(prompt_file: Path):
     lines = _load_lines(prompt_file)

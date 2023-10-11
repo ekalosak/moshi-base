@@ -2,7 +2,7 @@ import pytest
 
 from google.cloud.firestore import Client
 
-from moshi.activ import MinA
+from moshi.activ import MinA, UnstrA
 
 def test_mina(mina: MinA):
     assert 1
@@ -19,3 +19,7 @@ def test_read_mina(mina: MinA, db: Client):
     mina.set(db)
     mina2 = MinA.read(mina.docpath, db)
     assert mina == mina2
+
+@pytest.mark.fb
+def test_unstra(db):
+    act = UnstrA()

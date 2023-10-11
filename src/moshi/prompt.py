@@ -6,11 +6,9 @@ Key functionality includes:
         - token counting and logging
     - a templating system; if prompt contains "{{ MY_VAR }}", it will be replaced with the value of {'template': {'my_var': 'my value'}}.
 """
-import dataclasses
 import time
 from pathlib import Path
 from typing import Callable
-from google.cloud.firestore import Client
 
 import openai
 import tiktoken
@@ -20,8 +18,8 @@ from pydantic import field_validator, ValidationInfo
 from . import model
 from .exceptions import CompletionError
 from .func import FuncCall, Function
-from .msg import Message, Role, MOSHI_ROLES, OPENAI_ROLES
-from .storage import Mappable, Versioned
+from .msg import Message, Role, MOSHI_ROLES
+from .storage import Mappable
 
 enc: tiktoken.Encoding
 
@@ -73,7 +71,9 @@ def _load_lines(fp: Path) -> list[str]:
 
 
 class Prompt(Mappable):
-    """A prompt for OpenAI's API."""
+    """ A prompt for OpenAI's API. 
+    Use the self.complete() method to get the OpenAI response.
+    """
 
     msgs: list[Message] = []
     functions: list[Function] = None

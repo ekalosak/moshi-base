@@ -32,9 +32,12 @@ class ActT(str, enum.Enum):
 
 T = TypeVar('T', bound=ActT)
 
-def default_pid(atp: ActT) -> str:
+def default_pid(atp: ActT, n=8) -> str:
     tod = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-    return random_string(12) + '-' + atp.value + '-' + tod
+    return random_string(n) + '-' + atp.value + '-' + tod
+
+def default_aid(atp: ActT) -> str:
+    return default_pid(atp, n=4)
 
 class Plan(FB, Generic[T], ABC):
     """ The Plan is a strategy for a session. """
@@ -105,6 +108,10 @@ class MinPl(Plan[ActT.MIN]):
     aid: str = '000000-mina'  # a singular min activity
     pid: str = '000000-minp'  # a singular min plan for each user subscribed
 
+class UnstrPl(Plan[ActT.UNSTRUCTURED]):
+    """ Most basic functional session plan. """
+    atp: ActT = ActT.UNSTRUCTURED
+
 class Act(FB, Generic[T], ABC):
     """ Implement session logic. """
     aid: str
@@ -160,7 +167,7 @@ class Act(FB, Generic[T], ABC):
         ...
 
 class MinA(Act[ActT.MIN]):
-    """ Most basic activity implementation. """
+    """ Most basic activity implementation. Has no session logic. """
     atp: ActT = ActT.MIN
     aid: str = '000000-mina'  # a singular min activity
     prompt: Prompt = Prompt(msgs=[Message.from_string("Hello, world!", 'ast')])
@@ -173,13 +180,26 @@ class MinA(Act[ActT.MIN]):
         """ This is to be called when a user message arrives. """
         return Message('ast', "Hello, world!")
 
+class UnstrA(Act[ActT.UNSTRUCTURED]):
+    """ Most basic "functional" activity. Uses completion to generate a reply. """
+    atp: ActT = ActT.MIN
+    aid: str = Field(help="Activity ID.", default_factory=lambda: default_aid(ActT.UNSTRUCTURED))
+    source: str = "builtin"
+
+    def reply(self, msgs: list[Message], plan: Plan[ActT.UNSTRUCTURED]) -> str:
+        """ This is to be called when a user message arrives. """
+        self.prompt.msgs.extend(plan.prompt.msgs + msgs)
+        return self.prompt.complete(vocab=plan.vocab)
+
 
 PLAN_OF_TYPE = {
-    ActT.MIN: MinPl
+    ActT.MIN: MinPl,
+    ActT.UNSTRUCTURED: UnstrPl,
 }
 
 ACT_OF_TYPE = {
-    ActT.MIN: MinA
+    ActT.MIN: MinA,
+    ActT.UNSTRUCTURED: UnstrA,
 }
 
 
@@ -222,13 +242,6 @@ class UnstrP(Plan[ActT.UNSTRUCTURED]):
     """ Most basic session plan. """
     ...
 
-
-class UnstrA(Act[ActT.UNSTRUCTURED]):
-    """ Most basic activity implementation.
-    All it needs to do is respond to the user using the prompt.
-    No functions. No templated plan. No level. Only vocab and prompt.
-    """
-    ...
 
 class ScenarU(Act[ActT.SCENARIO]):
     """ Scenario activity implementation. """
