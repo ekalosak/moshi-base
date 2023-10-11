@@ -196,4 +196,6 @@ class Function(BaseModel):
         name = func.__name__
         description = _parse_docstring_description(func.__doc__)
         parameters = Parameters.from_callable(func)
-        return cls(name=name, _func=func, parameters=parameters, description=description)
+        res = cls(name=name, parameters=parameters, description=description)
+        res._func=func
+        return res
