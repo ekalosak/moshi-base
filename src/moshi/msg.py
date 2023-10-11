@@ -5,6 +5,7 @@ from enum import Enum
 from pydantic import Field
 
 from .audio import AudioStorage
+from .log import LOG_COLORIZE
 from .storage import Mappable
 
 OPENAI_ROLES = {
@@ -56,19 +57,25 @@ class Message(Mappable):
     def __str__(self):
         """Print message colorized based on message 'role'."""
         role = self.role.value
-        color_start = ROLE_COLORS[self.role.value]
-        color_end = ROLE_COLORS['reset']
-        return f"{color_start}[{role}] {self.body}{color_end}"
+        res = f"[{role}] {self.body}"
+        if LOG_COLORIZE:
+            color_start = ROLE_COLORS[self.role.value]
+            color_end = ROLE_COLORS['reset']
+            res = f"{color_start}{res}{color_end}"
+        return res
 
     @classmethod
     def from_string(cls, body: str, role: Role=Role.USR):
         return cls(role, body)
 
-    def to_json(self):
-        return {
-            'role': self.role.to_json(),
-            'content': self.body,
-        }
+    def to_json(self, mode='openai'):
+        if mode == 'openai':
+            return {
+                'role': self.role.to_json(),
+                'content': self.body,
+            }
+        else:
+            return self.model_dump_json(exclude_none=True)
 
     @classmethod
     def from_json(cls, completion: dict):

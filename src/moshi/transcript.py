@@ -47,7 +47,6 @@ class Transcript(FB):
     bcp47: str = Field(help='User language e.g. "en-US".')
     tid: str = Field(help='Transcript ID.', default=None, validate_default=True)
     status: Literal['live', 'final'] = 'live'
-    # first_speaker: Literal['usr', 'ast'] = 'ast'
 
     @field_validator('tid', mode='before')
     @classmethod
@@ -140,7 +139,7 @@ class Transcript(FB):
             logger.debug(f"Added message to transcript.")
     
     @traced
-    def add_msg(self, msg: Message, db: Client) -> str:
+    def add_msg(self, msg: Message, db: Client, create_in_subcollection: bool=True) -> str:
         """ Add a message to the transcript.
         Returns:
             The message ID.
@@ -154,8 +153,28 @@ class Transcript(FB):
         msg_id = msg.role.value.upper() + str(len(self.messages))
         self.messages.append(msg)
         self.update(db)
-        self._send_msg_to_subcollection(msg, msg_id, db)
+        if create_in_subcollection:
+            self._send_msg_to_subcollection(msg, msg_id, db)
+        else:
+            logger.warning(f"Not creating message in subcollection, only in transcript doc body. No Functions will be triggered. Message: {msg}")
         return msg_id
+
+    @traced
+    def update_msg(self, msg: Message, mid: str, db: Client) -> None:
+        """ Update a message in the transcript doc body, not in the subcollections.
+        Args:
+            msg: The message to update.
+            mid: The message ID in the Transcript.
+        """
+        with logger.contextualize(msg_id=mid):
+            logger.debug(f"Updating message in transcript: {msg}")
+            doc = self.docref(db)
+            doc.update({
+                'messages': {
+                    mid: msg.model_dump_json(exclude_none=True),
+                }
+            })
+            logger.debug("Updated message in transcript.")
 
     def _read_subcollections(self, db: Client) -> None:
         """ Read the subcollections from Firestore. You can use this only when the status is live. """

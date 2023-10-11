@@ -1,4 +1,6 @@
 """ Test the live session state. """
+import json
+
 import pytest
 from google.cloud.firestore import Client
 
@@ -58,3 +60,19 @@ def test_add_msg(tra: Transcript, db):
         doc = tra.docref(db).collection('umsgs').document(mid).get()
         dat = doc.to_dict()
         assert Message(**dat) == msg
+
+@pytest.mark.fb
+def test_update_msg(tra: Transcript, db):
+    tra.create(db)
+    msg = Message('usr', 'hello')
+    if tra.status == 'final':
+        with pytest.raises(ValueError):
+            mid = tra.add_msg(msg, db, create_in_subcollection=False)
+        return
+    mid = tra.add_msg(msg, db, create_in_subcollection=False)
+    msg.translation = 'bonjour'
+    tra.update_msg(msg, mid, db)
+    doc = tra.docref(db).get()
+    dat = doc.to_dict()
+    pld = json.loads(dat['messages'][mid])
+    assert Message(**pld) == msg
