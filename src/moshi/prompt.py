@@ -166,21 +166,23 @@ class Prompt(Mappable):
 
     def _pick(self, choices: list[dict]) -> dict:
         """ Select a completion result. """
+        chosen_msg = None
         for i, choice in enumerate(choices):
             index = choice.pop("index")
             finish_reason = choice.pop("finish_reason")
-            _msg = choice.pop("message")
-            role = MOSHI_ROLES[_msg["role"]]
-            content = _msg["content"]
+            msg = choice.pop("message")
+            role = MOSHI_ROLES[msg["role"]]
+            content = msg["content"]
             with logger.contextualize(
                 index=index, finish_reason=finish_reason, role=role
             ):
                 logger.debug(f"Choice {i + 1}: '{content}'")
                 if role != Role.AST:
                     logger.warning(f"Expected assistant response, got {role}.")
-            if not msg:
-                logger.debug("Selecting first message")
-                msg = _msg
+                if not chosen_msg:
+                    logger.debug("Selecting first message")
+                    chosen_msg = msg
+        return chosen_msg
 
     def complete(
         self, vocab: list[str] = [], retry_count=3, backoff_sec=5, check_user: bool = True, **kwargs

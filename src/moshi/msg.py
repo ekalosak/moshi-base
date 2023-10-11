@@ -64,15 +64,15 @@ class Message(Mappable):
     def from_string(cls, body: str, role: Role=Role.USR):
         return cls(role, body)
 
-    # def to_json(self):
-    #     return {
-    #         'role': self.role.to_json(),
-    #         'content': self.body,
-    #     }
+    def to_json(self):
+        return {
+            'role': self.role.to_json(),
+            'content': self.body,
+        }
 
-    # @classmethod
-    # def from_json(cls, completion: dict):
-    #     return cls(
-    #         role=Role.from_json(completion['role']),
-    #         body=completion['content'],
-    #     )
+    @classmethod
+    def from_json(cls, completion: dict):
+        return cls(
+            role=Role.from_json(completion['role']),
+            body=completion['content'],
+        )

@@ -2,6 +2,7 @@ import pytest
 from google.cloud.firestore import Client
 from loguru import logger
 
+from moshi import Message
 from moshi.activ import MinA, MinPl, UnstrA, UnstrPl
 
 
@@ -40,11 +41,25 @@ def test_read_minpl(live_minpl: MinPl, db: Client):
     assert minpl2 == minpl
 
 @pytest.mark.fb
-def test_unstrpl(unstra: UnstrA, uid: str, db: Client):
+def test_unstrpl(unstra: UnstrA, uid: str):
     upl = UnstrPl.from_act(unstra, uid, voice='en-US-Wavenet-A')
+    assert upl.uid, "User ID should be set."
 
-# @pytest.mark.fb
-# @pytest.mark.openai
-# def test_unstra_reply(unstra: UnstrA, db: Client):
-#     umsg = Message('usr', "Hello!")
-#     unstra.reply([umsg]
+@pytest.fixture
+def unstrpl(unstra: UnstrA, uid: str) -> UnstrPl:
+    return UnstrPl.from_act(unstra, uid, voice='en-US-Wavenet-A')
+
+@pytest.mark.fb
+def test_unstra_reply_wrong_plan_type(unstra: UnstrA, minpl: MinPl, db: Client):
+    umsg = Message('usr', "Hello!")
+    with pytest.raises(TypeError):
+        unstra.reply([umsg], minpl)
+
+@pytest.mark.fb
+@pytest.mark.openai
+def test_unstra_reply(unstra: UnstrA, unstrpl: UnstrPl, db: Client):
+    umsg = Message('usr', "Hello!")
+    amsg = unstra.reply([umsg], unstrpl)
+    assert isinstance(amsg, Message)
+    assert amsg.role == 'ast'
+    assert len(amsg.body) > 5, "Unexpectedly short completion response."

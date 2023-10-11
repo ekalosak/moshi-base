@@ -4,11 +4,11 @@ For design terms, see: https://refactoring.guru/design-patterns/catalog
 import enum
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-from typing import Generic, TypeVar, ParamSpec
+from typing import Generic, TypeVar
 
-from google.cloud.firestore import Client, DocumentReference
+from google.cloud.firestore import Client
 from loguru import logger
-from pydantic import BaseModel, field_validator, Field, ValidationInfo, computed_field
+from pydantic import field_validator, Field, ValidationInfo, computed_field
 
 from .language import Language
 from .msg import Message
@@ -46,7 +46,7 @@ class Plan(FB, Generic[T], ABC):
     uid: str = Field(help="User ID.")
     pid: str = Field(help="Plan ID. If not provided, pid will be generated.", default=None)
     bcp47: str = Field(help="Language for the session.")
-    prompt: Prompt = Field(default=None, help="Extra prompt for the session.")
+    prompt: Prompt = Field(help="Extra prompt for the session.", default_factory=Prompt)
     template: dict[str, str] = Field(default=None, help="Template for the activity prompt.")
     state: dict = None
     vocab: list[str] = None
@@ -178,6 +178,8 @@ class MinA(Act[ActT.MIN]):
 
     def reply(self, msgs: list[Message], plan: Plan[ActT.MIN]) -> str:
         """ This is to be called when a user message arrives. """
+        if not isinstance(plan, MinPl):
+            raise TypeError(f"Plan {plan.pid} is not a MinPl.")
         return Message('ast', "Hello, world!")
 
 class UnstrA(Act[ActT.UNSTRUCTURED]):
@@ -186,8 +188,10 @@ class UnstrA(Act[ActT.UNSTRUCTURED]):
     aid: str = Field(help="Activity ID.", default_factory=lambda: default_aid(ActT.UNSTRUCTURED))
     source: str = "builtin"
 
-    def reply(self, msgs: list[Message], plan: Plan[ActT.UNSTRUCTURED]) -> str:
+    def reply(self, msgs: list[Message], plan: Plan[ActT.UNSTRUCTURED]) -> Message:
         """ This is to be called when a user message arrives. """
+        if not isinstance(plan, UnstrPl):
+            raise TypeError(f"Plan {plan.pid} is not a UnstrPl.")
         self.prompt.msgs.extend(plan.prompt.msgs + msgs)
         return self.prompt.complete(vocab=plan.vocab)
 

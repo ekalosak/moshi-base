@@ -24,14 +24,6 @@ def bcp47() -> str:
     return 'en-US'
 
 @pytest.fixture
-def mina(bcp47: str) -> MinA:
-    return MinA(bcp47=bcp47)
-
-@pytest.fixture
-def unstra(bcp47: str, prompt: Prompt) -> UnstrA:
-    return UnstrA(bcp47=bcp47, prompt=prompt)
-
-@pytest.fixture
 def get_topic() -> Callable:
     def get_topic():
         """ Come up with a topic to talk about. """
@@ -91,3 +83,11 @@ def db():
         db = firestore.Client()
     print(f"Created db client, project={db.project}, database={db._database}, target={db._target}")
     return db
+
+@pytest.fixture
+def mina(bcp47: str) -> MinA:
+    return MinA(bcp47=bcp47)
+
+@pytest.fixture
+def unstra(bcp47: str, prompt: Prompt) -> UnstrA:
+    return UnstrA(bcp47=bcp47, prompt=prompt)
