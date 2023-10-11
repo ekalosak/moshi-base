@@ -2,7 +2,7 @@
 import json
 
 import pytest
-from google.cloud.firestore import Client
+from google.cloud.firestore import Client, DocumentSnapshot
 
 from moshi.transcript import Transcript, Message, Plan, ActT
 from moshi.storage import DocPath
@@ -57,7 +57,7 @@ def test_add_msg(tra: Transcript, db):
             tra.add_msg(msg, db)
     else:
         mid = tra.add_msg(msg, db)
-        doc = tra.docref(db).collection('umsgs').document(mid).get()
+        doc: DocumentSnapshot = tra.docref(db).collection('umsgs').document(mid).get()
         dat = doc.to_dict()
         assert Message(**dat) == msg
 
