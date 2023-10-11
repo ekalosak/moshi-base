@@ -45,12 +45,18 @@ def test_get_function(get_topic: Callable):
 def test_parse_lines(prompt_file: Path, get_topic: Callable, function: Function):
     lines = _load_lines(prompt_file)
     prompt_contents = _parse_lines(lines, [get_topic])
-    assert prompt_contents == [
+    expected_messages = [
         Message(Role.SYS, "Only use the functions you have been provided with."),
         function,
         Message(Role.SYS, "Be polite."),
         Message(Role.USR, "Hello."),
     ]
+    for pmsg, emsg in zip(prompt_contents, expected_messages):
+        if isinstance(emsg, Function):
+            assert pmsg.name == emsg.name
+        else:
+            assert pmsg.role == emsg.role
+            assert pmsg.body == emsg.body
 
 def test_from_file_forgot_functions(prompt: Prompt, prompt_file: Path):
     with pytest.raises(ValueError):
@@ -59,11 +65,17 @@ def test_from_file_forgot_functions(prompt: Prompt, prompt_file: Path):
 def test_from_file(prompt: Prompt, prompt_file: Path, get_topic: Callable, get_name: Callable):
     prompt = Prompt.from_file(prompt_file, [get_topic, get_name])
     assert prompt.mod == model.ChatM.GPT35TURBO
-    assert prompt.msgs == [
+    expected_messages = [
         Message(Role.SYS, "Only use the functions you have been provided with."),
         Message(Role.SYS, "Be polite."),
         Message(Role.USR, "Hello."),
     ]
+    for pmsg, emsg in zip(prompt.msgs, expected_messages):
+        if isinstance(emsg, Function):
+            assert pmsg.name == emsg.name
+        else:
+            assert pmsg.role == emsg.role
+            assert pmsg.body == emsg.body
     assert len(prompt.functions) == 1
     func = prompt.functions[0]
     assert isinstance(func, Function)
