@@ -44,13 +44,19 @@ class Plan(FB, Generic[T], ABC):
     atp: ActT = Field(help="Activity type.")
     aid: str = Field(help="Activity ID.")
     uid: str = Field(help="User ID.")
-    pid: str = Field(help="Plan ID.", default_factory=default_pid)
+    pid: str = Field(help="Plan ID. If not provided, pid will be generated.", default=None)
     bcp47: str = Field(help="Language for the session.")
     prompt: Prompt = Field(default=None, help="Extra prompt for the session.")
     template: dict[str, str] = Field(default=None, help="Template for the activity prompt.")
     state: dict = None
     vocab: list[str] = None
     voice: Voice
+
+    @field_validator('pid', mode='before')
+    def make_pid(cls, v: str, values: ValidationInfo) -> str:
+        if not v:
+            v = default_pid(values.data['atp'])
+        return v
 
     @field_validator('voice', mode='before')
     def convert_string_to_voice(cls, v: str) -> Voice:

@@ -18,7 +18,7 @@ class Voice(Versioned):
         with logger.contextualize(**kwargs):
             logger.debug(f"Initializing voice: {model}")
         if not kwargs.get('bcp47'):
-            kwargs['bcp47'] = '-'.join(model.split('-')[:1])
+            kwargs['bcp47'] = '-'.join(model.split('-')[:2])
         if not kwargs.get('type'):
             kwargs['type'] = model.split('-')[-2]
         super().__init__(model=model, gender=gender, **kwargs)

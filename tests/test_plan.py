@@ -1,9 +1,9 @@
 import pytest
-
 from google.cloud.firestore import Client
 from loguru import logger
 
-from moshi.activ import MinPl, MinA
+from moshi.activ import MinA, MinPl, UnstrA, UnstrPl
+
 
 @pytest.fixture
 def minpl(mina: MinA, uid: str) -> MinPl:
@@ -38,3 +38,13 @@ def test_read_minpl(live_minpl: MinPl, db: Client):
     assert doc.to_dict()['aid'] == minpl.aid
     minpl2 = MinPl.read(minpl.docpath, db)
     assert minpl2 == minpl
+
+@pytest.mark.fb
+def test_unstrpl(unstra: UnstrA, uid: str, db: Client):
+    upl = UnstrPl.from_act(unstra, uid, voice='en-US-Wavenet-A')
+
+# @pytest.mark.fb
+# @pytest.mark.openai
+# def test_unstra_reply(unstra: UnstrA, db: Client):
+#     umsg = Message('usr', "Hello!")
+#     unstra.reply([umsg]
