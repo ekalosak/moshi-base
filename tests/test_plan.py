@@ -8,7 +8,7 @@ from moshi.activ import MinPl, MinA
 @pytest.fixture
 def minpl(mina: MinA, uid: str) -> MinPl:
     # Most common method for creating Plan is from Activity. 
-    return MinPl.from_act(mina, uid)
+    return MinPl.from_act(mina, uid, voice='en-US-Wavenet-A')
 
 @pytest.fixture
 def live_minpl(minpl: MinPl, db: Client) -> MinPl:

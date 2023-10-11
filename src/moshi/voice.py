@@ -14,14 +14,14 @@ class Voice(Versioned):
     type: str  # Literal['WaveNet', 'Standard']  # standard  data['type']
     meta: dict[str, str]=Field(default={}, help="Metadata about the voice")
 
-    def __init__(self, model: str, **kwargs):
+    def __init__(self, model: str, gender: int=0, **kwargs):
         with logger.contextualize(**kwargs):
             logger.debug(f"Initializing voice: {model}")
         if not kwargs.get('bcp47'):
             kwargs['bcp47'] = '-'.join(model.split('-')[:1])
         if not kwargs.get('type'):
             kwargs['type'] = model.split('-')[-2]
-        super().__init__(model=model, **kwargs)
+        super().__init__(model=model, gender=gender, **kwargs)
 
     def __str__(self):
         res = f"{self.model} (gender={self.gender})"
