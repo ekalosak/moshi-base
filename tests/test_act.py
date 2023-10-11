@@ -2,6 +2,7 @@ import pytest
 
 from google.cloud.firestore import Client
 
+from moshi import Prompt
 from moshi.activ import MinA, UnstrA
 
 def test_mina(mina: MinA):
@@ -21,5 +22,5 @@ def test_read_mina(mina: MinA, db: Client):
     assert mina == mina2
 
 @pytest.mark.fb
-def test_unstra(db):
-    act = UnstrA()
+def test_unstra(bcp47: str, prompt: Prompt, db: Client):
+    act = UnstrA(bcp47=bcp47, prompt=prompt)
