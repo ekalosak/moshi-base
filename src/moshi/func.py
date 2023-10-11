@@ -1,8 +1,9 @@
 """ Functions for OpenAI models. https://platform.openai.com/docs/api-reference/chat/create#functions """
-import dataclasses
 from enum import Enum, EnumType
 import inspect
 from typing import Any, Callable, Literal
+
+from pydantic import BaseModel, Field, field_validator, ValidationInfo
 
 class PType(str, Enum):
     """ Types allowed in functions. """
@@ -31,8 +32,7 @@ class PType(str, Enum):
         else:
             raise ValueError(f"Annotation has no match in JSON parameter types: {annotation}")
 
-@dataclasses.dataclass
-class FuncCall:
+class FuncCall(BaseModel):
     """ Allowed values are either 'auto', 'none', or '<function_name>'.
     When 'auto', the function is chosen automatically based on the prompt.
     When 'none', no function is called.
@@ -49,12 +49,11 @@ class FuncCall:
             return {'name': self.func.__name__}
         
 
-@dataclasses.dataclass
-class Property:
+class Property(BaseModel):
     """ Arguments for functions. """
     ptype: PType
     description: str = ""
-    enum: list[str] = dataclasses.field(default_factory=list)
+    enum: list[str] = Field(default_factory=list)
 
     def __post_init__(self):
         if self.enum and self.ptype != PType.STRING:
@@ -120,18 +119,19 @@ def _parse_docstring_arg(docstring: str, name: str) -> str:
             return line.split(':')[-1].strip()
     return ""
 
-@dataclasses.dataclass
-class Parameters:
+class Parameters(BaseModel):
     """ List of function arguments (properties) and which are required. """
-    properties: dict[str, Property] = dataclasses.field(default_factory=dict)
-    required: list[str] = dataclasses.field(default_factory=list)
+    properties: dict[str, Property] = Field(default_factory=dict)
+    required: list[str] = Field(default_factory=list)
     _type = "object"
 
-    def __post_init__(self):
-        if self.required:
-            for req in self.required:
-                if req not in self.properties:
+    @field_validator('required')
+    def validate_required(cls, v, values: ValidationInfo):
+        if v:
+            for req in v:
+                if req not in values.data['properties']:
                     raise ValueError(f"Required property '{req}' not found in properties.")
+        return v
 
     def to_json(self):
         res = {'type': self._type}
@@ -173,12 +173,11 @@ class Parameters:
         return cls(properties, required)
             
 
-@dataclasses.dataclass
-class Function:
+class Function(BaseModel):
     """ Base class for OpenAI functions. """
     name: str
     func: Callable
-    parameters: Parameters = dataclasses.field(default_factory=Parameters)
+    parameters: Parameters = Field(default_factory=Parameters)
     description: str = ""
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:

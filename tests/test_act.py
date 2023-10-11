@@ -24,3 +24,7 @@ def test_read_mina(mina: MinA, db: Client):
 @pytest.mark.fb
 def test_unstra(bcp47: str, prompt: Prompt, db: Client):
     act = UnstrA(bcp47=bcp47, prompt=prompt)
+    act.set(db)
+    doc = act.docref(db).get()
+    assert doc.exists
+    assert doc.to_dict() == act.to_dict()

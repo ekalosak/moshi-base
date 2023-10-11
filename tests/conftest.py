@@ -10,7 +10,7 @@ from loguru import logger
 import pytest
 
 from moshi import model, Message, Role, Prompt, Function, FuncCall
-from moshi.activ import MinA
+from moshi.activ import MinA, UnstrA
 
 GCLOUD_PROJECT = os.getenv("GCLOUD_PROJECT", "demo-test")
 logger.info(f"GCLOUD_PROJECT={GCLOUD_PROJECT}")
@@ -24,8 +24,12 @@ def bcp47() -> str:
     return 'en-US'
 
 @pytest.fixture
-def mina():
-    return MinA('en-US')
+def mina(bcp47: str) -> MinA:
+    return MinA(bcp47)
+
+@pytest.fixture
+def unstra(bcp47: str, prompt: Prompt) -> UnstrA:
+    return UnstrA(bcp47=bcp47, prompt=prompt)
 
 @pytest.fixture
 def get_topic() -> Callable:
