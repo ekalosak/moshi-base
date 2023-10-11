@@ -2,22 +2,22 @@
 The Language class wraps langcodes.Language for use with Firebase.
 The match function uses isocodes to match a language name to a language code.
 """
-# TODO import iso639
+import iso639
 import isocodes  # for country annotation
-# from google.cloud.translate_v3 import TranslationServiceClient
 from google.cloud.translate_v2 import Client as TranslationClient
 import langcodes  # for language matching
 from loguru import logger
 from pydantic import Field
 
+from .exceptions import LanguageMatchError, CountryMatchError
 from .storage import FB, DocPath
 from .voice import Voice
 
 tra: TranslationClient = None
 
-def match(language: str) -> str:
-    """Get the closest matching language code ISO-639-1."""
+def _match_isocodes(language: str) -> str:
     lan = isocodes.languages.get(name=language)['alpha_2']
+    isocodes.languages.get()
     if not lan:
         lan = isocodes.languages.get(alpha_3=language)['alpha_2']
     if not lan:
@@ -25,6 +25,26 @@ def match(language: str) -> str:
     if not lan:
         raise ValueError(f"Could not find language for {language}")
     logger.debug(f"Matched {language} to {lan} using isocodes.")
+    return lan
+
+def _match_iso639(language: str) -> str:
+    lan = iso639.to_iso639_1(language)
+    if not lan:
+        lan = iso639.to_iso639_2(language)
+    if not lan:
+        raise ValueError(f"Could not find language for {language}")
+    logger.debug(f"Matched {language} to {lan} using iso639.")
+    return lan
+
+def match(language: str) -> str:
+    """Get the closest matching language code ISO-639-1."""
+    try:
+        try:
+            lan = _match_isocodes(language)
+        except (KeyError, ValueError):
+            lan = _match_iso639(language)
+    except Exception as e:
+        raise LanguageMatchError(f"Could not match language {language}") from e
     assert len(lan) in {2, 3}, f"Invalid language code: {lan}"
     return lan
 
@@ -35,6 +55,9 @@ def translate(text: str, target_bcp47: str, source_bcp47: str=None) -> str:
         logger.debug("Initializing TranslationServiceClient...")
         tra = TranslationClient()
         logger.debug("Initialized TranslationServiceClient.")
+    if target_bcp47 == source_bcp47:
+        logger.debug(f"Source and target languages are the same: {source_bcp47}")
+        return text
     logger.debug(f"Translating text to {target_bcp47}: {text}")
     res = tra.translate(text, target_language=target_bcp47, source_language=source_bcp47)
     with logger.contextualize(**res):
@@ -54,7 +77,10 @@ class Language(FB):
         logger.debug(f"Matched bcp47={bcp47} to {lang.language_name()}")
         super().__init__(**kwargs)
         self._language = lang
-        self._country: dict[str, str] = isocodes.countries.get(alpha_2=self._language.territory)
+        try:
+            self._country: dict[str, str] = isocodes.countries.get(alpha_2=self._language.territory)
+        except Exception as e:
+            raise CountryMatchError(f"Could not match country for {self._language}") from e
         self._bcp47 = self._language.to_tag()
 
     def __str__(self):
