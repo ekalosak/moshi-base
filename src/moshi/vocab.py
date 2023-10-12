@@ -1,15 +1,12 @@
-from pydantic import Field
-from .storage import FB
+from pydantic import Field, BaseModel
 
 
-# FB inherits pydantic.BaseModel
-class Vocab(FB):
-    """ Represents a vocabulary term.
-    """
+class Vocab(BaseModel):
+    """ Represents a vocabulary term. Only bcp47 and term are required.  """
     bcp47: str = Field(help="BCP-47 language code.")
-    defn: str = Field(help="Definition of the term in the source language. See self.bcp47.", default=None, alias="definition")
-    pos: str = Field(help="Part of speech.", default=None, alias="part_of_speech")
+    definition: str = Field(help="Definition of the term in the source language. See self.bcp47.", default=None, alias="defn")
+    part_of_speech: str = Field(help="Part of speech.", default=None, alias="pos")
     term: str = Field(help="As used in the source utterance.")
     translations: dict[str, 'Vocab'] = Field(help="Translation of the term. Keys are BCP-47 language codes.", default=None, alias="trs")
     root: str = Field(help="Root form of the term. Usually provided for verbs.", examples=["For 'went' it would be 'to go'."], default=None)
-    conj: str = Field(help="Conjugation of the term. Usually provided for verbs.", examples=["For 'went' it would be 'past tense'."], default=None, alias="conjugation")
+    conjugation: str = Field(help="Conjugation of the term. Usually provided for verbs.", examples=["For 'went' it would be 'past tense'."], default=None, alias="conj")

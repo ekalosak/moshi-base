@@ -1,11 +1,15 @@
 from moshi import Vocab
 
 def test_vocab_init():
-    vocab = Vocab(term="test", term_translation="test", part_of_speech="test", definition="test", definition_translation="test")
-    assert vocab.term == "test"
-    assert vocab.translations == {"term_translation": None}
-    assert vocab.pos == "test"
-    assert vocab.defn == "test"
-    assert vocab.bcp47 == None
-    assert vocab.root == None
-    assert vocab.conj == None
+    voc = Vocab(
+        term="test",
+        pos="test",
+        defn="test",
+        bcp47="en-US",
+    )
+    from pprint import pprint
+    print(voc)
+    pprint(voc.model_dump())
+    assert voc.term == "test"
+    assert voc.part_of_speech == "test"
+    assert voc.definition == "test"
