@@ -211,19 +211,19 @@ def pid2plan(pid: str, uid: str, db: Client) -> Plan:
     """ From the data in a Plan doc, determine the type of the plan and load it. """
     ds = DocPath(f'users/{uid}/plans/{pid}').to_docref(db).get()
     if not ds.exists:
-        raise KeyError(f"Plan {pid} does not exist.")
+        raise KeyError(f"Plan '{pid}' does not exist.")
     dat = ds.to_dict()
     try:
         atp = ActT(dat['atp'])
     except KeyError:
-        raise KeyError(f"Plan {pid} does not have an activity type ('atp') attribute.")
+        raise KeyError(f"Plan '{pid}' does not have an activity type ('atp') attribute.")
     except ValueError:
-        raise ValueError(f"Plan {pid} has an invalid activity type ('atp') attribute.")
+        raise ValueError(f"Plan '{pid}' has an invalid activity type ('atp') attribute.")
     try:
         P = PLAN_OF_TYPE[atp]
-        logger.debug(f"Found plan type {P} for plan {pid}.")
+        logger.debug(f"Found plan type {P} for plan '{pid}'.")
     except KeyError:
-        raise KeyError(f"Plan {pid} has an invalid activity type. Only {PLAN_OF_TYPE.keys()} are supported at the moment.")
+        raise KeyError(f"Plan '{pid}' has an invalid activity type. Only {PLAN_OF_TYPE.keys()} are supported at the moment.")
     dat['uid'] = uid
     dat['pid'] = pid
     return P(**dat)  # NOTE could use P.read() but this would incur an extra db read, so why not use the dat already here.
@@ -232,9 +232,9 @@ def plan2act(plan: Plan, db: Client) -> Act:
     """ Using the data in a Plan doc, determine the type of the activity and load it. """
     try:
         A = ACT_OF_TYPE[plan.atp]
-        logger.debug(f"Found activity type {A} for plan {plan.pid}.")
+        logger.debug(f"Found activity type {A} for plan '{plan.pid}'.")
     except KeyError:
-        raise KeyError(f"Plan {plan.pid} has an invalid activity type. Only {ACT_OF_TYPE.keys()} are supported at the moment. Got: {plan.atp}")
+        raise KeyError(f"Plan '{plan.pid}' has an invalid activity type. Only {ACT_OF_TYPE.keys()} are supported at the moment. Got: {plan.atp}")
     return A.read(A.get_docpath(plan.atp, plan.bcp47, plan.aid), db)
 
 # EOF

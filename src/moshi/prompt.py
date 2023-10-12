@@ -244,7 +244,7 @@ class Prompt(Mappable):
             logger.error(f"OpenAI unknown error: {type(e)}: {e}")
             raise e
         else:
-            logger.info("OpenAI API call succeeded.")
+            logger.debug("OpenAI API call succeeded.")
             choices = response.pop("choices")
             usage = response.pop("usage").to_dict()
             msg = None
@@ -253,8 +253,10 @@ class Prompt(Mappable):
                 msg = self._pick(choices)
                 logger.debug(f"Completion: {msg['role']:}: '{msg['content']}'")
             return Message.from_openai(msg)
-        if retry_count == 0:
+        if retry_count <= 0:
             logger.error("OpenAI API error: too many retries.")
+            if retry_count < 0:
+                logger.log("ALERT", f"Invalid retry_count={retry_count}.")
             raise CompletionError("Too many retries.")
         logger.info(f"Retrying in {backoff_sec} seconds... (retry_count={retry_count})")
         time.sleep(backoff_sec)
