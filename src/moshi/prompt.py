@@ -32,6 +32,20 @@ def _get_function(func_name: str, available_functions: list[Callable]) -> Functi
             return Function.from_callable(func)
     raise ValueError(f"Function {func_name} not found in available functions.")
 
+def _concatenate_multiline(lines: list[str]) -> list[str]:
+    """ Lines ending with the backslash character are concatenated with the next line using a newline character. """
+    if not lines:
+        return []
+    if (line := lines[0]).endswith("\\"):
+        rem = _concatenate_multiline(lines[1:])
+        if not rem:
+            raise ValueError("Line ends with '\\', but no more lines.")
+        if len(rem) > 1:
+            return [line[:-1] + '\n' + rem[0]] + rem[1:]
+        else:
+            return [line[:-1] + '\n' + rem[0]]
+    else:
+        return [line] + _concatenate_multiline(lines[1:])
 
 def _parse_lines(
     lines: list[str], available_functions: list[Callable] = []
@@ -39,6 +53,7 @@ def _parse_lines(
     """ Parse the next function or message from a list of lines. """
     if not lines:
         return []
+    lines = _concatenate_multiline(lines)
     line = lines[0]
     parts = line.split(":")
     if parts[0].strip().lower() in model.ChatM.__members__:
@@ -56,27 +71,12 @@ def _parse_lines(
     return [res] + _parse_lines(lines[1:], available_functions)
 
 
-def _concatenate_multiline(lines: list[str]) -> list[str]:
-    """ Lines ending with the backslash character are concatenated with the next line using a newline character. """
-    if not lines:
-        return []
-    if (line := lines[0]).endswith("\\"):
-        rem = _concatenate_multiline(lines[1:])
-        if not rem:
-            raise ValueError("Line ends with '\\', but no more lines.")
-        if len(rem) > 1:
-            return [line[:-1] + '\n' + rem[0]] + rem[1:]
-        else:
-            return [line[:-1] + '\n' + rem[0]]
-    else:
-        return [line] + _concatenate_multiline(lines[1:])
-
 def _load_lines(fp: Path) -> list[str]:
     """load lines that aren't commented out with '#'"""
     with open(fp, "r") as f:
         _lines = f.readlines()
     lines = []
-    for line in _concatenate_multiline(_lines):
+    for line in _lines:
         line = line.strip()
         if not line:
             continue
@@ -220,6 +220,8 @@ class Prompt(Mappable):
         """ Substitute template variables with values.
         Template variables are case- and whitespace-sensitive.
         No more than one template variable per message will be substituted.
+
+        Args are determined by the individual prompt's txt file, typically.
         """
         tvars = self.get_template_vars()
         for kwarg in kwargs:

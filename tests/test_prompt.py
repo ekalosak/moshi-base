@@ -34,6 +34,13 @@ def test_parse_lines(prompt_file: Path, get_topic: Callable, function: Function)
             assert pmsg.role == emsg.role
             assert pmsg.body == emsg.body
 
+def test_from_lines():
+    lines = ["sys: Hello\\", "world!"]
+    pro = Prompt.from_lines(lines)
+    assert pro.msgs[0].role == Role.SYS
+    assert len(pro.msgs) == 1
+    assert pro.msgs[0].body == "Hello\nworld!"
+
 def test_from_file_forgot_functions(prompt: Prompt, prompt_file: Path):
     with pytest.raises(ValueError):
         Prompt.from_file(prompt_file)
