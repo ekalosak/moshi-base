@@ -227,7 +227,7 @@ class Prompt(Mappable):
         try:
             response = openai.ChatCompletion.create(
                 model=self.model,
-                messages=[msg.to_json() for msg in self.msgs],
+                messages=[msg.to_openai() for msg in self.msgs],
                 logit_bias=logit_bias,
                 **kwargs,
             ).to_dict()
@@ -252,7 +252,7 @@ class Prompt(Mappable):
                 logger.debug(f"Total tokens: {usage['total_tokens']}")
                 msg = self._pick(choices)
                 logger.debug(f"Completion: {msg['role']:}: '{msg['content']}'")
-            return Message.from_json(msg)
+            return Message.from_openai(msg)
         if retry_count == 0:
             logger.error("OpenAI API error: too many retries.")
             raise CompletionError("Too many retries.")
