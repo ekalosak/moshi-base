@@ -4,7 +4,7 @@ from typing import Callable
 import pytest
 
 from moshi import Prompt, model, Message, Role, Function, Parameters
-from moshi.prompt import _parse_lines, _get_function, _load_lines, Prompt
+from moshi.prompt import _concatenate_multiline, _parse_lines, _get_function, _load_lines, Prompt
 from moshi import utils
 
 def test_load_lines(prompt_file: Path):
@@ -95,3 +95,40 @@ def test_translate():
     pro.translate("es-MX")
     print(f"After: {pro}")
     assert utils.similar(pro.msgs[0].body, "¡Hola Mundo!") > 0.75
+
+def test_concatenate_multiline_empty():
+    lines = []
+    assert _concatenate_multiline(lines) == []
+
+def test_concatenate_multiline_single_line():
+    lines = ["Hello, world!"]
+    assert _concatenate_multiline(lines) == ["Hello, world!"]
+
+def test_concatenate_multiline_single_line_backslash():
+    lines = ["Hello, world!\\"]
+    with pytest.raises(ValueError):
+        _concatenate_multiline(lines)
+
+def test_concatenate_multiline_multiple_lines():
+    lines = [
+        "Hello,",
+        "world!",
+    ]
+    assert _concatenate_multiline(lines) == ["Hello,",  "world!"]
+
+def test_concatenate_multiline_multiple_lines_backslash():
+    lines = [
+        "Hello,",
+        "world!\\",
+        "How are you?",
+    ]
+    assert _concatenate_multiline(lines) == ["Hello,", "world!\nHow are you?"]
+
+def test_concatenate_multiline_multiple_lines_backslash_multiple():
+    lines = [
+        "Hello,",
+        "world!\\",
+        "How are you?\\",
+        "I'm doing well, thanks for asking.",
+    ]
+    assert _concatenate_multiline(lines) == ["Hello,", "world!\nHow are you?\nI'm doing well, thanks for asking."]

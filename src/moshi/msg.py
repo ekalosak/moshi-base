@@ -8,6 +8,7 @@ from loguru import logger
 from .audio import AudioStorage
 from .log import LOG_COLORIZE
 from .storage import Mappable
+from .vocab import Vocab
 
 OPENAI_ROLES = {
     'sys': 'system',
@@ -50,7 +51,7 @@ class Message(Mappable):
     body: str
     audio: AudioStorage = None
     translation: str = None
-    vocab: list[str | dict] = None
+    vocab: list[str | dict | Vocab] = None
 
     def __init__(self, role: Role, body: str, **kwargs):
         super().__init__(role=role, body=body, **kwargs)

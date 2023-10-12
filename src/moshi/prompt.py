@@ -36,7 +36,7 @@ def _get_function(func_name: str, available_functions: list[Callable]) -> Functi
 def _parse_lines(
     lines: list[str], available_functions: list[Callable] = []
 ) -> list[Function | Message | model.ChatM]:
-    """Parse the next function or message from a list of lines."""
+    """ Parse the next function or message from a list of lines. """
     if not lines:
         return []
     line = lines[0]
@@ -56,12 +56,27 @@ def _parse_lines(
     return [res] + _parse_lines(lines[1:], available_functions)
 
 
+def _concatenate_multiline(lines: list[str]) -> list[str]:
+    """ Lines ending with the backslash character are concatenated with the next line using a newline character. """
+    if not lines:
+        return []
+    if (line := lines[0]).endswith("\\"):
+        rem = _concatenate_multiline(lines[1:])
+        if not rem:
+            raise ValueError("Line ends with '\\', but no more lines.")
+        if len(rem) > 1:
+            return [line[:-1] + '\n' + rem[0]] + rem[1:]
+        else:
+            return [line[:-1] + '\n' + rem[0]]
+    else:
+        return [line] + _concatenate_multiline(lines[1:])
+
 def _load_lines(fp: Path) -> list[str]:
     """load lines that aren't commented out with '#'"""
     with open(fp, "r") as f:
         _lines = f.readlines()
     lines = []
-    for line in _lines:
+    for line in _concatenate_multiline(_lines):
         line = line.strip()
         if not line:
             continue
