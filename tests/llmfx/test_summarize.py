@@ -27,6 +27,6 @@ CORPORA = {
 def test_summarize(bcp47: str):
     text = CORPORA[bcp47]
     msgs = [Message(Role.USR, t) for t in text.split("\n") if t]
-    summary = summarize.summarize(msgs, 5) #, bcp47)
-    print(summary)
-    assert len(summary.split(' ')) < 7, "Summary response too long."
+    summary = summarize.summarize(msgs, 5, bcp47)
+    print(f"Summary: {summary}")
+    assert len(summary) < 50, "Summary response too long."

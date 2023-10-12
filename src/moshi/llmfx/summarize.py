@@ -15,6 +15,6 @@ def summarize(msgs: list[Message], nwords: int=5, bcp47: str="en-US") -> str:
         msgs = sorted(msgs, key=lambda msg: msg.created_at)
         pro = _base_prompt()
         pro.msgs = msgs + pro.msgs
-        pro.translate(bcp47=bcp47)
         pro.template(NWORDS=nwords)
+        pro.translate(bcp47=bcp47)
         return pro.complete().body
