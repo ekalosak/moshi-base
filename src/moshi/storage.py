@@ -46,9 +46,10 @@ class DocPath:
 
 
 class Mappable(BaseModel, ABC):
+    """ Support for mapping to dicts and json. """
 
     def to_dict(self, *args, **kwargs) -> dict:
-        """ Alias for BaseModel's model_dump. """
+        """ Alias for BaseModel's model_dump. Convenience method. """
         if 'mode' in kwargs:
             logger.warning(f"mode={kwargs['mode']} will be ignored. Overriding to mode=python.")
             kwargs.pop('mode')
