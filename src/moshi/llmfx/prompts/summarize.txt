@@ -1,0 +1,2 @@
+# To use this prompt, append the conversation to the beginning of the prompt.
+sys: Summarize the conversation in {{NWORDS}} words.

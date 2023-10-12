@@ -60,3 +60,27 @@ def test_from_file(prompt: Prompt, prompt_file: Path, get_topic: Callable, get_n
         description= "Come up with a topic to talk about.",
     ).to_json()
     assert prompt.function_call == None
+
+def test_template_happy():
+    msg = Message('sys', "Hello, {{NAME}}!")
+    pro = Prompt(msgs=[msg])
+    pro.template(NAME="World")
+    assert pro.msgs[0].body == "Hello, World!"
+
+def test_template_fail_case():
+    msg = Message('sys', "Hello, {{NAME}}!")
+    pro = Prompt(msgs=[msg])
+    with pytest.raises(ValueError):
+        pro.template(name="World")
+
+def test_template_fail_whitespace():
+    msg = Message('sys', "Hello, {{ NAME }}!")
+    pro = Prompt(msgs=[msg])
+    with pytest.raises(ValueError):
+        pro.template(name="World")
+
+def test_template_fail_dne():
+    msg = Message('sys', "Hello, World!")
+    pro = Prompt(msgs=[msg])
+    with pytest.raises(ValueError):
+        pro.template(name="World")

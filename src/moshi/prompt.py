@@ -16,7 +16,7 @@ from loguru import logger
 from pydantic import field_validator, ValidationInfo
 
 from . import model
-from .exceptions import CompletionError
+from .exceptions import CompletionError, TemplateNotSubstitutedError
 from .func import FuncCall, Function
 from .msg import Message, Role, MOSHI_ROLES
 from .storage import Mappable
@@ -184,6 +184,39 @@ class Prompt(Mappable):
                     chosen_msg = msg
         return chosen_msg
 
+
+    def get_template_vars(self) -> list[str] | None:
+        """ Return the list of template variables that haven't been substituted.
+        Template variables are contained in 'sys' messages in the format: {{ MY_VAR }}
+        """
+        template_variables = []
+        msg: Message
+        for msg in self.msgs:
+            if msg.role == Role.SYS:
+                if "{{" in msg.body and "}}" in msg.body:
+                    template_var = msg.body.split("{{")[1].split("}}")[0].strip()
+                    template_variables.append(template_var)
+        return template_variables
+
+
+    def template(self, **kwargs):
+        """ Substitute template variables with values. Template variables are case- and whitespace-sensitive.
+        """
+        tvars = self.get_template_vars()
+        for kwarg in kwargs:
+            if kwarg not in tvars:
+                raise ValueError(f"Invalid template variable: {kwarg}")
+        for tvar in tvars:
+            if tvar not in kwargs:
+                raise ValueError(f"Missing template variable: {tvar}")
+        for msg in self.msgs:
+            if msg.role == Role.SYS:
+                if "{{" in msg.body and "}}" in msg.body:
+                    template_var = msg.body.split("{{")[1].split("}}")[0].strip()
+                    msg.body = msg.body.replace("{{" + template_var + "}}", kwargs[template_var])
+        assert not self.get_template_vars(), "Not all template variables were substituted."
+        logger.debug("Template substitution complete.")
+
     def complete(
         self, vocab: list[str] = [], retry_count=3, backoff_sec=5, check_user: bool = True, **kwargs
     ) -> Message | None:
@@ -206,6 +239,8 @@ class Prompt(Mappable):
                 - best_of
                 - and so on: https://platform.openai.com/docs/api-reference/chat/create
         """
+        if remaining_template := self.has_template():
+            raise TemplateNotSubstitutedError(f"Template not substituted: {remaining_template}")
         kwargs["n"] = kwargs.get("n", 1)
         kwargs["max_tokens"] = kwargs.get("max_tokens", 128)
         kwargs["stop"] = kwargs.get("stop", ["\n"])  # , '?', '!', '。'])

@@ -17,3 +17,9 @@ class CountryMatchError(Exception):
     """Raised when a country match fails."""
 
     ...
+
+
+class TemplateNotSubstitutedError(Exception):
+    """Raised when a template is not substituted."""
+
+    ...
