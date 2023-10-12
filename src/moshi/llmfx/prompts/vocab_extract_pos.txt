@@ -7,6 +7,6 @@ Hola; interjection\
 soy; verb\
 de; preposition\
 Mexico; noun
-# sys: Split this utterance into vocabulary terms: "Hello, my name is George."
-sys: Split this utterance into vocabulary terms: {{UTT}}
-sys: Respond only with the list.
+# sys: Split this utterance into parts of speech: "Hello, my name is George."
+sys: Split this utterance into vocabulary terms: "{{UTT}}"
+sys: Respond only with the list, formatted as in the example.
