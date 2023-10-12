@@ -43,6 +43,8 @@ Repository = "https://github.com/ekalosak/moshi-base.git"
 markers = [
   "slow: runs more than a second or two to run",
   "fb: requires an emulated firebase instance to run",
+  "openai: requires openai api key to run",
+  "gcp: requires google cloud credentials to run",
 ]
 addopts = [
   "--cov=moshi"

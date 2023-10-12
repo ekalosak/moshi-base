@@ -18,6 +18,7 @@ from pydantic import field_validator, ValidationInfo
 from . import model
 from .exceptions import CompletionError, TemplateNotSubstitutedError
 from .func import FuncCall, Function
+from .language import Language
 from .msg import Message, Role, MOSHI_ROLES
 from .storage import Mappable
 
@@ -79,6 +80,7 @@ class Prompt(Mappable):
     functions: list[Function] = None
     function_call: FuncCall = None
     mod: model.ChatM = model.ChatM.GPT35TURBO
+    bcp47: str = "en-US"
 
     @field_validator("msgs", mode='before')
     def coerce_string_msgs(cls, v):
@@ -200,20 +202,22 @@ class Prompt(Mappable):
 
 
     def template(self, **kwargs):
-        """ Substitute template variables with values. Template variables are case- and whitespace-sensitive.
+        """ Substitute template variables with values.
+        Template variables are case- and whitespace-sensitive.
+        No more than one template variable per message will be substituted.
         """
         tvars = self.get_template_vars()
         for kwarg in kwargs:
             if kwarg not in tvars:
-                raise ValueError(f"Invalid template variable: {kwarg}")
+                raise ValueError(f"Invalid template variable: {kwarg}. Valid variables: {tvars}.")
         for tvar in tvars:
             if tvar not in kwargs:
-                raise ValueError(f"Missing template variable: {tvar}")
+                raise ValueError(f"Missing template variable: {tvar}. Required variables: {tvars}. Received: {kwargs}.")
         for msg in self.msgs:
             if msg.role == Role.SYS:
                 if "{{" in msg.body and "}}" in msg.body:
                     template_var = msg.body.split("{{")[1].split("}}")[0].strip()
-                    msg.body = msg.body.replace("{{" + template_var + "}}", kwargs[template_var])
+                    msg.body = msg.body.replace("{{" + template_var + "}}", str(kwargs[template_var]))
         assert not self.get_template_vars(), "Not all template variables were substituted."
         logger.debug("Template substitution complete.")
 
@@ -239,7 +243,7 @@ class Prompt(Mappable):
                 - best_of
                 - and so on: https://platform.openai.com/docs/api-reference/chat/create
         """
-        if remaining_template := self.has_template():
+        if remaining_template := self.get_template_vars():
             raise TemplateNotSubstitutedError(f"Template not substituted: {remaining_template}")
         kwargs["n"] = kwargs.get("n", 1)
         kwargs["max_tokens"] = kwargs.get("max_tokens", 128)
@@ -302,3 +306,14 @@ class Prompt(Mappable):
             check_user=check_user,
             **kwargs,
         )
+
+    def translate(self, bcp47: str) -> None:
+        """ Translate the prompt contents into the target language. """
+        if self.bcp47 == bcp47:
+            logger.debug(f"Prompt already in {bcp47}.")
+            return
+        lang = Language(bcp47)
+        for msg in self.msgs:
+            logger.debug(f"Translating message: {msg.body}")
+            msg.body = lang.translate(msg.body, source_bcp47=self.bcp47)
+            logger.debug(f"Translated message: {msg.body}")

@@ -5,6 +5,7 @@ import pytest
 
 from moshi import Prompt, model, Message, Role, Function, Parameters
 from moshi.prompt import _parse_lines, _get_function, _load_lines, Prompt
+from moshi import utils
 
 def test_load_lines(prompt_file: Path):
     lines = _load_lines(prompt_file)
@@ -61,11 +62,12 @@ def test_from_file(prompt: Prompt, prompt_file: Path, get_topic: Callable, get_n
     ).to_json()
     assert prompt.function_call == None
 
-def test_template_happy():
+@pytest.mark.parametrize('pld', ["World", 123])
+def test_template_happy(pld: str):
     msg = Message('sys', "Hello, {{NAME}}!")
     pro = Prompt(msgs=[msg])
-    pro.template(NAME="World")
-    assert pro.msgs[0].body == "Hello, World!"
+    pro.template(NAME=pld)
+    assert pro.msgs[0].body == f"Hello, {pld}!"
 
 def test_template_fail_case():
     msg = Message('sys', "Hello, {{NAME}}!")
@@ -84,3 +86,12 @@ def test_template_fail_dne():
     pro = Prompt(msgs=[msg])
     with pytest.raises(ValueError):
         pro.template(name="World")
+
+@pytest.mark.gcp
+def test_translate():
+    msg = Message('sys', "Hello, World!")
+    pro = Prompt(msgs=[msg])
+    print(f"Before: {pro}")
+    pro.translate("es-MX")
+    print(f"After: {pro}")
+    assert utils.similar(pro.msgs[0].body, "¡Hola Mundo!") > 0.75
