@@ -47,7 +47,7 @@ def _extract_pos(msg: str, retry=3) -> list[Vocab]:
     return vocs
 
 def _extract_defn(vocs: list[Vocab], retry=1):
-    """ Get the brief definitions of the vocab terms.
+    """ Get the brief definitions of the vocab terms. Modifies the vocs in place.
     Args:
         vocs (list[Vocab]): The vocabulary terms to get definitions for.
     """
@@ -75,15 +75,32 @@ def _extract_defn(vocs: list[Vocab], retry=1):
             return _extract_defn(vocs, retry=retry-1)
         else:
             raise exc
-    return vocs
 
 
-def _extract_detail(voc: Vocab) -> str:
-    """ Get more information on the vocabulary term. """
+def _extract_detail(voc: Vocab):
+    """ Get more information on the vocabulary term. Modifies the voc in place. """
     msgs = [
         Message('sys', f'Define the term "{voc.term}".'),
-        Message('sys', f'Respond in {voc.bcp47}.'),
-        Message('sys', f'Do not include "{voc.bcp47}" in the response.'),
+        Message('sys', f'Respond in {voc.lang}.'),
     ]
     pro = Prompt(msgs=msgs)
-    return pro.complete().body
+    voc.detail = pro.complete().body
+
+def _extract_verb_root(vocs: list[Vocab]):
+    """ Get the root forms of verbs. Modifies the vocs in place. """
+    pro = Prompt.from_file(ROOT_PROMPT_FILE)
+    verbs = [v for v in vocs if v.pos == "verb"]
+    if not verbs:
+        logger.debug("No verbs found.")
+        return
+    msg = Message('usr', ", ".join([v.term for v in verbs]))
+    pro.msgs.append(msg)
+    _vocs = pro.complete().body.split(", ")
+    if len(_vocs) != len(verbs):
+        raise VocabParseError(f"Completion returned different number of terms: {verbs} -> {_vocs}")
+    for verb, root in zip(verbs, _vocs):
+        verb.root = root
+
+
+def _extract_verb_conjugation(voc: Vocab):
+    ...

@@ -1,0 +1,4 @@
+# Get the root form of a verb
+sys: Respond with the root forms of the verbs provided.
+sys: For example, if provided "fue, estaba", respond with "ir, estar".
+sys: Respond only wiht the comma-separated list of root forms.

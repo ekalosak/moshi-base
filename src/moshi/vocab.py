@@ -1,3 +1,5 @@
+from functools import cached_property
+
 from pydantic import Field, BaseModel
 
 from moshi.language import Language
@@ -11,8 +13,9 @@ class Vocab(BaseModel):
     trs: dict[str, 'Vocab'] = Field(help="Translation of the term. Keys are BCP-47 language codes.", default=None)
     root: str = Field(help="Root form of the term. Usually provided for verbs.", examples=["For 'went' it would be 'to go'."], default=None)
     conj: str = Field(help="Conjugation of the term. Usually provided for verbs.", examples=["For 'went' it would be 'past tense'."], default=None)
+    detail: str = Field(help="Additional details about the term.", default=None)
 
-    @property
+    @cached_property
     def lang(self) -> Language:
         """ The language of the term. """
         return Language(self.bcp47)

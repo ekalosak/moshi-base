@@ -26,7 +26,15 @@ def test_vocab_extract_defn():
         Vocab(term="went", bcp47="en-us"),
     ]
     pprint(vocs)
-    vocs_df = vocab._extract_defn(vocs=vocs)
-    pprint(vocs_df)
-    assert all([isinstance(v, Vocab) for v in vocs_df])
-    assert len(vocs_df) == len(vocs)
+    vocab._extract_defn(vocs=vocs)
+    pprint(vocs)
+    for v in vocs:
+        assert v.defn is not None
+
+@pytest.mark.openai
+def test_vocab_extract_detail():
+    voc = Vocab(term="volcán", bcp47="es-MS")
+    assert voc.detail is None
+    vocab._extract_detail(voc)
+    print(voc)
+    assert voc.detail is not None
