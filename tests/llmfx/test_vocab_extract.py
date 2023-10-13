@@ -1,4 +1,5 @@
 from pprint import pprint
+import time
 
 import pytest
 
@@ -8,6 +9,28 @@ from moshi.llmfx import vocab
 @pytest.mark.parametrize('pf', vocab.PROMPT_FILES)
 def test_parse_prompt(pf):
     pro = Prompt.from_file(pf)
+
+@pytest.mark.openai
+def test_extract():
+    msg = "私は行った"
+    bcp47 = "ja-JP"
+    t0 = time.time()
+    vocs = vocab.extract(msg, bcp47=bcp47, detail=False)
+    print(f"Extracted {len(vocs)} vocab terms in {time.time()-t0:.2f} seconds.")
+    pprint(vocs)
+    assert len(vocs) == 3
+    assert vocs[0].term == "私"
+    assert vocs[0].pos == "pronoun"
+    got_verb = False
+    for v in vocs:
+        assert v.defn is not None
+        assert v.pos is not None
+        if v.pos == "verb":
+            assert not got_verb, "Only one verb should be extracted from the message '私は行った'."
+            got_verb = True
+            assert v.root is not None
+            assert v.conju is not None
+    assert got_verb, "No verb was extracted from the message '私は行った', expected precisely one: '行く'."
 
 @pytest.mark.parametrize("msg", ["I went to the store."])
 @pytest.mark.openai
