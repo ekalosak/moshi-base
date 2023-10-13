@@ -44,6 +44,7 @@ def _extract_pos(msg: str, retry=3) -> list[Vocab]:
             return _extract_pos(msg, retry=retry-1)
         else:
             raise exc
+    logger.success(f"Extracted parts of speech: {vocs}")
     return vocs
 
 def _extract_defn(vocs: list[Vocab], retry=1):
@@ -75,6 +76,7 @@ def _extract_defn(vocs: list[Vocab], retry=1):
             return _extract_defn(vocs, retry=retry-1)
         else:
             raise exc
+    logger.success(f"Extracted definitions: {vocs}")
 
 
 def _extract_detail(voc: Vocab):
@@ -85,6 +87,7 @@ def _extract_detail(voc: Vocab):
     ]
     pro = Prompt(msgs=msgs)
     voc.detail = pro.complete().body
+    logger.success(f"Extracted detail: {voc}")
 
 def _extract_verb_root(vocs: list[Vocab]):
     """ Get the root forms of verbs. Modifies the vocs in place. """
@@ -100,7 +103,31 @@ def _extract_verb_root(vocs: list[Vocab]):
         raise VocabParseError(f"Completion returned different number of terms: {verbs} -> {_vocs}")
     for verb, root in zip(verbs, _vocs):
         verb.root = root
+    logger.success(f"Extracted verb roots: {verbs}")
 
 
-def _extract_verb_conjugation(voc: Vocab):
-    ...
+def _extract_verb_conjugation(vocs: list[Vocab]):
+    """ Get the conjugations of verbs. Modifies the vocs in place. """
+    pro = Prompt.from_file(CONJ_PROMPT_FILE)
+    verbs = [v for v in vocs if v.pos == "verb"]
+    if not verbs:
+        logger.debug("No verbs found.")
+        return
+    msg = Message('usr', ", ".join([v.term for v in verbs]))
+    pro.msgs.append(msg)
+    _vocs = pro.complete().body.split(", ")
+    if len(_vocs) != len(verbs):
+        raise VocabParseError(f"Completion returned different number of terms: {verbs} -> {_vocs}")
+    for verb, con in zip(verbs, _vocs):
+        verb.conju = con
+    logger.success(f"Extracted verb conjugations: {verbs}")
+
+def extract(msg: str) -> list[Vocab]:
+    """ Extract vocabulary terms from a message. This is the main entrypoint. It calls all the other functions in this module, each of which is responsible for extracting a different piece of information via OpenAI's API. As such, this function may take a while to run and should not be called as a blocking part of the session. """
+    vocs = _extract_pos(msg)
+    _extract_defn(vocs)
+    _extract_verb_root(vocs)
+    _extract_verb_conjugation(vocs)
+    for voc in vocs:
+        _extract_detail(voc)
+    return vocs

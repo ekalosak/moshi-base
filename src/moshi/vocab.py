@@ -12,7 +12,7 @@ class Vocab(BaseModel):
     term: str = Field(help="As used in the source utterance.")
     trs: dict[str, 'Vocab'] = Field(help="Translation of the term. Keys are BCP-47 language codes.", default=None)
     root: str = Field(help="Root form of the term. Usually provided for verbs.", examples=["For 'went' it would be 'to go'."], default=None)
-    conj: str = Field(help="Conjugation of the term. Usually provided for verbs.", examples=["For 'went' it would be 'past tense'."], default=None)
+    conju: str = Field(help="Conjugation of the term. Usually provided for verbs.", examples=["For 'went' it would be 'past tense'."], default=None)
     detail: str = Field(help="Additional details about the term.", default=None)
 
     @cached_property

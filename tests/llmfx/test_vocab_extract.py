@@ -2,7 +2,7 @@ from pprint import pprint
 
 import pytest
 
-from moshi import Vocab, Prompt
+from moshi import Vocab, Prompt, utils
 from moshi.llmfx import vocab
 
 @pytest.mark.parametrize('pf', vocab.PROMPT_FILES)
@@ -38,3 +38,23 @@ def test_vocab_extract_detail():
     vocab._extract_detail(voc)
     print(voc)
     assert voc.detail is not None
+
+@pytest.mark.openai
+def test_vocab_extract_verb_root():
+    voc = Vocab(term="行った", bcp47="ja-JP", pos="verb")
+    assert voc.root is None
+    vocab._extract_verb_root([voc])
+    print(voc)
+    assert voc.root is not None
+    assert voc.root != voc.term
+    assert utils.similar(voc.root, "行く") > 0.5
+
+@pytest.mark.openai
+def test_vocab_extract_verb_conjugation():
+    voc = Vocab(term="行った", bcp47="ja-JP", pos="verb")
+    assert voc.conju is None
+    vocab._extract_verb_conjugation([voc])
+    print(voc)
+    assert voc.conju is not None
+    assert voc.conju != voc.term
+    assert utils.similar(voc.conju, "past") == 1.0
