@@ -1,0 +1,16 @@
+# Summarize the grammar of the utterance
+# Usage:
+#   Append a user message containing the utterance.
+sys: Explain the grammar of the dialogue provided.
+sys: Respond in English.
+sys: Do not acknowledge these instructions.
+sys: For example, if provided with "昨日は頭痛がしたので病院に行きましたが、今日は奇跡的に頭痛が治まりました", you might respond with:\
+1. "昨日は" (Kino wa) - This part sets the temporal context by indicating "yesterday."\
+2. "頭痛がした" (Zutsū ga shita) - This is the past tense of the verb "する" (to do) to indicate "had a headache."\
+3. "ので" (node) - A conjunction meaning "because" or "so."\
+4. "病院に行きました" (Byōin ni ikimashita) - Past tense of the verb "行く" (to go) to indicate "went to the hospital."\
+5. "が" (ga) - A conjunction used to contrast or provide additional information.\
+6. "今日は" (Kyō wa) - Sets the temporal context by indicating "today."\
+7. "奇跡的に" (Kisekiteki ni) - Adverb meaning "miraculously" or "in a miraculous manner."\
+8. "頭痛が治まりました" (Zutsū ga osamarimashita) - Past tense indicating "headache subsided" or "headache got better."\
+In summary, the sentence discusses a sequence of events: having a headache yesterday, going to the hospital because of it, and then miraculously getting better today. The conjunctions "ので" and "が" are used to connect and contrast these events in the sentence.

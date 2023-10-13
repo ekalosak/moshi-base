@@ -52,6 +52,7 @@ class Message(Mappable):
     audio: AudioStorage = None
     translation: str = None
     vocab: list[str | dict | Vocab] = None
+    grammar: str = None
 
     def __init__(self, role: Role, body: str, **kwargs):
         super().__init__(role=role, body=body, **kwargs)
