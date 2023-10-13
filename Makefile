@@ -68,7 +68,7 @@ test: test-unit test-integration
 test-unit:
 	@echo "🧪🖐 Running unit tests..."
 	ENV='dev' LOG_LEVEL='DETAIL' LOG_FORMAT='rich' \
-		pytest --disable-warnings -m 'not fb'
+		pytest --disable-warnings -m 'not fb and not openai'
 	@echo "🧪✊✅ Tests passed."
 
 test-integration:
@@ -77,7 +77,7 @@ test-integration:
 	ENV='dev' LOG_LEVEL='DETAIL' LOG_FORMAT='rich' \
 		GCLOUD_PROJECT='demo-test' \
 		FIRESTORE_EMULATOR_HOST='localhost:8090' \
-		pytest --disable-warnings -m 'fb'
+		pytest --disable-warnings -m 'fb or openai'
 	@echo "🧪🤝✅ Integration tests passed."
 
 
