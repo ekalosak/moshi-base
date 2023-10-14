@@ -204,7 +204,7 @@ def extract_verb_conjugation(verbs: list[str]) -> dict[str, str]:
     return cons
 
 @traced
-def extract_all(msg: str, bcp47: str, detail: bool=False) -> list[dict[str, dict]]:
+def extract_all(msg: str, bcp47: str, detail: bool=False) -> dict[str, dict]:
     """ Extract vocabulary terms from a message. This sequences a number of OpenAI API requests proportional to the number of vocab terms in the message. This is a convenience function that calls the other extract functions in this module.
     Args:
         msg (str): The message to extract vocabulary from.

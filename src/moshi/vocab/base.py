@@ -30,7 +30,13 @@ class Level(Enum):
     EX = 'expert'
 
 class Vocab(BaseModel):
-    """ Represents a vocabulary term. """
+    """ Represents a vocabulary term.
+    Args:
+        term (str): The term itself.
+        bcp47 (str): The BCP-47 language code of the term.
+    Properties:
+        lang (moshi.language.Language): The language of the term.
+    """
     bcp47: str = Field(help="BCP-47 language code.")
     term: str = Field(help="As used in the source utterance.")
 

@@ -1,6 +1,6 @@
 from .__version__ import __version__
-from .audio import AudioStorage
 from .activ import Act, ActT, Plan, ACT_OF_TYPE, PLAN_OF_TYPE, plan2act, pid2plan, MinA, MinPl, UnstrA, UnstrPl
+from .audio import AudioStorage
 from .func import PType, Property, Parameters, Function, FuncCall
 from .language import Language
 from .log import setup_loguru, failed, traced
@@ -10,4 +10,4 @@ from .prompt import Prompt
 from .transcript import Transcript
 from .user import User
 from .utils import confirm, random_string, jsonify
-from .vocab import Vocab
+from .vocab import Vocab, MsgV, CurricV, UsageV
