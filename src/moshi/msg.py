@@ -2,13 +2,13 @@
 from datetime import datetime
 from enum import Enum
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from loguru import logger
 
 from .audio import AudioStorage
 from .log import LOG_COLORIZE
 from .storage import Mappable
-from .vocab import Vocab
+from .vocab import MsgV
 
 OPENAI_ROLES = {
     'sys': 'system',
@@ -51,8 +51,23 @@ class Message(Mappable):
     body: str
     audio: AudioStorage = None
     translation: str = None
-    vocab: list[str | dict | Vocab] = None
+    vocab: list[str | dict | MsgV] = None
     grammar: str = None
+
+    @field_validator('vocab', mode='after')
+    def coerce_vocab(cls, v):
+        """ Coerce vocab to a list of MsgV. """
+        if not v:
+            return v
+        v0 = v[0]
+        if isinstance(v0, str):
+            return [MsgV(term=term) for term in v]
+        elif isinstance(v0, dict):
+            return [MsgV(**term) for term in v]
+        elif isinstance(v0, MsgV):
+            return v
+        else:
+            raise ValueError(f"Cannot coerce {v0} to MsgV.")
 
     def __init__(self, role: Role, body: str, **kwargs):
         super().__init__(role=role, body=body, **kwargs)

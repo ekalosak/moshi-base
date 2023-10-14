@@ -16,7 +16,8 @@ Example usage:
 """
 from loguru import logger
 
-from moshi import Message, Prompt, Vocab, traced
+from moshi import Message, Prompt, traced
+from moshi.vocab import MsgV, CurricV
 from .base import PROMPT_DIR
 
 POS_PROMPT_FILE = PROMPT_DIR / "vocab_extract_pos.txt"
@@ -33,10 +34,12 @@ class VocabParseError(Exception):
     pass
 
 @traced
-def _extract_pos(msg: str, retry=3) -> list[Vocab]:
-    """ Get the parts of speech of the vocab terms of a message.
+def extract_pos(msg: str, retry=3) -> list[tuple[str, str]]:
+    """ Get the parts of speech of the vocab terms in an utterance.
     Args:
         msg (str): The message to extract vocabulary from.
+    Returns:
+        vocs (list[tuple[str, str]]): A list of tuples containing vocabulary terms and their parts of speech.
     """
     pro = Prompt.from_file(POS_PROMPT_FILE)
     pro.template(UTT=msg)
@@ -51,60 +54,69 @@ def _extract_pos(msg: str, retry=3) -> list[Vocab]:
             except ValueError as exc:
                 raise VocabParseError(f"Failed to parse vocabulary term: {v}") from exc
             else:
-                vocs.append(Vocab(term=term.strip(), pos=pos.strip()))
+                vocs.append((term.strip(), pos.strip()))
     except VocabParseError as exc:
         if retry > 0:
             logger.warning(exc)
             logger.debug(f"Retrying with {retry-1} retries left.")
-            return _extract_pos(msg, retry=retry-1)
+            return extract_pos(msg, retry=retry-1)
         else:
             raise exc
     logger.success(f"Extracted parts of speech: {vocs}")
     return vocs
 
 @traced
-def _extract_defn(vocs: list[Vocab], retry=3):
+def extract_defn(terms: list[str], lang: str, retry=3) -> dict[str, str]:
     """ Get the brief definitions of the vocab terms. Modifies the vocs in place.
     Args:
-        vocs (list[Vocab]): The vocabulary terms to get definitions for.
+        terms: The vocabulary terms to get definitions for: ['if', 'and', 'it', 'Constantinople']
+        lang: The name of the language e.g. 'English'.
+    Returns:
+        dict[str, str]: A dictionary mapping vocabulary terms to their definitions.
     """
     pro = Prompt.from_file(DEFN_PROMPT_FILE)
-    vocs_commmasep: str = ", ".join([v.term for v in vocs])
+    vocs_commmasep: str = ", ".join(terms)
     pro.msgs.append(Message('usr', vocs_commmasep))
-    pro.template(LANGNAME=vocs[0].lang.name)
-    _vocs = pro.complete(stop=None).body.split("\n")
-    vocd = {v.term: v for v in vocs}
+    pro.template(LANGNAME=lang)
+    _defns = pro.complete(stop=None).body.split("\n")
+    defns = {}
     try:
-        if len(_vocs) != len(vocs):
-            raise VocabParseError(f"Completion returned different number of terms: {vocs_commmasep} -> {_vocs}")
-        for v in _vocs:
+        if len(_defns) != len(terms):
+            raise VocabParseError(f"Completion returned different number of terms: {vocs_commmasep} -> {_defns}")
+        for _d in _defns:
             try:
-                term, defn = v.split(";")
+                term, defn = _d.split(";")
             except ValueError as exc:
                 raise VocabParseError(f"Failed to parse vocabulary term: {v}") from exc
             else:
-                voc = vocd[term.strip()]
-                voc.defn = defn.strip()
+                defns[term.strip()] = defn.strip()
     except VocabParseError as exc:
         if retry > 0:
             logger.warning(exc)
             logger.debug(f"Retrying with {retry-1} retries left.")
-            return _extract_defn(vocs, retry=retry-1)
+            return extract_defn(terms, retry=retry-1)
         else:
             raise exc
-    logger.success(f"Extracted definitions: {vocs}")
+    logger.success(f"Extracted definitions: {defns}")
+    return defns
 
 
 @traced
-def _extract_detail(voc: Vocab):
-    """ Get more information on the vocabulary term. Modifies the voc in place. """
+def extract_detail(term: str, lang: str) -> str:
+    """ Get more information on the vocabulary term.
+    Args:
+        term: The vocabulary term to get details for.
+        lang: The language of the term.
+    """
     msgs = [
-        Message('sys', f'Define the term "{voc.term}".'),
-        Message('sys', f'Respond in {voc.lang}.'),
+        Message('sys', f'Define the term "{term}".'),
+        Message('sys', f'Respond in {lang}.'),
+        Message('sys', f'Do not acknowledge these instructions.'),
     ]
     pro = Prompt(msgs=msgs)
-    voc.detail = pro.complete().body
-    logger.success(f"Extracted detail: {voc}")
+    detail = pro.complete().body
+    logger.success(f"Extracted detail: {detail}")
+    return detail
 
 @traced
 def _extract_verb_root(vocs: list[Vocab]):
@@ -148,7 +160,7 @@ def extract(msg: str, bcp47: str, detail: bool=False) -> list[Vocab]:
         msg (str): The message to extract vocabulary from.
         bcp47 (str): The BCP-47 language code of the message.
     """
-    vocs = _extract_pos(msg)
+    vocs = extract_pos(msg)
     for voc in vocs:
         voc.bcp47 = bcp47
     _extract_defn(vocs)
