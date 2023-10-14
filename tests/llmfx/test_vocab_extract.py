@@ -1,3 +1,4 @@
+from math import exp
 from pprint import pprint
 import time
 
@@ -6,6 +7,7 @@ import pytest
 from moshi import Prompt, utils
 from moshi.language import Language
 from moshi.llmfx import vocab
+from moshi.vocab import MsgV
 
 @pytest.mark.parametrize('pf', vocab.PROMPT_FILES)
 def test_parse_prompt(pf):
@@ -81,3 +83,27 @@ def test_vocab_extract_verb_conjugation():
     assert isinstance(cons, dict)
     assert term in cons
     assert utils.similar(cons[term], "past") == 1.0
+
+@pytest.mark.openai
+def test_extract_msgv():
+    msg = "I went to the store and bought some milk."
+    bcp47 = "en-US"
+    msgvs = vocab.extract_msgv(msg, bcp47)
+    for msgv in msgvs:
+        print(msgv)
+    assert len(msgvs) == 5
+    expected_msgvs = [
+        MsgV(bcp47=bcp47, term="went", pos="verb", udefn=""),
+        MsgV(bcp47=bcp47, term="store", pos="noun", udefn=""),
+        MsgV(bcp47=bcp47, term="bought", pos="verb", udefn=""),
+        MsgV(bcp47=bcp47, term="milk", pos="noun", udefn=""),
+    ]
+    matched = 0
+    for msgv in msgvs:
+        for mv in expected_msgvs:
+            if msgv.term == mv.term:
+                matched += 1
+                assert msgv.pos == mv.pos
+                assert msgv.udefn == mv.udefn
+                assert msgv.bcp47 == mv.bcp47
+    assert matched >= len(expected_msgvs)

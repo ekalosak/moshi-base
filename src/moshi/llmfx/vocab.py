@@ -73,7 +73,7 @@ def extract_pos(msg: str, retry=3) -> dict[str, str]:
                 result[term] += f", {pos}"
         else:
             result[term] = pos
-    return poss
+    return result
 
 @traced
 def extract_defn(terms: list[str], lang: str, retry=3) -> dict[str, str]:
@@ -245,4 +245,4 @@ def extract_msgv(msg: str, bcp47: str) -> list[MsgV]:
     for term in poss:
         if term not in udefns:
             udefns[term] = ""
-    return [MsgV(term=term, pos=pos, udefn=udefns[term]) for term, pos in poss.items()]
+    return [MsgV(bcp47=bcp47, term=term, pos=pos, udefn=udefns[term]) for term, pos in poss.items()]
