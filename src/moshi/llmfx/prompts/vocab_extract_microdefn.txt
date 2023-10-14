@@ -1,0 +1,13 @@
+# Get a very short definition of each term
+# Template variables:
+#   LANGNAME: The name of the language to use for the definitions.
+# Usage:
+#   Append a single usr message with the comma separated terms to the prompt.msgs list.
+sys: For each term, return a tiny definition of no more than a few words.
+sys: For example, when the user provides "Hola, soy de Mexico", the system should return:\
+Hola; manera amigable para comenzar\
+soy; expresar la identidad o estado actual\
+de; indicar una relación\
+Mexico; un país en América del Norte
+sys: Respond only with the list, formatted as in the example.
+sys: Respond in {{LANGNAME}}.
