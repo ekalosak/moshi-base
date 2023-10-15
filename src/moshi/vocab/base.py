@@ -14,7 +14,7 @@ class Vocab(BaseModel):
     Properties:
         lang (moshi.language.Language): The language of the term.
     """
-    bcp47: str = Field(help="BCP-47 language code.")
+    bcp47: str = Field(help="BCP-47 language code.", default=None)
     term: str = Field(help="As used in the source utterance.")
 
     @cached_property

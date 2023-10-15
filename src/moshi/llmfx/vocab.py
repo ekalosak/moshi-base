@@ -104,7 +104,7 @@ def extract_defn(terms: list[str], lang: str, retry=3) -> dict[str, str]:
         if retry > 0:
             logger.warning(exc)
             logger.debug(f"Retrying with {retry-1} retries left.")
-            return extract_defn(terms, retry=retry-1)
+            return extract_defn(terms, lang, retry=retry-1)
         else:
             raise exc
     logger.success(f"Extracted definitions: {defns}")

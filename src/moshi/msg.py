@@ -51,23 +51,8 @@ class Message(Mappable):
     body: str
     audio: AudioStorage = None
     translation: str = None
-    vocab: list[str | dict | MsgV] = None
+    vocab: dict[str, dict[str, str]] = None
     grammar: str = None
-
-    @field_validator('vocab', mode='after')
-    def coerce_vocab(cls, v):
-        """ Coerce vocab to a list of MsgV. """
-        if not v:
-            return v
-        v0 = v[0]
-        if isinstance(v0, str):
-            return [MsgV(term=term) for term in v]
-        elif isinstance(v0, dict):
-            return [MsgV(**term) for term in v]
-        elif isinstance(v0, MsgV):
-            return v
-        else:
-            raise ValueError(f"Cannot coerce {v0} to MsgV.")
 
     def __init__(self, role: Role, body: str, **kwargs):
         super().__init__(role=role, body=body, **kwargs)
@@ -81,6 +66,11 @@ class Message(Mappable):
             color_end = ROLE_COLORS['reset']
             res = f"{color_start}{res}{color_end}"
         return res
+
+    @property
+    def mvs(self) -> list[MsgV]:
+        """ Get the MsgV values for the message's vocab. """
+        return [MsgV(term=k, **v) for k, v in self.vocab.items()]
 
     @classmethod
     def from_string(cls, body: str, role: Role=Role.USR):
