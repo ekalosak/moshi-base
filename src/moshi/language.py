@@ -7,7 +7,7 @@ import isocodes  # for country annotation
 from google.cloud.translate_v2 import Client as TranslationClient
 import langcodes  # for language matching
 from loguru import logger
-from pydantic import Field
+from pydantic import Field, field_validator, ValidationInfo
 
 from .exceptions import LanguageMatchError, CountryMatchError
 from .storage import FB, DocPath
@@ -69,10 +69,9 @@ class Language(FB):
     _language: langcodes.Language
     _country: dict[str, str]
     _bcp47: str
-    meta: dict[str, str | bool] = Field(help="Metadata about the language.", default_factory=dict)
-    voices: list[Voice] = Field(help="Voices supported by this language.", default_factory=list)
+    voices: list[Voice] = Field(help="Voices supported by this language.", default=None)
 
-    def __init__(self, bcp47: str, **kwargs):
+    def __init__(self, bcp47: str, use_default_voice: bool=False, **kwargs):
         lang: langcodes.Language = langcodes.Language.get(bcp47.strip())
         logger.debug(f"Matched bcp47={bcp47} to {lang.language_name()}")
         super().__init__(**kwargs)
@@ -82,10 +81,15 @@ class Language(FB):
         except Exception as e:
             raise CountryMatchError(f"Could not match country for {self._language}") from e
         self._bcp47 = self._language.to_tag()
+        if not self.voices and use_default_voice:
+            default_voice = Voice(model=f"{self._bcp47}-Standard-A")
+            logger.debug(f"Using default voice: {default_voice}")
+            self.voices = [default_voice]
 
     def __str__(self):
         res = f"{self.name} ({self.bcp47})"
         return f"L<{res}>"
+
 
     @property
     def docpath(self) -> DocPath:

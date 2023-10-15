@@ -9,10 +9,9 @@ class Voice(Versioned):
     """ A voice supported by Google's Text-to-Speech API. """
     bcp47: str=Field(examples=["af-ZA"])  # af-ZA  /config/voices doc -> af-ZA key -> af-ZA-Standard-A key -> data dict[str, str]
     model: str=Field(help="GCP TTS Voice model name", examples=["af-ZS-Standard-A"])  # af-ZS-Standard-A  data['model']
-    language_name: str=Field(None, help="Language name", examples=["Afrikaans"])  # Afrikaans  data['language_name']
     gender: Literal[0, 1, 2] = Field(help="SSML Gender of the Google Cloud TTS Voice model, 1 is male 2 is female. Neuter not supported by Google. 0 is agnostic.", default=0)
     type: str  # Literal['WaveNet', 'Standard']  # standard  data['type']
-    meta: dict[str, str]=Field(default={}, help="Metadata about the voice")
+    meta: dict[str, str]=Field(None, help="Metadata about the voice, e.g. sample_rate")
 
     def __init__(self, model: str, gender: int=0, **kwargs):
         with logger.contextualize(**kwargs):

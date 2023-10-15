@@ -4,6 +4,7 @@ For design terms, see: https://refactoring.guru/design-patterns/catalog
 import enum
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
+from functools import cached_property
 from typing import Generic, TypeVar
 
 from google.cloud.firestore import Client
@@ -50,20 +51,32 @@ class Plan(FB, Generic[T], ABC):
     template: dict[str, str] = Field(default=None, help="Template for the activity prompt.")
     state: dict = None
     vocab: list[str] = None
-    voice: Voice
+    voice: Voice = Field(default=None, help="Voice for the session.")
 
     @field_validator('pid', mode='before')
+    @classmethod
     def make_pid(cls, v: str, values: ValidationInfo) -> str:
         if not v:
             v = default_pid(values.data['atp'])
         return v
 
     @field_validator('voice', mode='before')
+    @classmethod
     def convert_string_to_voice(cls, v: str) -> Voice:
         logger.debug(f"Got: {v}")
         if isinstance(v, str):
             logger.debug(f"Converting string to voice: {v}")
             v = Voice(v)
+        return v
+
+    @field_validator('voice', mode='after')
+    @classmethod
+    def _ensure_voice(cls, v, values: ValidationInfo) -> Voice:
+        if not v:
+            bcp47 = values.data['bcp47']
+            default_voice = Voice(f"{bcp47}-Standard-A")
+            logger.debug(f"Using default voice: {default_voice}")
+            return default_voice
         return v
 
     @classmethod
@@ -123,10 +136,10 @@ class Act(FB, Generic[T], ABC):
     prompt: Prompt
     source: str = "builtin"
 
-    @computed_field
-    @property
-    def lang(self) -> Language:
-        return Language(self.bcp47)
+    # @computed_field
+    # @cached_property
+    # def lang(self) -> Language:
+    #     return Language(self.bcp47)
 
     @classmethod
     def get_docpath(cls, atp: ActT | str, bcp47: str, aid: str) -> DocPath:
