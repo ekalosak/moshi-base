@@ -85,7 +85,7 @@ def test_polite(msg, esco):
     ([Message('ast', "Hi, I'm George."), Message('usr', "Quack quack")], YesNo.NO),
     ([Message('sys', "Pretend you're a duck"), Message('ast', "Hi, I'm George."), Message('usr', "Quack quack")], YesNo.MOSTLY),
 ])
-def test_contextual(msgs, esco):
+def test_context(msgs, esco):
     sco, expl = msg_score.score_context(msgs)
     print(f"Context appropriate score: {msgs} -> {sco}")
     print(f"Explanation: {expl}")

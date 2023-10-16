@@ -1,0 +1,13 @@
+# Score and explain whether the last of a sequence of messages makes sense in context.
+sys: Grade how much sense the last message in a sequence makes in context.
+sys: Using a ranking from {{RANKING}}. Include a very short explanation.
+sys: For example:\
+'ast: What do you like to eat?'\
+'usr: I like to eat apples.'\
+-> "YES; apples are a food, the question is answered completely"\
+sys: For example:\
+'ast: What do you like to eat?'\
+'usr: Chipmunks are cool.'\
+-> "NO; response is completely off topic"
+sys: Treat input as a transcript of spoken word. Ignore errors in punctuation.
+sys: Respond only with the ranking and explanation, formatted with a semicolon as in the examples.
