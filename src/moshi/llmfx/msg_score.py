@@ -1,4 +1,5 @@
 from loguru import logger
+from zipp import Path
 
 from moshi import Message, Prompt, traced, Level
 from .base import PROMPT_DIR
@@ -18,72 +19,59 @@ class ScoreParseError(Exception):
     pass
 
 @traced
-def score_vocab(msg: str) -> float:
-    """ Score the user's use of vocabulary in an utterance, from 1 to 10 inclusive.
+def _score(msg: str, pro: Path | Prompt, **kwargs) -> tuple[Level, str]:
+    """ Score a message using a prompt file.
     """
-    pro = Prompt.from_file(VOCAB_PROMPT_FILE)
+    if isinstance(pro, Path):
+        pro = Prompt.from_file(pro)
+    assert 'RANKING' not in kwargs
+    pro.template(RANKING=Level.to_ranking())
+    if kwargs:
+        pro.template(**kwargs)
     msg = Message('usr', msg)
     pro.msgs.append(msg)
-    logger.debug(f"Getting vocab score for: {msg}")
-    _vsco = pro.complete().body
-    logger.debug(f"Got vocab score: {_vsco}")
+    logger.debug(f"Getting score for: {msg}")
+    _sco = pro.complete().body
+    logger.debug(f"Got score: {_sco}")
     try:
-        vsco = float(_vsco.strip())
+        sco, expl = _sco.split('; ')
+        expl = expl.strip()
+        sco = Level.from_str(sco.strip())
     except ValueError as exc:
-        raise ScoreParseError(f"Failed to parse score: {_vsco}") from exc
-    return vsco
+        raise ScoreParseError(f"Failed to parse score: {_sco}") from exc
+    return sco, expl
+
+@traced
+def score_vocab(msg: str) -> tuple[Level, str]:
+    """ Score the user's use of vocabulary in an utterance.
+    """
+    return _score(msg, VOCAB_PROMPT_FILE)
 
 @traced
 def score_grammar(msg: str) -> tuple[Level, str]:
-    """ Score the user's use of grammar in an utterance, from 1 to 10 inclusive.
+    """ Score the user's use of grammar in an utterance.
     """
-    pro = Prompt.from_file(GRAMMAR_PROMPT_FILE)
-    pro.template(RANKING=Level.to_ranking())
-    msg = Message('usr', msg)
-    pro.msgs.append(msg)
-    logger.debug(f"Getting grammar score for: {msg}")
-    _gsco = pro.complete().body
-    logger.debug(f"Got grammar score: {_gsco}")
-    try:
-        gsco, expl = _gsco.split('; ')
-        expl = expl.strip()
-        gsco = Level.from_str(gsco.strip())
-    except ValueError as exc:
-        raise ScoreParseError(f"Failed to parse score: {_gsco}") from exc
-    return gsco, expl
+    return _score(msg, GRAMMAR_PROMPT_FILE)
 
 @traced
 def score_polite(msg: str) -> tuple[float, str]:
-    """ Score the user's utterance for politeness, from 1 to 10 inclusive.
+    """ Score the user's utterance for politeness.
     """
-    pro = Prompt.from_file(POLITENESS_PROMPT_FILE)
-    msg = Message('usr', msg)
-    pro.msgs.append(msg)
-    logger.debug(f"Getting politeness score for: {msg}")
-    _psco = pro.complete().body
-    logger.debug(f"Got politeness score: {_psco}")
-    try:
-        psco, expl = _psco.split('; ')
-        expl = expl.strip()
-        psco = float(psco.strip())
-    except ValueError as exc:
-        raise ScoreParseError(f"Failed to parse score: {_psco}") from exc
-    return psco, expl
+    return _score(msg, POLITENESS_PROMPT_FILE)
 
 @traced
 def score_idiomaticity(msg: str) -> tuple[float, str]:
-    """ Score the user's utterance for idiomaticity, from 1 to 10 inclusive.
+    """ Score the user's utterance for idiomaticity.
     """
-    pro = Prompt.from_file(IDIOMATICITY_PROMPT_FILE)
-    msg = Message('usr', msg)
-    pro.msgs.append(msg)
-    logger.debug(f"Getting politeness score for: {msg}")
-    _isco = pro.complete().body
-    logger.debug(f"Got idiomaticity score: {_isco}")
-    try:
-        isco, expl = _isco.split('; ')
-        expl = expl.strip()
-        isco = float(isco.strip())
-    except ValueError as exc:
-        raise ScoreParseError(f"Failed to parse score: {_isco}") from exc
-    return isco, expl
+    return _score(msg, IDIOMATICITY_PROMPT_FILE)
+
+@traced
+def score_context(msgs: list[str]) -> tuple[Level, str]:
+    """ Score the user's utterance for context.
+    Scores 
+    """
+    pld = ""
+    for speaker, msg in enumerate(msgs):
+        speaker = speaker % 2 + 1
+        pld += f"{speaker}: {msg}\n"
+    return _score(msg, CONTEXT_PROMPT_FILE)
