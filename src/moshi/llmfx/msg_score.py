@@ -46,7 +46,7 @@ def _score(msg: str, pro: Path | Prompt, score_as: Rankable=Level, **kwargs) -> 
     try:
         sco, expl = _sco.split('; ')
         expl = expl.strip()
-        sco = Level.from_str(sco.strip())
+        sco = score_as.from_str(sco.strip())
     except ValueError as exc:
         raise ScoreParseError(f"Failed to parse score: {_sco}") from exc
     return sco, expl

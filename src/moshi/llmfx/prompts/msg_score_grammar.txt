@@ -2,6 +2,9 @@
 sys: Grade the grammar of the message using a ranking from {{RANKING}}. Include a very short explanation.
 sys: For example: "milk want" -> "ERROR; this utterance is unintelligible"
 sys: For example: "want milk" -> "BABY; this incomplete sentence is intelligible, but not grammatical"
+sys: For example: "I like apple" -> "CHILD; close to correct grammar, should be 'apples'"
+sys: For example: "I like apples" -> "CHILD; correct grammar, simple sentence"
+sys: For example: "Apples are my absolute favorite" -> "ADULT; correct grammar, complex sentence using adjective clause"
 sys: For example: "hi I'm Charles but you can call me Chuck" -> "ADULT; idiomatic, polite, affable greeting"
 sys: Treat input as a transcript of spoken word. Ignore errors in punctuation.
 sys: Respond only with the ranking and explanation, formatted with a semicolon as in the examples.
