@@ -33,7 +33,7 @@ class ActT(str, enum.Enum):
 
 T = TypeVar('T', bound=ActT)
 
-def default_pid(atp: ActT, n=8) -> str:
+def default_pid(atp: ActT, n=6) -> str:
     tod = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     return random_string(n) + '-' + atp.value + '-' + tod
 
@@ -51,32 +51,29 @@ class Plan(FB, Generic[T], ABC):
     template: dict[str, str] = Field(default=None, help="Template for the activity prompt.")
     state: dict = None
     vocab: list[str] = None
-    voice: Voice = Field(default=None, help="Voice for the session.")
+    voice: Voice = Field(default=None, help="Voice for the session.", validate_default=True)
 
     @field_validator('pid', mode='before')
-    @classmethod
-    def make_pid(cls, v: str, values: ValidationInfo) -> str:
+    def _make_pid(cls, v: str, values: ValidationInfo) -> str:
         if not v:
             v = default_pid(values.data['atp'])
         return v
 
     @field_validator('voice', mode='before')
-    @classmethod
-    def convert_string_to_voice(cls, v: str) -> Voice:
-        logger.debug(f"Got: {v}")
-        if isinstance(v, str):
-            logger.debug(f"Converting string to voice: {v}")
-            v = Voice(v)
-        return v
-
-    @field_validator('voice', mode='after')
-    @classmethod
     def _ensure_voice(cls, v, values: ValidationInfo) -> Voice:
+        logger.debug(f"Got voice: {v}")
         if not v:
             bcp47 = values.data['bcp47']
             default_voice = Voice(f"{bcp47}-Standard-A")
             logger.debug(f"Using default voice: {default_voice}")
             return default_voice
+        elif isinstance(v, str):
+            logger.debug(f"Converting string to voice: {v}")
+            v = Voice(v)
+        return v
+
+    @field_validator('voice', mode='before')
+    def _convert_string_to_voice(cls, v: str) -> Voice:
         return v
 
     @classmethod

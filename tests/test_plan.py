@@ -3,7 +3,7 @@ from google.cloud.firestore import Client
 from loguru import logger
 
 from moshi import Message
-from moshi.activ import MinA, MinPl, UnstrA, UnstrPl
+from moshi.activ import MinA, MinPl, UnstrA, UnstrPl, pid2plan
 
 
 @pytest.fixture
@@ -63,3 +63,10 @@ def test_unstra_reply(unstra: UnstrA, unstrpl: UnstrPl, db: Client):
     assert isinstance(amsg, Message)
     assert amsg.role == 'ast'
     assert len(amsg.body) > 5, "Unexpectedly short completion response."
+
+@pytest.mark.fb
+def test_pid2plan(minpl: MinPl, db: Client):
+    minpl.delete(db)
+    minpl.create(db)
+    minpl2 = pid2plan(minpl.pid, minpl.uid, db)
+    assert minpl2 == minpl
