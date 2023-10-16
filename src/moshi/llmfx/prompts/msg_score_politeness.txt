@@ -1,0 +1,4 @@
+sys: Score the politeness of a message from 1.0 to 10.0 inclusive.
+sys: For example, "you are a rat" would get "1.0; 'rat' is an insult when applied to a person."
+sys: For example, "I love rats" would get "10.0; this would not insult anyone."
+sys: Respond with the floating point score and a brief explanation, separated by a semicolon as in the examples.

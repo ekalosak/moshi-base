@@ -23,3 +23,15 @@ def test_msg_score_grammar(msg, sco):
     assert gsco <= 10
     assert gsco >= 1
     assert abs(gsco - sco) < 2.5, "Grammar score mismatch."
+
+@pytest.mark.openai
+@pytest.mark.parametrize('msg, sco', [("You are a jerk", 1.0), ("You are my friend", 10.0)])
+def test_msg_score_politeness(msg, sco):
+    psco, expl = msg_score.score_politeness(msg)
+    print(f"Politeness score: {msg} -> {psco}")
+    print(f"Explanation: {expl}")
+    assert isinstance(expl, str)
+    assert isinstance(psco, float)
+    assert psco <= 10
+    assert psco >= 1
+    assert abs(psco - sco) < 2.5, "Politeness score mismatch."

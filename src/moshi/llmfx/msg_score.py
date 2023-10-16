@@ -52,3 +52,21 @@ def score_grammar(msg: str) -> tuple[float, str]:
     except ValueError as exc:
         raise ScoreParseError(f"Failed to parse score: {_gsco}") from exc
     return gsco, expl
+
+@traced
+def score_politeness(msg: str) -> tuple[float, str]:
+    """ Score the user's use of politeness in an utterance, from 1 to 10 inclusive.
+    """
+    pro = Prompt.from_file(POLITENESS_PROMPT_FILE)
+    msg = Message('usr', msg)
+    pro.msgs.append(msg)
+    logger.debug(f"Getting politeness score for: {msg}")
+    _psco = pro.complete().body
+    logger.debug(f"Got politeness score: {_psco}")
+    try:
+        psco, expl = _psco.split('; ')
+        expl = expl.strip()
+        psco = float(psco.strip())
+    except ValueError as exc:
+        raise ScoreParseError(f"Failed to parse score: {_psco}") from exc
+    return psco, expl
