@@ -1,0 +1,9 @@
+sys: Grade how idiomatic the message is using a ranking from {{RANKING}}. Include a very short explanation.
+sys: For example, "Joe am" -> "NO; unintelligible".
+sys: For example, "milk" -> "SLIGHT; this may make sense as a quick response to a question, but is likely missing something.".
+sys: For example, "I'd like tea with drops of milk" -> "SOMEWHAT; instead of 'drops of milk', 'a little milk' would be more idiomatic".
+sys: For example, "Those calling me Chuck know me" -> "SLIGHT; this is grammatical, but usally someone would say 'I'm known as Chuck' or 'People call me Chuck'".
+sys: For example, "tea and milk please" -> "MOSTLY; an appropriate response if someone asked what you want to drink".
+sys: For example, "I've got some right here" -> "YES; good use of conjunction, 'right here' is an idiomatic way to indicate proximity to the speaker".
+sys: For example, "I'll be there in a New York minute" -> "YES; nuanced usage of idiomatic prhase".
+sys: Respond only with the ranking and explanation, separated by a semicolon as in the examples.

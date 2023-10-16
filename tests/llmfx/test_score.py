@@ -37,9 +37,8 @@ def test_vocab(msg, esco):
 @pytest.mark.openai
 @pytest.mark.parametrize('msg, esco', [
     ("In oregano seven query jib", Level.ERROR),
-    ("I like apple", Level.BABY),
-    ("I like apples", Level.CHILD),
-    ("Rats overtaken city", Level.CHILD),
+    ("have truck", Level.BABY),
+    ("I have a truck", Level.CHILD),
     ("Rats have overtaken the city", Level.ADULT),
     ("Jeff has a great sense of humor, developed in his early childhood", Level.EXPERT),
 ])
@@ -54,8 +53,8 @@ def test_grammar(msg, esco: Level):
 
 @pytest.mark.openai
 @pytest.mark.parametrize('msg, esco', [
-    ("My name's Charlie, but you can call me Chuck.", YesNo.YES),
-    ("Those calling me Chuck know me", YesNo.SLIGHT),
+    ("My name's Gregory, but please call me Greg.", YesNo.YES),
+    ("Oregano is a favored herb", YesNo.SOMEWHAT),
     ("Knowing me, I can be Chuck ", YesNo.NO),
 ])
 def test_idiom(msg, esco: YesNo):
@@ -63,7 +62,7 @@ def test_idiom(msg, esco: YesNo):
     print(f"Idiom score: {msg} -> {sco}")
     print(f"Explanation: {expl}")
     assert isinstance(expl, str)
-    assert isinstance(sco, Level)
+    assert isinstance(sco, YesNo)
     assert abs(sco - esco) <= 1, "Score mismatch."
 
 @pytest.mark.openai
