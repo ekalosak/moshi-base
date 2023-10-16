@@ -32,6 +32,7 @@ def _score(msg: str, pro: Path | Prompt, score_as: Rankable=Level, **kwargs) -> 
             The RANKING variable is automatically set to the ranking of the score type (e.g. Level.to_ranking()).
     """
     if isinstance(pro, Path):
+        logger.debug(f"Loading prompt from file: {pro}")
         pro = Prompt.from_file(pro)
     assert 'RANKING' not in kwargs
     pro.template(RANKING=score_as.to_ranking())

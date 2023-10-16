@@ -4,18 +4,25 @@ from moshi import Message
 from moshi.grade import Level, YesNo
 from moshi.llmfx import msg_score
 
-def test_level():
-    print(Level.to_ranking())
-
 def test_yesno():
+    for yn in YesNo:
+        YesNo.from_str(yn.name)
     print(YesNo.to_ranking())
+    assert YesNo.YES > YesNo.NO
+    assert YesNo.YES != YesNo.NO
+    assert YesNo.YES - YesNo.NO > 1
+
+def test_level():
+    for l in Level:
+        Level.from_str(l.name)
+    print(Level.to_ranking())
 
 @pytest.mark.openai
 @pytest.mark.parametrize('msg, esco', [
     ("widgywadgDNA", Level.ERROR),
     ("milk", Level.BABY),
     ("applesauce", Level.CHILD),
-    ("In oregano seven query jibb", Level.ADULT),
+    ("In oregano seven query jib", Level.ADULT),
     ("Criminal rats overtaken city", Level.ADULT),
     ("Gargantuan alternative grandeur paroxysm", Level.EXPERT),
 ])

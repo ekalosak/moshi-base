@@ -15,25 +15,46 @@ class FromStr(Enum):
         except KeyError as exc:
             raise ValueError(f"Invalid string representation for {cls.__name__}: {str_repr}") from exc
 
-class Rankable(Enum):
+class Rankable(IntEnum):
     @classmethod
     def to_ranking(cls) -> str:
         """ Return the ranking of this object as a string. """
         ranking = [r.name for r in cls]
         return ', '.join(ranking)
 
+    # def __le__(self, other):
+    #     return self.value <= other.value
+    
+    # def __ge__(self, other):
+    #     return self.value >= other.value
+    
+    # def __lt__(self, other):
+    #     return self.value < other.value
+    
+    # def __gt__(self, other):
+    #     return self.value > other.value
+
+    # def __sub__(self, other):
+    #     if not isinstance(other, Rankable):
+    #         raise TypeError(f"Unsupported operand type(s) for -: '{type(self).__name__}' and '{type(other).__name__}'")
+    #     return self.value - other.value
+
 class YesNo(FromStr, Rankable):
     """ A degree of correctness or truth, from no to yes. """
-    NO = 'NO', 0
-    SLIGHT = 'SLIGHT', 1
-    SOMEWHAT = 'SOMEWHAT', 2
-    MOSTLY = 'MOSTLY', 3 
-    YES = 'YES', 4
+    NO = 0
+    SLIGHT = 1
+    SOMEWHAT = 2
+    MOSTLY = 3 
+    YES = 4
 
-class Level(Rankable):
-    """ The maturity of a typical speaker required for expected mastery of a term. """
-    ERROR = 'ERROR', 0
-    BABY = 'BABY', 1
-    CHILD = 'CHILD', 2
-    ADULT = 'ADULT', 3
-    EXPERT = 'EXPERT', 4
+class Level(FromStr, Rankable):
+    """ The maturity of a typical speaker required for expected mastery of a term.
+    NOTE See the prompts (e.g. msg_score_vocab.txt) for the exact definitions of each level.
+    NOTE Don't change the string representations of these values without updating the prompts.
+    """
+    ERROR = 0
+    BABY = 1
+    CHILD = 2
+    ADULT = 3
+    EXPERT = 4
+

@@ -1,8 +1,7 @@
 # Score and explain grammar of an utterance.
-# Args:
-#   RANKING: The ranking of the grammar of the message e.g. 'baby', 'adult', 'sophisticated'
 sys: Grade the grammar of the message using a ranking from {{RANKING}}. Include a very short explanation.
-sys: For example: "milk" -> "baby; in context, a listener may be able to understand, but with the lowest level of sophistication"
-sys: For example: "Hi I'm Charles but you can call me Chuck" -> "adult; idiomatic, polite, affable greeting"
+sys: For example: "milk want" -> "ERROR; this utterance is unintelligible"
+sys: For example: "want milk" -> "BABY; this incomplete sentence is intelligible, but not grammatical"
+sys: For example: "hi I'm Charles but you can call me Chuck" -> "ADULT; idiomatic, polite, affable greeting"
 sys: Treat input as a transcript of spoken word. Ignore errors in punctuation.
 sys: Respond only with the ranking and explanation, formatted with a semicolon as in the examples.

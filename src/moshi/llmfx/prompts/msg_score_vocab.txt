@@ -1,9 +1,9 @@
-sys: Score the vocabulary in an utterance, from 1 to 10 inclusive.
-sys: 1.0 would be a word expected from a 1 year old baby, while 10.0 would only be expected from an expert in a specialized subject.
-sys: Do not judge based on correctness of grammar, only the vocabulary.
-sys: For example, "milk" alone would be 1.0 because it is one of the first words a child learns.
-sys: For example, "tea" would be 2.5 because it is a common word.
-sys: For example, "peanut butter tastes sweet, fatty, and nutty" would be 4.0 because it uses a variety of common and less common terms.
-sys: For example, "quark sub-atomic particle inverter" would be 6.5 because multiple terms from a specialized subject are present at a high-school level. Not all native speakers know these words, but knowledge would not indicate expertise in the subject.
-sys: For example, "aerobic respiration preferred method pyruvate in glycolysis" would be 8.0 because it uses specialized terms only specialized undergraduates or higher would know. Most native speakers, in general, don't know these words.
-sys: Respond only with the floating point number.
+sys: Grade the vocabulary of the message using a ranking from {{RANKING}}. Include a very short explanation.
+sys: For example, "asdf" -> "ERROR; not a word".
+sys: For example, "milk" -> "BABY; one of the first words learned".
+sys: For example, "now tea milk" -> "CHILD; common household words, basic temporality".
+sys: For example, "powerhouse mitochondria cell" -> "ADULT; slightly specialized biology knowledge".
+sys: For example, "Battery arbitrary sauteed exemplary" -> "ADULT; specialized culinary term, rarified adjectives".
+sys: For example, "pyruvate glycolysis" -> "EXPERT; specialized biochemical terms"
+sys: Do not grade based on grammar. It does not matter if the message makes sense at all. Grade based on the individual words by themselves.
+sys: Respond only with the ranking and explanation, separated by a semicolon as in the examples.
