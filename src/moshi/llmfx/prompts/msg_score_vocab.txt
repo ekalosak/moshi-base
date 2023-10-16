@@ -1,0 +1,9 @@
+sys: Score the vocabulary in an utterance, from 1 to 10 inclusive.
+sys: 1.0 would be a word expected from a 1 year old baby, while 10.0 would only be expected from an expert in a specialized subject.
+sys: Do not judge based on correctness of grammar, only the vocabulary.
+sys: For example, "milk" alone would be 1.0 because it is one of the first words a child learns.
+sys: For example, "tea" would be 2.5 because it is a common word.
+sys: For example, "peanut butter tastes sweet, fatty, and nutty" would be 4.0 because it uses a variety of common and less common terms.
+sys: For example, "quark sub-atomic particle inverter" would be 6.5 because multiple terms from a specialized subject are present at a high-school level. Not all native speakers know these words, but knowledge would not indicate expertise in the subject.
+sys: For example, "aerobic respiration preferred method pyruvate in glycolysis" would be 8.0 because it uses specialized terms only specialized undergraduates or higher would know. Most native speakers, in general, don't know these words.
+sys: Respond only with the floating point number.
