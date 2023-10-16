@@ -1,6 +1,0 @@
-# Get the root form of a verb
-# Usage:
-#   Append a usr message with a semicolon-separated list of verbs e.g. "fue; estaba"
-sys: Respond with the root forms of the verbs provided.
-sys: For example, if provided "fue; estaba", respond with "ir; estar".
-sys: Respond only with the semicolon-separated list of root forms.

@@ -23,7 +23,7 @@ from .base import PROMPT_DIR
 
 POS_PROMPT_FILE = PROMPT_DIR / "vocab_extract_pos.txt"
 DEFN_PROMPT_FILE = PROMPT_DIR / "vocab_extract_defn.txt"
-ROOT_PROMPT_FILE = PROMPT_DIR / "vocab_extract_verb_root.txt"
+ROOT_PROMPT_FILE = PROMPT_DIR / "vocab_extract_root.txt"
 CONJ_PROMPT_FILE = PROMPT_DIR / "vocab_extract_verb_conjugation.txt"
 UDEFN_PROMPT_FILE = PROMPT_DIR / "vocab_extract_microdefn.txt"
 PROMPT_FILES = [POS_PROMPT_FILE, DEFN_PROMPT_FILE, ROOT_PROMPT_FILE, CONJ_PROMPT_FILE, UDEFN_PROMPT_FILE]
