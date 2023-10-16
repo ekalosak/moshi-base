@@ -34,3 +34,21 @@ def score_vocab(msg: str) -> float:
     except ValueError as exc:
         raise ScoreParseError(f"Failed to parse score: {_vsco}") from exc
     return vsco
+
+@traced
+def score_grammar(msg: str) -> tuple[float, str]:
+    """ Score the user's use of grammar in an utterance, from 1 to 10 inclusive.
+    """
+    pro = Prompt.from_file(GRAMMAR_PROMPT_FILE)
+    msg = Message('usr', msg)
+    pro.msgs.append(msg)
+    logger.debug(f"Getting grammar score for: {msg}")
+    _gsco = pro.complete().body
+    logger.debug(f"Got grammar score: {_gsco}")
+    try:
+        gsco, expl = _gsco.split('; ')
+        expl = expl.strip()
+        gsco = float(gsco.strip())
+    except ValueError as exc:
+        raise ScoreParseError(f"Failed to parse score: {_gsco}") from exc
+    return gsco, expl

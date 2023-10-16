@@ -11,3 +11,15 @@ def test_msg_score_vocab(msg, sco):
     assert vsco <= 10
     assert vsco >= 1
     assert abs(vsco - sco) < 2.5, "Vocab score mismatch."
+
+@pytest.mark.openai
+@pytest.mark.parametrize('msg, sco', [("I like apples", 2.0), ("Rats overtaken city", 1.5), ("Rats have overtaken the city", 5.5), ("Jeff has a great sense of humor, developed in his early childhood", 7.5)])
+def test_msg_score_grammar(msg, sco):
+    gsco, expl = msg_score.score_grammar(msg)
+    print(f"Grammar score: {msg} -> {gsco}")
+    print(f"Explanation: {expl}")
+    assert isinstance(expl, str)
+    assert isinstance(gsco, float)
+    assert gsco <= 10
+    assert gsco >= 1
+    assert abs(gsco - sco) < 2.5, "Grammar score mismatch."
