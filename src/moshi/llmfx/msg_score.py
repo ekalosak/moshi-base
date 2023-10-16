@@ -1,7 +1,10 @@
-from loguru import logger
-from zipp import Path
+from pathlib import Path
 
-from moshi import Message, Prompt, traced, Level
+from loguru import logger
+from typing import TypeVar
+
+from moshi import Message, Prompt, traced
+from moshi.grade import Rankable, YesNo, Level
 from .base import PROMPT_DIR
 
 CONTEXT_PROMPT_FILE = PROMPT_DIR / "msg_score_context.txt"
@@ -19,13 +22,19 @@ class ScoreParseError(Exception):
     pass
 
 @traced
-def _score(msg: str, pro: Path | Prompt, **kwargs) -> tuple[Level, str]:
+def _score(msg: str, pro: Path | Prompt, score_as: Rankable=Level, **kwargs) -> tuple[Rankable, str]:
     """ Score a message using a prompt file.
+    Args:
+        msg: The message to score.
+        pro: The prompt file or prompt to use.
+        score_as: The type of score to return.
+        **kwargs: The keyword arguments to pass to the prompt as template variables.
+            The RANKING variable is automatically set to the ranking of the score type (e.g. Level.to_ranking()).
     """
     if isinstance(pro, Path):
         pro = Prompt.from_file(pro)
     assert 'RANKING' not in kwargs
-    pro.template(RANKING=Level.to_ranking())
+    pro.template(RANKING=score_as.to_ranking())
     if kwargs:
         pro.template(**kwargs)
     msg = Message('usr', msg)
@@ -54,24 +63,23 @@ def score_grammar(msg: str) -> tuple[Level, str]:
     return _score(msg, GRAMMAR_PROMPT_FILE)
 
 @traced
-def score_polite(msg: str) -> tuple[float, str]:
+def score_polite(msg: str) -> tuple[YesNo, str]:
     """ Score the user's utterance for politeness.
     """
-    return _score(msg, POLITENESS_PROMPT_FILE)
+    return _score(msg, POLITENESS_PROMPT_FILE, score_as=YesNo)
 
 @traced
-def score_idiomaticity(msg: str) -> tuple[float, str]:
+def score_idiom(msg: str) -> tuple[YesNo, str]:
     """ Score the user's utterance for idiomaticity.
     """
-    return _score(msg, IDIOMATICITY_PROMPT_FILE)
+    return _score(msg, IDIOMATICITY_PROMPT_FILE, score_as=YesNo)
 
 @traced
-def score_context(msgs: list[str]) -> tuple[Level, str]:
+def score_context(msgs: list[Message]) -> tuple[YesNo, str]:
     """ Score the user's utterance for context.
-    Scores 
     """
     pld = ""
-    for speaker, msg in enumerate(msgs):
-        speaker = speaker % 2 + 1
-        pld += f"{speaker}: {msg}\n"
-    return _score(msg, CONTEXT_PROMPT_FILE)
+    for msg in msgs:
+        pld += f"{msg.role.name}: {msg.body}\n"
+    pld.strip()
+    return _score(pld, CONTEXT_PROMPT_FILE, score_as=YesNo)
