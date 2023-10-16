@@ -2,6 +2,7 @@ from .__version__ import __version__
 from .activ import Act, ActT, Plan, ACT_OF_TYPE, PLAN_OF_TYPE, plan2act, pid2plan, MinA, MinPl, UnstrA, UnstrPl
 from .audio import AudioStorage
 from .func import PType, Property, Parameters, Function, FuncCall
+from .grade import Level
 from .language import Language
 from .log import setup_loguru, failed, traced
 from .model import CompletionM, ChatM

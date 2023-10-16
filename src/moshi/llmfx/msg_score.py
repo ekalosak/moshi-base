@@ -1,8 +1,6 @@
 from loguru import logger
 
-from moshi import Message, Prompt, traced
-from moshi.language import Language
-from moshi.vocab import MsgV
+from moshi import Message, Prompt, traced, Level
 from .base import PROMPT_DIR
 
 CONTEXT_PROMPT_FILE = PROMPT_DIR / "msg_score_context.txt"
@@ -36,10 +34,11 @@ def score_vocab(msg: str) -> float:
     return vsco
 
 @traced
-def score_grammar(msg: str) -> tuple[float, str]:
+def score_grammar(msg: str) -> tuple[Level, str]:
     """ Score the user's use of grammar in an utterance, from 1 to 10 inclusive.
     """
     pro = Prompt.from_file(GRAMMAR_PROMPT_FILE)
+    pro.template(RANKING=Level.to_ranking())
     msg = Message('usr', msg)
     pro.msgs.append(msg)
     logger.debug(f"Getting grammar score for: {msg}")
@@ -48,14 +47,14 @@ def score_grammar(msg: str) -> tuple[float, str]:
     try:
         gsco, expl = _gsco.split('; ')
         expl = expl.strip()
-        gsco = float(gsco.strip())
+        gsco = Level.from_str(gsco.strip())
     except ValueError as exc:
         raise ScoreParseError(f"Failed to parse score: {_gsco}") from exc
     return gsco, expl
 
 @traced
-def score_politeness(msg: str) -> tuple[float, str]:
-    """ Score the user's use of politeness in an utterance, from 1 to 10 inclusive.
+def score_polite(msg: str) -> tuple[float, str]:
+    """ Score the user's utterance for politeness, from 1 to 10 inclusive.
     """
     pro = Prompt.from_file(POLITENESS_PROMPT_FILE)
     msg = Message('usr', msg)
@@ -70,3 +69,21 @@ def score_politeness(msg: str) -> tuple[float, str]:
     except ValueError as exc:
         raise ScoreParseError(f"Failed to parse score: {_psco}") from exc
     return psco, expl
+
+@traced
+def score_idiomaticity(msg: str) -> tuple[float, str]:
+    """ Score the user's utterance for idiomaticity, from 1 to 10 inclusive.
+    """
+    pro = Prompt.from_file(IDIOMATICITY_PROMPT_FILE)
+    msg = Message('usr', msg)
+    pro.msgs.append(msg)
+    logger.debug(f"Getting politeness score for: {msg}")
+    _isco = pro.complete().body
+    logger.debug(f"Got idiomaticity score: {_isco}")
+    try:
+        isco, expl = _isco.split('; ')
+        expl = expl.strip()
+        isco = float(isco.strip())
+    except ValueError as exc:
+        raise ScoreParseError(f"Failed to parse score: {_isco}") from exc
+    return isco, expl

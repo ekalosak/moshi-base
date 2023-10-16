@@ -1,9 +1,8 @@
-sys: Score the grammar in a message, from 1 to 10 inclusive.
-sys: 1.0 would be a sentence construct expected from a 1 year old baby, while 10.0 would be expected only from sophisticated literary sources. 2.5 is correct grammar simple sentence. 5.0 is compound sentence. 7.5 is complex sentence. Deduct points for incorrect grammar, and add points for complex grammar.
-sys: Do not judge based on vocabulary, only grammar.
-sys: For example, "I am thirsty, so I would like some milk" would be "5.0; grammatically correct compound sentence"
-sys: For example, "When asked about the mode of milk production, one considers not only the farmer, but also the cow, the grass, the soil, and the facets of their interaction" would be "8.5; complex sentence with multiple clauses"
-sys: For example, "milk" alone would be "1.0; not even a full sentence"
-sys: For example, "I want milk" would be "2.5; grammatically correct simple sentence"
-sys: Do not award scores above 5.0 for correct grammar alone. For a high score, the sentence must also be complex. It is more important that the user attempt complex grammar than that they are correct.
-sys: Respond with the floating point score and a brief explanation of why you give that score, separated by a semicolon, as in the examples.
+# Score and explain grammar of an utterance.
+# Args:
+#   RANKING: The ranking of the grammar of the message e.g. 'baby', 'adult', 'sophisticated'
+sys: Grade the grammar of the message using a ranking from {{RANKING}}. Include a very short explanation.
+sys: For example: "milk" -> "baby; in context, a listener may be able to understand, but with the lowest level of sophistication"
+sys: For example: "Hi I'm Charles but you can call me Chuck" -> "adult; idiomatic, polite, affable greeting"
+sys: Treat input as a transcript of spoken word. Ignore errors in punctuation.
+sys: Respond only with the ranking and explanation, formatted with a semicolon as in the examples.
