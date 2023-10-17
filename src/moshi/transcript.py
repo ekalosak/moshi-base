@@ -16,13 +16,15 @@ After the session terminates, the umsgs and amsgs are merged into the Transcript
 This complexity allows different enrichment functionality to be applied to the messages after the session terminates e.g. translation, summarization, subsequent lesson planning, etc. Moreover, it allows the avoidance of unnecessarily loading the live-session functionality when the session is not live and updates are made.
 """
 from itertools import chain
+from lib2to3.pgen2 import grammar
+from typing import TypeVar
 
 from google.cloud.firestore import Client, CollectionReference
 from loguru import logger
-from pydantic import Field, field_validator, ValidationInfo
+from pydantic import BaseModel, Field, field_validator, ValidationInfo, computed_field
 
 from .activ import ActT, Plan
-from .grade import Grade, Scores
+from .grade import Grade, Score, Scores
 from .log import traced
 from .msg import Message
 from .storage import FB, DocPath
@@ -38,6 +40,29 @@ def _transcript_id(bcp47: str) -> str:
     """ Generate a unique ID for a transcript. """
     return f"{id_prefix()}-{bcp47}"
 
+class ScoreT(BaseModel):
+    """ A single transcript's scores, aggregated into a median and MAD. """
+    median: float
+    mad: float
+
+class ScoresT(BaseModel):
+    vocab: ScoreT = None
+    grammar: ScoreT = None
+    idiom: ScoreT = None
+    polite: ScoreT = None
+    context: ScoreT = None
+
+T = TypeVar('T', bound=[int, float])
+
+def median(lst: list[T]) -> T:
+    """ Return the median of a list of numeric values. """
+    lst = sorted(lst)
+    n = len(lst)
+    if n % 2 == 0:
+        return (lst[n//2] + lst[n//2 - 1]) / 2
+    else:
+        return lst[n//2]
+
 class Transcript(FB):
     messages: list[Message] = None
     aid: str = Field(help='Activity ID.')
@@ -48,7 +73,47 @@ class Transcript(FB):
     tid: str = Field(None, help='Transcript ID. One is created if not provided.', validate_default=True)
     summary: str = None
     grade: Grade=Field(None, help='Overall grade for this transcript.')
-    scores: Scores=Field(None, help='Overall VGIPC scores for this transcript.')
+
+    @computed_field
+    @property
+    def scores(self) -> ScoresT | None:
+        """ If there are enough messages, calculate overall VGIPC scores.
+        The scores are a median and mad for each of VGIPC (vocab, grammar, idiom, polite, context).
+        """
+        if not self.messages:
+            logger.debug("No messages in transcript, cannot compute scores.")
+            return None
+        elif (nmsg := len(self.messages)) < 4:
+            logger.debug(f"Not enough messages (nmsg={nmsg} < 4) in transcript, cannot compute scores.")
+            return None
+        _all: dict[str, list[int]] = {}
+        for msg in self.messages:
+            if msg.role != 'usr':
+                continue
+            if scos := msg.score:
+                for name, sco in scos.each:
+                    if name not in _all:
+                        _all[name] = []
+                    _all[name].append(int(sco.score))
+            else:
+                logger.debug(f"Message {msg} has no score.")
+        if not _all:
+            logger.debug("No scores in transcript, cannot compute scores.")
+            return None
+        medians: dict[str, int] = {}
+        mads: dict[str, float] = {}
+        for name, vals in _all.items():
+            if nscos := len(vals) < 4:
+                logger.warning(f"Not enough scores (nscos={nscos} < 4) for {name} transcript, cannot compute scores.")
+            else:
+                medians[name] = median(vals)
+                mads[name] = median([abs(val - medians[name]) for val in vals])
+        scost_pld = {}
+        for name in ('vocab', 'grammar', 'idiom', 'polite', 'context'):
+            if name in medians:
+                scost_pld[name] = ScoreT(median=medians[name], mad=mads[name])
+        return ScoresT(**scost_pld)
+
 
     @field_validator('tid', mode='before')
     @classmethod

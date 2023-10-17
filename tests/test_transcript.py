@@ -4,8 +4,8 @@ import json
 import pytest
 from google.cloud.firestore import Client, DocumentSnapshot
 
-from moshi.transcript import Transcript, Message, Plan, ActT
-from moshi.storage import DocPath
+from moshi.transcript import ScoresT, Transcript, Message, ActT
+from moshi.grade import Scores, Score, Grade, YesNo, Level
 
 @pytest.fixture(params=['live', 'final'])
 def status(request) -> str:
@@ -76,3 +76,25 @@ def test_update_msg(tra: Transcript, db):
     dat = doc.to_dict()
     pld = json.loads(dat['messages'][mid])
     assert Message(**pld) == msg
+
+def test_scores_happy():
+    tra = Transcript(
+        aid='doesn\'t exist',
+        atp=ActT.MIN,
+        pid='doesn\'t exist',
+        uid='doesn\'t exist',
+        bcp47='en-MX',
+        status='live',
+    )
+    tra.messages = [
+        Message('usr', 'hello', score=Scores(vocab=Score(Level.CHILD))),
+        Message('usr', 'hello', score=Scores(vocab=Score(Level.ERROR), grammar=Score(Level.CHILD))),
+        Message('usr', 'hello', score=Scores(vocab=Score(Level.ADULT), grammar=Score(Level.CHILD))),
+        Message('usr', 'hello'),
+        Message('usr', 'hello', score=Scores(vocab=Score(Level.ADULT), grammar=Score(Level.CHILD))),
+    ]
+    scos = tra.scores
+    assert isinstance(scos, ScoresT)
+    assert scos.vocab.median > Level.CHILD
+    assert scos.vocab.median < Level.ADULT
+    assert scos.grammar is None

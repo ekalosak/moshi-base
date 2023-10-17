@@ -1,10 +1,11 @@
 """ The maturity of a typical speaker required for expected mastery of a term. """
-from abc import ABC, abstractmethod
-from typing import TypeVar
-from enum import EnumType, IntEnum
+from enum import Enum, IntEnum
+from math import exp
+from typing import Generator
 
-from loguru import logger
-from enum import Enum
+from pydantic import BaseModel
+
+from . import utils
 
 class FromStr(Enum):
     @classmethod
@@ -66,8 +67,11 @@ class Score(BaseModel):
     score: Grade | Level | YesNo
     explain: str = None
 
-    def __init__(self, score: Level, explain: str):
-        super().__init__(score=score, explain=explain)
+    def __init__(self, score: Level, explain: str=None):
+        if not explain:
+            super().__init__(score=score)
+        else:
+            super().__init__(score=score, explain=explain)
 
 class Scores(BaseModel):
     """ Standard set of scores for a message. """
@@ -76,6 +80,13 @@ class Scores(BaseModel):
     idiom: Score = None
     polite: Score = None
     context: Score = None
+
+    @property
+    def each(self) -> Generator[tuple[str, Score], None, None]:
+        """ Iterate over each score. """
+        for name, score in self.__dict__.items():
+            if score is not None:
+                yield (name, score)
 
     def to_json(self, exclude_none=True, **kwargs):
         """ Convenience method to convert to consise JSON. """
