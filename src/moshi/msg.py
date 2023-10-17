@@ -71,6 +71,9 @@ class Scores(BaseModel):
     polite: ScoreY = None
     context: ScoreY = None
 
+    def to_json(self, exclude_none=True, **kwargs):
+        return self.model_dump(exclude_none=exclude_none, **kwargs)
+
 class Message(Mappable):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     role: Role
