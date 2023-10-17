@@ -6,6 +6,7 @@ from typing import Generic, TypeVar
 from pydantic import Field, field_validator, BaseModel
 from loguru import logger
 
+from . import utils
 from .audio import AudioStorage
 from .grade import Level, YesNo, Rankable
 from .log import LOG_COLORIZE
@@ -72,7 +73,17 @@ class Scores(BaseModel):
     context: ScoreY = None
 
     def to_json(self, exclude_none=True, **kwargs):
+        """ Convenience method to convert to consise JSON. """
         return self.model_dump(exclude_none=exclude_none, **kwargs)
+
+    def to_fb(self, mid: str) -> dict:
+        """ Convert to a dictionary for Firebase.
+        That is, for nested dictionary representation, collapse into a flat dictionary.
+        The keys are then the field paths in the transcript document, concattenated with '.'.
+        For example: {'foo': {'fizz': 'bar'}} -> {'foo.fizz': 'bar'}
+        """
+        return utils.flatten({'messages': {mid: {'score': self.to_json()}}})
+        
 
 class Message(Mappable):
     created_at: datetime = Field(default_factory=datetime.utcnow)
