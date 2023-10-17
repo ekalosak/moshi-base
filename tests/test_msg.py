@@ -1,4 +1,4 @@
-from moshi.msg import Message, ScoreL, ScoreY, Scores
+from moshi.msg import Message, Score, Scores
 from moshi.grade import Level, YesNo
 
 def test_to_json():
@@ -8,10 +8,10 @@ def test_to_json():
     assert pld['role'] == 'usr'
 
 def test_scores():
-    sco = ScoreL(Level.ADULT, "Because I say so.")
+    sco = Score(Level.ADULT, "Because I say so.")
     print(sco)
     scos = Scores(
         vocab=sco,
-        polite=ScoreY(YesNo.YES, "Something informative.")
+        polite=Score(YesNo.YES, "Something informative.")
     )
     print(scos)

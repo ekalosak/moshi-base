@@ -41,3 +41,51 @@ class Level(Rankable):
     ADULT = 3
     EXPERT = 4
 
+
+class Grade(Rankable):
+    """ Granular levels of education. """
+    BABY = 0
+    TODDLER = 1
+    PRESCHOOL = 2
+    KINDERGARTEN = 3
+    FIRSTGRADE = 4
+    SECONDGRADE = 5
+    THIRDGRADE = 6
+    FOURTHGRADE = 7
+    FIFTHGRADE = 8
+    MIDDLESCHOOL = 9
+    HIGHSCHOOL = 10
+    ADULT = 11
+    COLLEGE = 12
+    SPECIALIST = 13
+    EXPERT = 14
+
+
+class Score(BaseModel):
+    """ How good is an element of a user session? """
+    score: Grade | Level | YesNo
+    explain: str = None
+
+    def __init__(self, score: Level, explain: str):
+        super().__init__(score=score, explain=explain)
+
+class Scores(BaseModel):
+    """ Standard set of scores for a message. """
+    vocab: Score = None
+    grammar: Score = None
+    idiom: Score = None
+    polite: Score = None
+    context: Score = None
+
+    def to_json(self, exclude_none=True, **kwargs):
+        """ Convenience method to convert to consise JSON. """
+        return self.model_dump(exclude_none=exclude_none, **kwargs)
+
+    def to_fb(self, mid: str) -> dict:
+        """ Convert to a dictionary for Firebase.
+        That is, for nested dictionary representation, collapse into a flat dictionary.
+        The keys are then the field paths in the transcript document, concattenated with '.'.
+        For example: {'foo': {'fizz': 'bar'}} -> {'foo.fizz': 'bar'}
+        """
+        return utils.flatten({'messages': {mid: {'score': self.to_json()}}})
+        

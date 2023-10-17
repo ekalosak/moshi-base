@@ -8,7 +8,7 @@ from loguru import logger
 
 from . import utils
 from .audio import AudioStorage
-from .grade import Level, YesNo, Rankable
+from .grade import Level, YesNo, Scores
 from .log import LOG_COLORIZE
 from .storage import Mappable
 from .vocab import MsgV
@@ -47,43 +47,6 @@ class Role(str, Enum):
     @classmethod
     def from_json(cls, role: str):
         return cls(MOSHI_ROLES[role])
-
-class ScoreL(BaseModel):
-    """ How good is an element of a user session? """
-    score: Level
-    explain: str
-
-    def __init__(self, score: Level, explain: str):
-        super().__init__(score=score, explain=explain)
-
-class ScoreY(BaseModel):
-    """ How good is an element of a user session? """
-    score: YesNo
-    explain: str
-
-    def __init__(self, score: Level, explain: str):
-        super().__init__(score=score, explain=explain)
-
-class Scores(BaseModel):
-    """ Standard set of scores for a message. """
-    vocab: ScoreL = None
-    grammar: ScoreL = None
-    idiom: ScoreY = None
-    polite: ScoreY = None
-    context: ScoreY = None
-
-    def to_json(self, exclude_none=True, **kwargs):
-        """ Convenience method to convert to consise JSON. """
-        return self.model_dump(exclude_none=exclude_none, **kwargs)
-
-    def to_fb(self, mid: str) -> dict:
-        """ Convert to a dictionary for Firebase.
-        That is, for nested dictionary representation, collapse into a flat dictionary.
-        The keys are then the field paths in the transcript document, concattenated with '.'.
-        For example: {'foo': {'fizz': 'bar'}} -> {'foo.fizz': 'bar'}
-        """
-        return utils.flatten({'messages': {mid: {'score': self.to_json()}}})
-        
 
 class Message(Mappable):
     created_at: datetime = Field(default_factory=datetime.utcnow)

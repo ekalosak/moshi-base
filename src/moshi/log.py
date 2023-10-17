@@ -122,6 +122,7 @@ def setup_loguru(fmt=LOG_FORMAT, sink=print, level=LOG_LEVEL, diagnose=False):
     )
     print("Logger setup complete.")
 
+# TODO should be in moshifx
 def log_event(fn):
     """ Decorator to log the event params in firebase functions. """
     @functools.wraps(fn)

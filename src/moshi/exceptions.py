@@ -23,3 +23,7 @@ class TemplateNotSubstitutedError(Exception):
     """Raised when a template is not substituted."""
 
     ...
+
+class ScoreParseError(ParseError):
+    """ Raised when a score cannot be parsed. """
+    pass

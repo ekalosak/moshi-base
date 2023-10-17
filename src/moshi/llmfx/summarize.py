@@ -17,21 +17,22 @@ Example usage:
     "Alice and Bob exchanged greetings."
 
 """
-from pathlib import Path
-
 from loguru import logger
 
+from moshi.log import traced
 from moshi.msg import Message
 from moshi.prompt import Prompt
 from .base import PROMPT_DIR
 
 PROMPT_FILE = PROMPT_DIR / "summarize.txt"
 
+@traced
 def summarize(msgs: list[Message], nwords: int=5, bcp47: str="en-US") -> str:
     """ Summarize a list of messages. """
     msgs = sorted(msgs, key=lambda msg: msg.created_at)
     pro = Prompt.from_file(PROMPT_FILE)
     pro.msgs = msgs + pro.msgs
     pro.template(NWORDS=nwords)
+    logger.warning("TRANSLATING PROMPT UNCACHED")
     pro.translate(bcp47=bcp47)
     return pro.complete().body
