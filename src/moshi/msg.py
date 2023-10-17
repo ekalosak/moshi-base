@@ -1,11 +1,13 @@
 """Models for messages."""
 from datetime import datetime
 from enum import Enum
+from typing import Generic, TypeVar
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, BaseModel
 from loguru import logger
 
 from .audio import AudioStorage
+from .grade import Level, YesNo, Rankable
 from .log import LOG_COLORIZE
 from .storage import Mappable
 from .vocab import MsgV
@@ -45,6 +47,30 @@ class Role(str, Enum):
     def from_json(cls, role: str):
         return cls(MOSHI_ROLES[role])
 
+class ScoreL(BaseModel):
+    """ How good is an element of a user session? """
+    score: Level
+    explain: str
+
+    def __init__(self, score: Level, explain: str):
+        super().__init__(score=score, explain=explain)
+
+class ScoreY(BaseModel):
+    """ How good is an element of a user session? """
+    score: YesNo
+    explain: str
+
+    def __init__(self, score: Level, explain: str):
+        super().__init__(score=score, explain=explain)
+
+class Scores(BaseModel):
+    """ Standard set of scores for a message. """
+    vocab: ScoreL = None
+    grammar: ScoreL = None
+    idiom: ScoreY = None
+    polite: ScoreY = None
+    context: ScoreY = None
+
 class Message(Mappable):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     role: Role
@@ -53,6 +79,7 @@ class Message(Mappable):
     translation: str = None
     vocab: dict[str, dict[str, str]] = None
     grammar: str = None
+    score: Scores = None
 
     def __init__(self, role: Role, body: str, **kwargs):
         super().__init__(role=role, body=body, **kwargs)
