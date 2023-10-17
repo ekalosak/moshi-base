@@ -98,3 +98,18 @@ def test_scores_happy():
     assert scos.vocab.median > Level.CHILD
     assert scos.vocab.median < Level.ADULT
     assert scos.grammar is None
+
+def test_scores_null():
+    tra = Transcript(
+        aid='doesn\'t exist',
+        atp=ActT.MIN,
+        pid='doesn\'t exist',
+        uid='doesn\'t exist',
+        bcp47='en-MX',
+        status='live',
+    )
+    tra.messages = [
+        Message('usr', 'hello', score=Scores(vocab=Score(Level.CHILD))),
+        Message('usr', 'hello', score=Scores(vocab=Score(Level.ERROR), grammar=Score(Level.CHILD))),
+    ]
+    assert not tra.scores
