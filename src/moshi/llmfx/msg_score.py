@@ -1,10 +1,12 @@
 from pathlib import Path
+from re import S
 
 from loguru import logger
 from typing import TypeVar
 
 from moshi import Message, Prompt, traced
 from moshi.grade import Rankable, YesNo, Level
+from moshi.msg import ScoreL, ScoreY
 from .base import PROMPT_DIR
 
 CONTEXT_PROMPT_FILE = PROMPT_DIR / "msg_score_context.txt"
@@ -22,7 +24,7 @@ class ScoreParseError(Exception):
     pass
 
 @traced
-def _score(msg: str, pro: Path | Prompt, score_as: Rankable=Level, **kwargs) -> tuple[Rankable, str]:
+def _score(msg: str, pro: Path | Prompt, score_as: Rankable=Level, **kwargs) -> ScoreL | ScoreY:
     """ Score a message using a prompt file.
     Args:
         msg: The message to score.
@@ -31,6 +33,12 @@ def _score(msg: str, pro: Path | Prompt, score_as: Rankable=Level, **kwargs) -> 
         **kwargs: The keyword arguments to pass to the prompt as template variables.
             The RANKING variable is automatically set to the ranking of the score type (e.g. Level.to_ranking()).
     """
+    if score_as is YesNo:
+        Score = ScoreY
+    elif score_as is Level:
+        Score = ScoreL
+    else:
+        raise TypeError(f"Invalid score type: {score_as}")
     if isinstance(pro, Path):
         logger.debug(f"Loading prompt from file: {pro}")
         pro = Prompt.from_file(pro)
@@ -49,34 +57,34 @@ def _score(msg: str, pro: Path | Prompt, score_as: Rankable=Level, **kwargs) -> 
         sco = score_as.from_str(sco.strip())
     except ValueError as exc:
         raise ScoreParseError(f"Failed to parse score: {_sco}") from exc
-    return sco, expl
+    return Score(sco, expl)
 
 @traced
-def score_vocab(msg: str) -> tuple[Level, str]:
+def score_vocab(msg: str) -> ScoreL:
     """ Score the user's use of vocabulary in an utterance.
     """
     return _score(msg, VOCAB_PROMPT_FILE)
 
 @traced
-def score_grammar(msg: str) -> tuple[Level, str]:
+def score_grammar(msg: str) -> ScoreL:
     """ Score the user's use of grammar in an utterance.
     """
     return _score(msg, GRAMMAR_PROMPT_FILE)
 
 @traced
-def score_polite(msg: str) -> tuple[YesNo, str]:
+def score_polite(msg: str) -> ScoreY:
     """ Score the user's utterance for politeness.
     """
     return _score(msg, POLITENESS_PROMPT_FILE, score_as=YesNo)
 
 @traced
-def score_idiom(msg: str) -> tuple[YesNo, str]:
+def score_idiom(msg: str) -> ScoreY:
     """ Score the user's utterance for idiomaticity.
     """
     return _score(msg, IDIOMATICITY_PROMPT_FILE, score_as=YesNo)
 
 @traced
-def score_context(msgs: list[Message]) -> tuple[YesNo, str]:
+def score_context(msgs: list[Message]) ->  ScoreY:
     """ Score the user's utterance for context.
     """
     pld = ""
