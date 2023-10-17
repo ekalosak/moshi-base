@@ -72,7 +72,10 @@ class Transcript(FB):
     bcp47: str = Field(help='User language e.g. "en-US".')
     tid: str = Field(None, help='Transcript ID. One is created if not provided.', validate_default=True)
     summary: str = None
-    grade: Grade=Field(None, help='Overall grade for this transcript.')
+    grade: Grade=Field(None, help='Overall grade. Created upon finalization.')
+    topics: list[str]=Field(None, help='Topic tags. Created upon finalization.')
+    strengths: list[str]=Field(None, help='User strengths across all messages. Created upon finalization.')
+    focus: list[str]=Field(None, help='User weaknesses across all messages. Created upon finalization.')
 
     @computed_field
     @property
