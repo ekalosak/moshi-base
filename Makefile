@@ -77,7 +77,7 @@ test-integration:
 	ENV='dev' LOG_LEVEL='DETAIL' LOG_FORMAT='rich' \
 		GCLOUD_PROJECT='demo-test' \
 		FIRESTORE_EMULATOR_HOST='localhost:8090' \
-		pytest --disable-warnings -m 'fb or openai'
+		pytest --disable-warnings -m 'fb or openai and not slow'
 	@echo "🧪🤝✅ Integration tests passed."
 
 

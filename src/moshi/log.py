@@ -121,3 +121,11 @@ def setup_loguru(fmt=LOG_FORMAT, sink=print, level=LOG_LEVEL, diagnose=False):
         colorize=colorize,
     )
     print("Logger setup complete.")
+
+def log_event(fn):
+    """ Decorator to log the event params in firebase functions. """
+    @functools.wraps(fn)
+    def wrapper(event: 'Event[DocumentSnapshot]'):  # firebase_functions.firestore_fn.Event, DocumentSnapshot
+        with logger.contextualize(**event.params):
+            return fn(event)
+    return wrapper
