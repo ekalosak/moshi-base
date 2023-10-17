@@ -1,0 +1,5 @@
+sys: Provide synonyms for the term provided.
+sys: For example, "George is cool; cool" -> "stylish, admired"
+sys: For example, "Naranjas son frutas; naranjas" -> "peras, membrillos"
+sys: For example, "Naranjas son frutas; frutas" -> "verduras, plantas"
+sys: Format the outputs as in the examples above. Respond only with the formatted output.

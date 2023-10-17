@@ -26,7 +26,8 @@ DEFN_PROMPT_FILE = PROMPT_DIR / "vocab_extract_defn.txt"
 ROOT_PROMPT_FILE = PROMPT_DIR / "vocab_extract_root.txt"
 CONJ_PROMPT_FILE = PROMPT_DIR / "vocab_extract_verb_conjugation.txt"
 UDEFN_PROMPT_FILE = PROMPT_DIR / "vocab_extract_microdefn.txt"
-PROMPT_FILES = [POS_PROMPT_FILE, DEFN_PROMPT_FILE, ROOT_PROMPT_FILE, CONJ_PROMPT_FILE, UDEFN_PROMPT_FILE]
+SYNO_PROMPT_FILE = PROMPT_DIR / "vocab_extract_synonyms.txt"
+PROMPT_FILES = [POS_PROMPT_FILE, DEFN_PROMPT_FILE, ROOT_PROMPT_FILE, CONJ_PROMPT_FILE, UDEFN_PROMPT_FILE, SYNO_PROMPT_FILE]
 for pf in PROMPT_FILES:
     if not pf.exists():
         raise FileNotFoundError(f"Prompt file {pf} not found.")
@@ -204,12 +205,23 @@ def extract_verb_conjugation(verbs: list[str]) -> dict[str, str]:
     return cons
 
 @traced
+def synonyms(msg: str, term: str) -> list[str]:
+    """ Get synonyms for the term. """
+    pro = Prompt.from_file(SYNO_PROMPT_FILE)
+    msg = Message('usr', f"{msg}; {term}")
+    pro.msgs.append(msg)
+    synos = pro.complete().body.split(", ")
+    logger.success(f"Extracted synonyms: {synos}")
+    return synos
+
+@traced
 def extract_all(msg: str, bcp47: str, detail: bool=False) -> dict[str, dict]:
     """ Extract vocabulary terms from a message. This sequences a number of OpenAI API requests proportional to the number of vocab terms in the message. This is a convenience function that calls the other extract functions in this module.
     Args:
         msg (str): The message to extract vocabulary from.
         bcp47 (str): The BCP-47 language code of the message.
     """
+    logger.warning("This will take as long as 15 or 20 seconds.")
     poss: list[tuple] = extract_pos(msg)
     logger.info(f"Extracted parts of speech: {poss}")
     terms = list(set([term for term, _ in poss]))

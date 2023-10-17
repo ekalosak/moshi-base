@@ -85,6 +85,14 @@ def test_vocab_extract_verb_conjugation():
     assert utils.similar(cons[term], "past") == 1.0
 
 @pytest.mark.openai
+@pytest.mark.parametrize('term', ["行った", "明るく"])
+def test_synonym(term):
+    synos: list[str] = vocab.synonyms(term)
+    print(synos)
+    assert len(synos) > 0
+    assert all([isinstance(syno, str) for syno in synos])
+
+@pytest.mark.openai
 def test_extract_msgv():
     msg = "I went to the store and bought some milk."
     bcp47 = "en-US"
