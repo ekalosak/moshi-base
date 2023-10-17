@@ -26,4 +26,5 @@ class TemplateNotSubstitutedError(Exception):
 
 class ScoreParseError(ParseError):
     """ Raised when a score cannot be parsed. """
-    pass
+
+    ...

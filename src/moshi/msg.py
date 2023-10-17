@@ -6,9 +6,8 @@ from typing import Generic, TypeVar
 from pydantic import Field, field_validator, BaseModel
 from loguru import logger
 
-from . import utils
 from .audio import AudioStorage
-from .grade import Level, YesNo, Scores
+from .grade import Scores
 from .log import LOG_COLORIZE
 from .storage import Mappable
 from .vocab import MsgV

@@ -15,7 +15,6 @@ After the session terminates, the umsgs and amsgs are merged into the Transcript
     under the 'msgs' attribute, and the document is 'moved' (copied and deleted) to /users/<uid>/final/<tid>.
 This complexity allows different enrichment functionality to be applied to the messages after the session terminates e.g. translation, summarization, subsequent lesson planning, etc. Moreover, it allows the avoidance of unnecessarily loading the live-session functionality when the session is not live and updates are made.
 """
-from typing import Literal
 from itertools import chain
 
 from google.cloud.firestore import Client, CollectionReference
@@ -23,6 +22,7 @@ from loguru import logger
 from pydantic import Field, field_validator, ValidationInfo
 
 from .activ import ActT, Plan
+from .grade import Grade, Scores
 from .log import traced
 from .msg import Message
 from .storage import FB, DocPath
@@ -45,9 +45,10 @@ class Transcript(FB):
     pid: str = Field(help='Plan ID.')
     uid: str = Field(help='User ID.')
     bcp47: str = Field(help='User language e.g. "en-US".')
-    tid: str = Field(help='Transcript ID.', default=None, validate_default=True)
-    status: Literal['live', 'final'] = 'live'
+    tid: str = Field(None, help='Transcript ID. One is created if not provided.', validate_default=True)
     summary: str = None
+    grade: Grade=Field(None, help='Overall grade for this transcript.')
+    scores: Scores=Field(None, help='Overall VGIPC scores for this transcript.')
 
     @field_validator('tid', mode='before')
     @classmethod
