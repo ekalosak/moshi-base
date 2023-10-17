@@ -25,7 +25,7 @@ class ActT(str, enum.Enum):
     INTRO = 'intro'  # name, pronouns, interests, why learning this lang, learning goals.
     GUIDED = 'guided'  # curriculum and learning goals, e.g. match colors and nouns; levels; win conditions
     SCENARIO = 'scen'  # get a coffee; state; win conitions
-    UNSTRUCTURED = 'unstr'  # only vocab and prompt
+    UNSTRUCTURED = 'unstr'  # only vocab and prompt; can have leveling
     LESSON = 'lesson'  # in native language, teach theory
     STORY = 'story'  # multi-scenario with a plot, persistent characters
     DRILL = 'drill'  # practice, e.g. flashcards, fill in the blank, multiple choice, etc.
@@ -45,13 +45,16 @@ class Plan(FB, Generic[T], ABC):
     atp: ActT = Field(help="Activity type.")
     aid: str = Field(help="Activity ID.")
     uid: str = Field(help="User ID.")
-    pid: str = Field(help="Plan ID. If not provided, pid will be generated.", default=None)
+    pid: str = Field(None, help="Plan ID. If not provided, pid will be generated.")
     bcp47: str = Field(help="Language for the session.")
     prompt: Prompt = Field(help="Extra prompt for the session.", default_factory=Prompt)
-    template: dict[str, str] = Field(default=None, help="Template for the activity prompt.")
-    state: dict = None
-    vocab: list[str] = None
-    voice: Voice = Field(default=None, help="Voice for the session.", validate_default=True)
+    level: str = Field(None, help="Optional user level for the session.", examples=["complete novice", "knows some words, struggles with conjugating regular verbs"])
+    subtp: str = Field(None, help="Optional subtype used for different activity subtypes", examples=['topical', 'combine'])
+    state: dict = Field(None, help="State of the session, accessible via functions or in the prompt.", )
+    template: dict[str, str] = Field(None, help="Template for the activity prompt.", examples=[{"combine": "colors and nouns"}])
+    topic: str = Field(None, help="Optional topic for the session.", examples=["cooking", "wizardry"])
+    vocab: list[str] = Field(None, help="List of vocabulary terms to be tokenized and logit_biased in completions")
+    voice: Voice = Field(None, help="Voice for the session.", validate_default=True)
 
     @field_validator('pid', mode='before')
     def _make_pid(cls, v: str, values: ValidationInfo) -> str:
