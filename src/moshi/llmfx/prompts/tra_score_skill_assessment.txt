@@ -3,30 +3,32 @@
 # Usage: insert the all transcript messages just before the last 4 prompt messages.
 sys: For example:\
     sys: {'user_name': 'Y'}\
-    x: Hello, world!\
-    y: Hey what's up, I'm Mars.\
-    x: Ah, and I, Jupiter.\
-    y: Celestial, my dude.\
-    x: Indeed, my friend.\
-    y: So, what's the deal with the sun?\
-    x: It's a star some minutes away.\
-would receive: "Using a casual, humourous introduction, Y converses adeptly. The use of specific astronomy terminology and advanced adjectives like 'Celestial' indicates a broad vocabulary. Usr clearly understands and flows with the conversation."
+    x: What's up?\
+    y: Not much, maybe the sky?\
+    x: Haha ok smart guy. Hey, have you heard the word?\
+    y: The bird is the word.\
+    x: Yeah! But birds don't exist.\
+    y: So I wonder, does that mean words don't exist?\
+    x: That's a thinker!\
+would receive: "Y appears at ease in English. Their discussion is a bit esoteric, but in context the conversation flows naturally. Y demonstrates wit. The vocabulary used is not tremendously sophisticated, but it is still appropriate, and the phrasing indicates skill without requiring big words."\
+Note that saying "X's use of 'smart guy' ..." would be wrong, because X is not the user.
 sys: For example:\
     ast: Hola, senor\
     usr: Hola, mucho gusto\
     ast: Como estas tu?\
     usr: Estoy bien, y tu?\
-would receive: "Usr performs a standard introduction. They match ast's tennor, set by the use of 'senor', using corresponding pleasantries: 'mucho gusto'. Moreover, the reciprocated use of 'tu' indicates some familiarity, if not openness. This is an appropriate style for pleasantly meeting a complete stranger at similar social status."
+would receive: "The user exchanges a standard introduction, mathcing ast's tennor, set by the use of 'senor'. The reciprocal use of 'tu' indicates some familiarity, if not openness. While it is a little stilted, this is an appropriate style for meeting a stranger with similar social status."\
+Note that saying "The use of 'mucho gusto' ..." would be wrong, because ast is not the user.
 sys: For example:\
     ast: こんにちは、外のシダを見ましたか？\
     usr: ごめんなさい、シダって何ですか？\
-would receive: "Usr successfully and politely asks for help with botanical vocabulary."
+would receive: "The user politely asks for help with botanical vocabulary. They appear to understand the overall structure of the question, but do not understand the word 'シダ' read as 'しだ' meaning 'fern'."
 sys: For example:\
     ast: ¿De donde eres?\
     usr: Te llamo George\
-would receive: "George is able to conjugate 'llamar' to 'llamo', indicating himself."
-sys: Assess the user's language skill strengths in the following dialogue.
+would receive: "George is able to conjugate 'llamar' to 'llamo', indicating himself. However, by responding to a question about their origin with their name does not make sense in context. Moreover, the conjugation for 'llamar' in this case would be 'me llamo', not 'te'.
+sys: Assess the user's language skill in the following dialogue.
 # --> PUT MESSAGES HERE
-sys: Respond only with points supported by specific evidence from the dialogue.
-sys: Give no more than three comments on: vocabulary, grammar, sounding natural, being polite, and or appearing to understand the full conversation.
-sys: Respond only with your assessment of the last dialogue above, in {{LANGUAGE}}.
+sys: Give comments on some of the following: vocabulary, grammar, sounding natural, being polite, and or appearing to understand the full conversation.
+sys: Give at least one positive and at least one negative comment. Give no more than three comments total.
+sys: Respond only with your assessment of the dialogue above in {{LANGUAGE}}, using specific examples.

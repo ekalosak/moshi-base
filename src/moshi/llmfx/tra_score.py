@@ -29,13 +29,13 @@ def grade(tra: Transcript) -> Grade:
 
 @traced
 def split_into_str_and_weak(skill_summary: str) -> tuple[str, str]:
-    """Assess user's weaknesses."""
+    """Split the skill summary into strengths and weaknesses."""
     if not skill_summary:
         return ''
     pro = Prompt.from_file(SPLIT_PROMPT_FILE)
     pro.msgs = pro.msgs + [Message('usr', skill_summary)]
     res = pro.complete(presence_penalty=-2.0).body.strip()
-    logger.success(f"Split: {res}")
+    logger.success(f"Split skills into strengths and weaknesses: {res}")
     st, wk = res.split('\n')
     return st, wk
 
@@ -52,4 +52,5 @@ def summarize_skills(tra: Transcript) -> tuple[str, str]:
     pro.msgs = pro.msgs[:-4] + tra.msgs + pro.msgs[-4:]
     skill_summary = pro.complete(presence_penalty=-0.8).body.strip()
     logger.success(f"Skill summary: {skill_summary}")
+    exit()
     return split_into_str_and_weak(skill_summary)

@@ -51,15 +51,12 @@ def test_grade(tra: Transcript):
 
 
 @pytest.mark.openai
-def test_strengths(tra):
-    st = score.strengths(tra)
-    print(st)
-    assert isinstance(st, str)
-
-
-@pytest.mark.openai
-def test_weaknesses(tra):
-    wk = score.weakenesses(tra)
-    print(wk)
-    assert isinstance(wk, str)
-
+def test_skill_assess(tra):
+    res = score.summarize_skills(tra)
+    print(res)
+    st, wk = res
+    print(f"Strengths: {st}")
+    print(f"Weaknesses: {wk}")
+    for s in [st, wk]:
+        assert isinstance(s, str)
+        assert '\n' not in s
