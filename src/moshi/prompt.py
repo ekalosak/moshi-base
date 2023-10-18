@@ -253,15 +253,17 @@ class Prompt(Mappable):
                 - max_tokens: the maximum number of tokens to generate.
                 - stop: the tokens to stop generation at.
                 - logit_bias: any additional logit_bias added to the vocab's biases.
-                - temperature
-                - top_p
-                - presence_penalty
-                - frequency_penalty
-                - best_of
+                - temperature: float between 0 and 2, e.g. 0.8 is more random, e.g. 0.2 more focused.
+                - top_p: float between 0 and 1, e.g. 0.1 means only top 10% of tokens are considered.
+                - presence_penalty: float between -2 and 2, already present tokens are penalized if > 0.
+                - frequency_penalty: float between -2 and 2, frequent token are penalized if > 0.
+                - best_of: int > 0, number of completions to generate and return the best of.
                 - and so on: https://platform.openai.com/docs/api-reference/chat/create
         """
         if remaining_template := self.get_template_vars():
             raise TemplateNotSubstitutedError(f"Template not substituted: {remaining_template}")
+        if 'best_of' in kwargs:
+            logger.info(f"best_of={kwargs['best_of']} leads to more expensive API calls, use with caution.")
         kwargs["n"] = kwargs.get("n", 1)
         kwargs["max_tokens"] = kwargs.get("max_tokens", 128)
         kwargs["stop"] = kwargs.get("stop", ["\n"])  # , '?', '!', '。'])

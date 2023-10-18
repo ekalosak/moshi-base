@@ -1,24 +1,32 @@
 # Args:
 #   - LANGUAGE: e.g. 'English', the lang in which the AI assessess skill.
-# Usage: prepend the transcript messages, especially if there are > 8 messages.
-sys: Describe the user's correct use of language skills, including vocabulary, grammar, sounding natural, being polite, and appearing to understand the full conversation.
+# Usage: insert the all transcript messages just before the last 4 prompt messages.
 sys: For example:\
-    ast: Hello, world!\
-    usr: Hey what's up, I'm Mars.\
-    ast: Ah, and I, Jupiter.\
-    usr: Celestial, my dude.\
-    ast: Indeed, my friend.\
-    usr: So, what's the deal with the sun?\
-    ast: It's a star some minutes away.\
-would receive: "Using a casual introduction humourously related to ast's own, the user carries on a conversation adeptly. The use of specific astronomy terminology and advanced adjectives like 'Celestial' indicates a broad vocabulary. Usr clearly understands and flows with the conversation."
+    sys: {'user_name': 'Y'}\
+    x: Hello, world!\
+    y: Hey what's up, I'm Mars.\
+    x: Ah, and I, Jupiter.\
+    y: Celestial, my dude.\
+    x: Indeed, my friend.\
+    y: So, what's the deal with the sun?\
+    x: It's a star some minutes away.\
+would receive: "Using a casual, humourous introduction, Y converses adeptly. The use of specific astronomy terminology and advanced adjectives like 'Celestial' indicates a broad vocabulary. Usr clearly understands and flows with the conversation."
 sys: For example:\
     ast: Hola, senor\
     usr: Hola, mucho gusto\
     ast: Como estas tu?\
     usr: Estoy bien, y tu?\
-would receive: "Usr handles standard introductions well. They match ast's tennor. This is an appropriate style for meeting a complete stranger."
+would receive: "Usr performs a standard introduction. They match ast's tennor, set by the use of 'senor', using corresponding pleasantries: 'mucho gusto'. Moreover, the reciprocated use of 'tu' indicates some familiarity, if not openness. This is an appropriate style for pleasantly meeting a complete stranger at similar social status."
 sys: For example:\
     ast: こんにちは、外のシダを見ましたか？\
     usr: ごめんなさい、シダって何ですか？\
-would receive: "Usr successfully and politely asks for help with botanical vocabulary"
-sys: Respond only with your assessment, in {{LANGUAGE}}.
+would receive: "Usr successfully and politely asks for help with botanical vocabulary."
+sys: For example:\
+    ast: ¿De donde eres?\
+    usr: Te llamo George\
+would receive: "George is able to conjugate 'llamar' to 'llamo', indicating himself."
+sys: Assess the user's language skill strengths in the following dialogue.
+# --> PUT MESSAGES HERE
+sys: Respond only with points supported by specific evidence from the dialogue.
+sys: Give no more than three comments on: vocabulary, grammar, sounding natural, being polite, and or appearing to understand the full conversation.
+sys: Respond only with your assessment of the last dialogue above, in {{LANGUAGE}}.
