@@ -1,0 +1,25 @@
+# Args:
+#   - GRADES: the list of text enumerated comma-separated e.g. "BABY, TODDLER, ..., EXPERT"
+# Usage: prepend the transcript messages, especially if there are > 8 messages.
+sys: Grade the user's overall language skill.
+sys: Do not include the assistant's skill in your assessment.
+sys: For example:\
+    ast: Hello, world!\
+    usr: Hey what's up, I'm Mars.\
+    ast: Ah, and I, Jupiter.\
+    usr: Celestial, my dude.\
+    ast: Indeed, my friend.\
+    usr: So, what's the deal with the sun?\
+    ast: It's a star some minutes away.\
+would receive: HIGHSCHOOL
+sys: For example:\
+    ast: Hola, senor\
+    usr: Hola, mucho gusto\
+    ast: Como estas tu?\
+    usr: Estoy bien, y tu?\
+would receive: THIRDGRADE
+sys: For example:\
+    ast: こんにちは、外のシダを見ましたか？\
+    usr: ごめんなさい、シダって何ですか？\
+would receive: KINDERGARTEN
+sys: Respond only with one of: {{GRADES}}

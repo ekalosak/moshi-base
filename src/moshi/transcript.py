@@ -82,18 +82,22 @@ class Transcript(FB):
     def msgs(self):
         return self.messages
 
-    def to_templatable(self) -> str:
+    def to_templatable(self, roles=['ast', 'usr']) -> str:
         """ Convert the transcript to a string that can be used in a template.
-        Returns, for example:
-        '''
+        Args:
+            roles: those roles to include in the template.
+        Example return value:
+        ```
         ast: hello
         usr: hi
-        '''
+        ```
         """
         if not self.messages:
             return ''
         mstrs: list[str] = []
         for msg in self.msgs:
+            if msg.role.value.lower() not in roles:
+                continue
             mstrs.append(f"{msg.role.value.lower()}: {msg.body.strip()}")
         return "\n".join(mstrs).strip()
 
