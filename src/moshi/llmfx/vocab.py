@@ -14,6 +14,8 @@ Example usage:
     >>> assert vocs[0].pos == "pronoun"
     >>> assert vocs[0].defn == "A reference to the speaker or writer."
 """
+import asyncio
+
 from loguru import logger
 
 from moshi import Message, Prompt, traced
@@ -214,6 +216,31 @@ def synonyms(msg: str, term: str) -> list[str]:
     logger.success(f"Extracted synonyms: {synos}")
     return synos
 
+def _extract_all_async(terms: list[str], verbs: list[str], lang: str):
+    """ Helper function for extract_all.
+    Args:
+        terms: The vocabulary terms to extract.
+        verbs: The verbs as subset of terms.
+        lang: The language to extract definitions in e.g. 'English'.
+    """
+    async def _get_core():
+        td = asyncio.to_thread(extract_defn, terms, lang)
+        tr = asyncio.to_thread(extract_root, terms)
+        tc = asyncio.to_thread(extract_verb_conjugation, verbs)
+        return await asyncio.gather(td, tr, tc)
+    async def _get_details():
+        coros = []
+        for term in terms:
+            thread = asyncio.to_thread(extract_detail, term, lang)
+            coros.append(thread)
+        details: list[str] = await asyncio.gather(*coros)
+        assert len(details) == len(terms)
+        return {term: detail for term, detail in zip(terms, details)}
+    async def _all():
+        return await asyncio.gather(_get_core(), _get_details())
+    (defns, roots, cons), details = asyncio.run(_all())
+    return defns, roots, cons, details
+
 @traced
 def extract_all(msg: str, bcp47: str, detail: bool=False) -> dict[str, dict]:
     """ Extract vocabulary terms from a message. This sequences a number of OpenAI API requests proportional to the number of vocab terms in the message. This is a convenience function that calls the other extract functions in this module.
@@ -221,18 +248,16 @@ def extract_all(msg: str, bcp47: str, detail: bool=False) -> dict[str, dict]:
         msg (str): The message to extract vocabulary from.
         bcp47 (str): The BCP-47 language code of the message.
     """
-    logger.warning("This will take as long as 15 or 20 seconds.")
-    poss: list[tuple] = extract_pos(msg)
+    lang = Language(bcp47).name
+    poss: dict[str, str] = extract_pos(msg)  # NOTE need to do this first because downstream completions are designed around separated terms
     logger.info(f"Extracted parts of speech: {poss}")
-    terms = list(set([term for term, _ in poss]))
+    terms = list(poss.keys())
     logger.info(f"Extracted terms: {terms}")
-    defns = extract_defn(terms)
-    logger.info(f"Extracted definitions: {defns}")
-    roots = extract_root(terms)
-    logger.info(f"Extracted roots: {roots}")
-    verbs = list(set([term for term, pos in poss if pos == "verb"]))
+    verbs = list(set([term for term, pos in poss.items() if pos == "verb"]))
     logger.info(f"Extracted verbs: {verbs}")
-    cons = extract_verb_conjugation(verbs)
+    defns, roots, cons, details = _extract_all_async(terms, verbs, lang)
+    logger.info(f"Extracted definitions: {defns}")
+    logger.info(f"Extracted roots: {roots}")
     logger.info(f"Extracted verbs' conjugations: {cons}")
     result = {}
     for term in terms:
@@ -241,10 +266,8 @@ def extract_all(msg: str, bcp47: str, detail: bool=False) -> dict[str, dict]:
             'defn': defns[term],
             'root': roots[term],
             'con': cons[term],
+            'detail': details.get(term),
         }
-        if detail:
-            result[term]['detail'] = extract_detail(term)
-            logger.info(f"Extracted detail for '{term}': {result[term]['detail']}")
     return result
 
 @traced
