@@ -76,6 +76,26 @@ class Transcript(FB):
     topics: list[str]=Field(None, help='Topic tags. Created upon finalization.')
     strengths: list[str]=Field(None, help='User strengths across all messages. Created upon finalization.')
     focus: list[str]=Field(None, help='User weaknesses across all messages. Created upon finalization.')
+    status: str = Field('live', help='Transcript status. One of "live", "final".')
+
+    @property
+    def msgs(self):
+        return self.messages
+
+    def to_templatable(self) -> str:
+        """ Convert the transcript to a string that can be used in a template.
+        Returns, for example:
+        '''
+        ast: hello
+        usr: hi
+        '''
+        """
+        if not self.messages:
+            return ''
+        mstrs: list[str] = []
+        for msg in self.msgs:
+            mstrs.append(f"{msg.role.value.lower()}: {msg.body.strip()}")
+        return "\n".join(mstrs).strip()
 
     @computed_field
     @property
@@ -116,7 +136,6 @@ class Transcript(FB):
             if name in medians:
                 scost_pld[name] = ScoreT(median=medians[name], mad=mads[name])
         return ScoresT(**scost_pld)
-
 
     @field_validator('tid', mode='before')
     @classmethod
@@ -210,7 +229,7 @@ class Transcript(FB):
     
     @traced
     def add_msg(self, msg: Message, db: Client, create_in_subcollection: bool=True) -> str:
-        """ Add a message to the transcript.
+        """ Add a message to the transcript. Also adds it to the appropriate subcollection.
         Returns:
             The message ID.
         """

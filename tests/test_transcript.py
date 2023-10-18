@@ -113,3 +113,61 @@ def test_scores_null():
         Message('usr', 'hello', score=Scores(vocab=Score(Level.ERROR), grammar=Score(Level.CHILD))),
     ]
     assert not tra.scores
+
+def test_to_templatable_no_messages():
+    tra = Transcript(
+        aid='test_aid',
+        atp=ActT.MIN,
+        pid='test_pid',
+        uid='test_uid',
+        bcp47='en-US',
+        tid='test_tid',
+        summary='test_summary',
+        grade=Grade.ADULT,
+        topics=['test_topic1', 'test_topic2'],
+        strengths=['test_strength1', 'test_strength2'],
+        focus=['test_focus1', 'test_focus2']
+    )
+    assert tra.to_templatable() == ''
+
+def test_to_templatable_with_messages():
+    tra = Transcript(
+        aid='test_aid',
+        atp=ActT.MIN,
+        pid='test_pid',
+        uid='test_uid',
+        bcp47='en-US',
+        tid='test_tid',
+        summary='test_summary',
+        grade=Grade.EXPERT,
+        topics=['test_topic1', 'test_topic2'],
+        strengths=['test_strength1', 'test_strength2'],
+        focus=['test_focus1', 'test_focus2']
+    )
+    tra.messages = [
+        Message('usr', 'hello'),
+        Message('ast', 'hi')
+    ]
+    assert tra.to_templatable() == 'usr: hello\nast: hi'
+
+def test_to_templatable_with_multiple_messages():
+    tra = Transcript(
+        aid='test_aid',
+        atp=ActT.MIN,
+        pid='test_pid',
+        uid='test_uid',
+        bcp47='en-US',
+        tid='test_tid',
+        summary='test_summary',
+        grade=Grade.BABY,
+        topics=['test_topic1', 'test_topic2'],
+        strengths=['test_strength1', 'test_strength2'],
+        focus=['test_focus1', 'test_focus2']
+    )
+    tra.messages = [
+        Message('usr', 'hello'),
+        Message('ast', 'hi'),
+        Message('usr', 'how are you?'),
+        Message('ast', 'I am doing well, thank you for asking.')
+    ]
+    assert tra.to_templatable() == 'usr: hello\nast: hi\nusr: how are you?\nast: I am doing well, thank you for asking.'
