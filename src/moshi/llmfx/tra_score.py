@@ -34,13 +34,13 @@ def split_into_str_and_weak(skill_summary: str) -> tuple[str, str]:
         return ''
     pro = Prompt.from_file(SPLIT_PROMPT_FILE)
     pro.msgs = pro.msgs + [Message('usr', skill_summary)]
-    res = pro.complete(presence_penalty=-2.0).body.strip()
+    res = pro.complete(presence_penalty=-2.0, stop=['\n\n']).body.strip()
     logger.success(f"Split skills into strengths and weaknesses: {res}")
     st, wk = res.split('\n')
     return st, wk
 
 @traced
-def summarize_skills(tra: Transcript) -> tuple[str, str]:
+def summarize_skills(tra: Transcript) -> str:
     """Assess the user's strengths and weaknesses."""
     # TODO FUTURE provide user name and ast char name to prompt
     if not tra.messages:
@@ -52,5 +52,4 @@ def summarize_skills(tra: Transcript) -> tuple[str, str]:
     pro.msgs = pro.msgs[:-4] + tra.msgs + pro.msgs[-4:]
     skill_summary = pro.complete(presence_penalty=-0.8).body.strip()
     logger.success(f"Skill summary: {skill_summary}")
-    exit()
-    return split_into_str_and_weak(skill_summary)
+    return skill_summary

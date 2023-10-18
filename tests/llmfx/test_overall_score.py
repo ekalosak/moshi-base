@@ -52,11 +52,18 @@ def test_grade(tra: Transcript):
 
 @pytest.mark.openai
 def test_skill_assess(tra):
-    res = score.summarize_skills(tra)
-    print(res)
-    st, wk = res
+    skills = score.summarize_skills(tra)
+    print(skills)
+    assert isinstance(skills, str)
+
+@pytest.mark.openai
+def test_split_str_wk():
+    summary = """The user has good grammar, but poor vocabulary."""
+    st, wk = score.split_into_str_and_weak(summary)
     print(f"Strengths: {st}")
     print(f"Weaknesses: {wk}")
     for s in [st, wk]:
         assert isinstance(s, str)
         assert '\n' not in s
+    assert 'grammar' in st
+    assert 'vocab' in wk

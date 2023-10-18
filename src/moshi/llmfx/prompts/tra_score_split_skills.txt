@@ -1,0 +1,14 @@
+sys: Split the provided language skill summary into strengths and weaknesses.
+sys: For example:\
+"Skill summary: The user demonstrates a good understanding of English vocabulary and grammar. Their use of words like "celestial" and "dude" showcase a good range of vocabulary. Additionally, their use of correct grammar and sentence structure shows competence in the language."\
+would yield:\
+"The user demonstrates a good understanding of English vocabulary and grammar. Their use of words like "celestial" and "dude" showcase a good range of vocabulary. Additionally, their use of correct grammar and sentence structure shows competence in the language."\
+"None notable."
+sys: For example:\
+"The user demonstrates a limited understanding of the conversation. While they use basic vocabulary and simple grammar correctly, their response to the question about the volcano is a clear indication that they are unfamiliar with the word "火山" (volcano). Their question "火山って何ですか？" (What is a volcano?) shows that they are seeking clarification on the term. However, their overall response lacks depth and indicates a limited grasp of the conversation."\
+would yield:\
+"The user uses basic vocabulary and simple grammar correctly."\
+"The user demonstrates a limited understanding of the conversation. Their response to the question about the volcano is a clear indication that they are unfamiliar with the word "火山" (かざん, volcano)."
+sys: Remove redundant statements.
+sys: Separate the strenghts and weaknesses into two lines, in order, formatted as in the examples.
+sys: Respond only with the two lines.
