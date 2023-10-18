@@ -10,9 +10,9 @@ from moshi.transcript import Transcript
 from .base import PROMPT_DIR
 
 GRADE_PROMPT_FILE = PROMPT_DIR / "tra_score_overall_grade.txt"
-STRENGTH_PROMPT_FILE = PROMPT_DIR / "tra_score_strengths.txt"
-WEAKNESS_PROMPT_FILE = PROMPT_DIR / "tra_score_weaknesses.txt"
-for pf in [GRADE_PROMPT_FILE, STRENGTH_PROMPT_FILE, WEAKNESS_PROMPT_FILE]:
+SKILLS_PROMPT_FILE = PROMPT_DIR / "tra_score_skill_assessment.txt"
+SPLIT_PROMPT_FILE = PROMPT_DIR / "tra_score_split_skills.txt"
+for pf in [GRADE_PROMPT_FILE, SKILLS_PROMPT_FILE, SPLIT_PROMPT_FILE]:
     if not pf.exists():
         raise FileNotFoundError(f"Prompt file {pf} not found.")
 
@@ -22,36 +22,34 @@ def grade(tra: Transcript) -> Grade:
     pro = Prompt.from_file(GRADE_PROMPT_FILE)
     pro.template(GRADES=Grade.to_ranking())
     pro.msgs = tra.msgs + pro.msgs
-    _gd = pro.complete(best_of=3).body.strip()
+    _gd = pro.complete(presence_penalty=-1.0).body.strip()
     gd = Grade.from_str(_gd)
     logger.success(f"Grade: {gd}")
     return gd
 
 @traced
-def strengths(tra: Transcript) -> str:
-    """Assess the user's strengths."""
+def split_into_str_and_weak(skill_summary: str) -> tuple[str, str]:
+    """Assess user's weaknesses."""
+    if not skill_summary:
+        return ''
+    pro = Prompt.from_file(SPLIT_PROMPT_FILE)
+    pro.msgs = pro.msgs + [Message('usr', skill_summary)]
+    res = pro.complete(presence_penalty=-2.0).body.strip()
+    logger.success(f"Split: {res}")
+    st, wk = res.split('\n')
+    return st, wk
+
+@traced
+def summarize_skills(tra: Transcript) -> tuple[str, str]:
+    """Assess the user's strengths and weaknesses."""
     # TODO FUTURE provide user name and ast char name to prompt
     if not tra.messages:
         return ''
-    pro = Prompt.from_file(STRENGTH_PROMPT_FILE)
+    pro = Prompt.from_file(SKILLS_PROMPT_FILE)
     pro.template(
         LANGUAGE=Language(tra.bcp47).name,
     )
     pro.msgs = pro.msgs[:-4] + tra.msgs + pro.msgs[-4:]
-    st = pro.complete(presence_penalty=-0.8).body.strip()
-    logger.success(f"Strengths: {st}")
-    return st
-
-@traced
-def weakenesses(tra: Transcript) -> str:
-    """Assess user's weaknesses."""
-    if not tra.messages:
-        return ''
-    pro = Prompt.from_file(WEAKNESS_PROMPT_FILE)
-    pro.template(
-        LANGUAGE=Language(tra.bcp47).name,
-    )
-    pro.msgs = pro.msgs[:-1] + tra.msgs + pro.msgs[-1:]
-    wk = pro.complete(best_of=3).body.strip()
-    logger.success(f"Weaknesses: {wk}")
-    return wk
+    skill_summary = pro.complete(presence_penalty=-0.8).body.strip()
+    logger.success(f"Skill summary: {skill_summary}")
+    return split_into_str_and_weak(skill_summary)
