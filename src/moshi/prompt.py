@@ -4,7 +4,7 @@ Key functionality includes:
         - maps vocab to logit_bias
         - synchronous retry, backoff, and timeout logic.
         - token counting and logging
-    - a templating system; if prompt contains "{{ MY_VAR }}", it will be replaced with the value of {'template': {'my_var': 'my value'}}.
+    - a templating system; if prompt contains "{{MY_VAR}}", it will be replaced with the value of {'template': {'MY_VAR': 'my value'}}.
 """
 import time
 from pathlib import Path
