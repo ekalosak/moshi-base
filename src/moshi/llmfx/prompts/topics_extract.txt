@@ -1,6 +1,20 @@
+# Args:
+#   - LANGUAGE: response language e.g. 'English'
+#   - MAX_RESPONSES: maximum number of responses to return
+# Usage: Append a usr message with tra.to_template() output, as in example.
 sys: Provide topical tags for the user dialogue.
 sys: For example:\
+"""\
 sys: {'time of year': 'Fall'}\
 usr: What is the weather like in Berlin?\
 ast: The weather in Berlin is usually 20 degrees Celsius and sunny, something like today.\
-would return: ['weather', 'Berlin']
+"""\
+would return: "weather, Berlin, Fall, temperature"
+sys: For example:\
+"""\
+usr: Where in the world is Carmen San Diego?\
+ast: I've heard a rumor she was recently in Greece.\
+"""\
+would return: "Carmen San Diego, Greece, rumors, geography"
+sys: Return no more than {{MAX_RESPONSES}} responses.
+sys: Respond in {{LANGUAGE}}.
