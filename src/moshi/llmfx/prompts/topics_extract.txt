@@ -1,0 +1,6 @@
+sys: Provide topical tags for the user dialogue.
+sys: For example:\
+sys: {'time of year': 'Fall'}\
+usr: What is the weather like in Berlin?\
+ast: The weather in Berlin is usually 20 degrees Celsius and sunny, something like today.\
+would return: ['weather', 'Berlin']
