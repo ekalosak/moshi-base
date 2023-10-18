@@ -20,6 +20,7 @@ from lib2to3.pgen2 import grammar
 from typing import TypeVar
 
 from google.cloud.firestore import Client, CollectionReference
+from google.cloud.exceptions import Conflict
 from loguru import logger
 from pydantic import BaseModel, Field, field_validator, ValidationInfo, computed_field
 
@@ -74,8 +75,7 @@ class Transcript(FB):
     summary: str = None
     grade: Grade=Field(None, help='Overall grade. Created upon finalization.')
     topics: list[str]=Field(None, help='Topic tags. Created upon finalization.')
-    strengths: list[str]=Field(None, help='User strengths across all messages. Created upon finalization.')
-    focus: list[str]=Field(None, help='User weaknesses across all messages. Created upon finalization.')
+    assessment: str=Field(None, help='A brief assessment of user language skill. Created upon finalization.')
     status: str = Field('live', help='Transcript status. One of "live", "final".')
 
     @property
@@ -130,11 +130,8 @@ class Transcript(FB):
         medians: dict[str, int] = {}
         mads: dict[str, float] = {}
         for name, vals in _all.items():
-            if nscos := len(vals) < 4:
-                logger.warning(f"Not enough scores (nscos={nscos} < 4) for {name} transcript, cannot compute scores.")
-            else:
-                medians[name] = median(vals)
-                mads[name] = median([abs(val - medians[name]) for val in vals])
+            medians[name] = median(vals)
+            mads[name] = median([abs(val - medians[name]) for val in vals])
         scost_pld = {}
         for name in ('vocab', 'grammar', 'idiom', 'polite', 'context'):
             if name in medians:
@@ -326,3 +323,14 @@ class Transcript(FB):
                 logger.debug(f"Deleting message from transcript: {msgdoc.id}")
                 msgdoc.reference.delete()
         return self.docref(db).delete(**kwargs)
+
+    def finalize(self, db):
+        """ Idempotently finalize the transcript. """
+        self.status = 'final' if len(self.messages) > 0 else 'empty'
+        self.update(db)
+        _dp = self.docpath
+        dp = DocPath(_dp._path / f'status/{self.status}')
+        try:
+            dp.to_docref(db).create({})
+        except Conflict:
+            logger.debug(f"Status {dp} already exists.")

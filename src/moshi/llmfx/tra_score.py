@@ -19,6 +19,9 @@ for pf in [GRADE_PROMPT_FILE, SKILLS_PROMPT_FILE, SPLIT_PROMPT_FILE]:
 @traced
 def grade(tra: Transcript) -> Grade:
     """Grade the user's overall capabilities."""
+    if not tra.messages or len(tra.messages) < 3:
+        logger.debug(f"Transcript has {len(tra.messages)} < 3 messages, skipping grading.")
+        return ''
     pro = Prompt.from_file(GRADE_PROMPT_FILE)
     pro.template(GRADES=Grade.to_ranking())
     pro.msgs = tra.msgs + pro.msgs
@@ -43,7 +46,8 @@ def split_into_str_and_weak(skill_summary: str) -> tuple[str, str]:
 def summarize_skills(tra: Transcript) -> str:
     """Assess the user's strengths and weaknesses."""
     # TODO FUTURE provide user name and ast char name to prompt
-    if not tra.messages:
+    if not tra.messages or len(tra.messages) < 3:
+        logger.debug(f"Transcript has {len(tra.messages)} < 3 messages, skipping skill assessment.")
         return ''
     pro = Prompt.from_file(SKILLS_PROMPT_FILE)
     pro.template(
