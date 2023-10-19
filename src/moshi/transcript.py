@@ -305,16 +305,16 @@ class Transcript(FB):
         transc._read_messages(db)
         return transc
 
-    def create(self, db: Client, **kwargs) -> None:
-        """ Create the document in Firestore if it doesn't exist.
-        Does NOT create the messages in the subcollections.
-        Raises:
-            AttributeError: If docpath is not set.
-            AlreadyExists: If the document already exists.
-        """
-        payload = self.to_json()
-        self.docref(db).create(payload, **kwargs)
-        logger.debug(f"Created transcript: {self.docpath}")
+    # def create(self, db: Client, **kwargs) -> None:
+    #     """ Create the document in Firestore if it doesn't exist.
+    #     Does NOT create the messages in the subcollections.
+    #     Raises:
+    #         AttributeError: If docpath is not set.
+    #         AlreadyExists: If the document already exists.
+    #     """
+    #     payload = self.to_json()
+    #     self.docref(db).create(payload, **kwargs)
+    #     logger.debug(f"Created transcript: {self.docpath}")
 
     def delete(self, db: Client, **kwargs) -> None:
         """ Delete the document in Firestore. """
@@ -325,16 +325,22 @@ class Transcript(FB):
                 msgdoc.reference.delete()
         return self.docref(db).delete(**kwargs)
 
-    def finalize(self, db):
+    def finalize(self, db) -> str:
         """ Idempotently finalize the transcript.
         First, change the status to 'final' if there are messages, otherwise 'empty'.
         Next, add a sentinel doc to self.docpath/status/<status>. This triggers the appropriate finalization functions, including:
             - user streak update
             - grade transcript
             - etc.
+        Returns:
+            str: The transcript status.
         """
-        self.status = 'final' if len(self.messages) > 0 else 'empty'
+        self.status = 'empty'
+        if self.messages:
+            if any(msg.role == 'usr' for msg in self.messages):
+                self.status = 'final'
         self.update(db)
+        logger.debug(f"Updated transcript status to: {self.status}")
         _dp = self.docpath
         dp = DocPath(_dp._path / f'status/{self.status}')
         try:
@@ -342,3 +348,4 @@ class Transcript(FB):
         except Conflict:
             logger.debug(f"Status {dp} already exists.")
         logger.success(f"Finalized transcript: {self.tid}")
+        return self.status

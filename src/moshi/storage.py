@@ -145,14 +145,14 @@ class FB(Versioned, ABC):
             AttributeError: If docpath is not set.
             AlreadyExists: If the document already exists.
         """
-        return self.docref(db).create(self.to_json(), **kwargs)
+        return self.docref(db).create(self.to_fb(), **kwargs)
 
     def set(self, db: Client, **kwargs):
-        """ Set the document in FirestoreFirebase.
+        """ Write over the document in FirestoreFirebase. See also merge.
         Raises:
             AttributeError: If docpath is not set.
         """
-        return self.docref(db).set(self.to_json(), **kwargs)
+        return self.docref(db).set(self.to_fb(), **kwargs)
 
     def merge(self, db: Client, **kwargs):
         """ Set the document in Firestore using the merge option.
@@ -162,7 +162,7 @@ class FB(Versioned, ABC):
         if kwargs.get('merge') is False:
             logger.warning("merge=False is not allowed. Overriding to merge=True.")
         kwargs['merge'] = True
-        return self.docref(db).set(self.to_json(), **kwargs)
+        return self.docref(db).set(self.to_fb(), **kwargs)
 
     def update(self, db: Client, **kwargs):
         """ Update the document in Firestore.
