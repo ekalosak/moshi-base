@@ -172,6 +172,9 @@ class FB(Versioned, ABC):
 
     def update(self, db: Client, **kwargs):
         """ Update the document in Firestore.
+        Args:
+            db: The Firestore client.
+            **kwargs: Additional arguments to pass to Firestore's update method, incl. timeout: float.
         Raises:
             AttributeError: If docpath is not set.
         """

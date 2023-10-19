@@ -186,6 +186,11 @@ class Transcript(FB):
         return cls.read(docpath, db)
 
     @classmethod
+    def from_ref(cls, ref: 'DocumentReference', db) -> 'Transcript':
+        """ Get a transcript from a document reference. """
+        return cls.from_ids(ref.parent.parent.id, ref.id, db)
+
+    @classmethod
     def _kwargs_from_docpath(cls, docpath: DocPath) -> dict:
         """ Get kwargs from the docpath. For example, /users/<uid> should return {'uid': <uid>}. """
         if len(docpath.parts) != 4:
