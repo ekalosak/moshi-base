@@ -131,6 +131,14 @@ class FB(Versioned, ABC):
                 logger.debug(f"Updated with kwargs derived from {docpath}: {dat}")
         return cls(**dat)
 
+    def refresh(self, db: Client) -> None:
+        """ Refresh the document from Firestore. """
+        logger.debug(f"Refreshing {self.docpath} from Firestore.")
+        dat = self.docref(db).get().to_dict()
+        logger.debug(f"Got data from Fb: {dat}")
+        self.__init__(**dat)
+        logger.debug(f"Refreshed {self.docpath} from Firestore.")
+
     def create(self, db: Client, **kwargs) -> None:
         """ Create the document in Firestore if it doesn't exist.
         Raises:

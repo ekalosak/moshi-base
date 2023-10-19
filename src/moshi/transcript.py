@@ -25,10 +25,11 @@ from loguru import logger
 from pydantic import BaseModel, Field, field_validator, ValidationInfo, computed_field
 
 from .activ import ActT, Plan
-from .grade import Grade, Score, Scores
+from .grade import Grade
 from .log import traced
 from .msg import Message
 from .storage import FB, DocPath
+from .user import User
 from .utils import id_prefix
 
 def _a2int(audio_name: str) -> int:
@@ -325,7 +326,13 @@ class Transcript(FB):
         return self.docref(db).delete(**kwargs)
 
     def finalize(self, db):
-        """ Idempotently finalize the transcript. """
+        """ Idempotently finalize the transcript.
+        First, change the status to 'final' if there are messages, otherwise 'empty'.
+        Next, add a sentinel doc to self.docpath/status/<status>. This triggers the appropriate finalization functions, including:
+            - user streak update
+            - grade transcript
+            - etc.
+        """
         self.status = 'final' if len(self.messages) > 0 else 'empty'
         self.update(db)
         _dp = self.docpath
@@ -334,3 +341,4 @@ class Transcript(FB):
             dp.to_docref(db).create({})
         except Conflict:
             logger.debug(f"Status {dp} already exists.")
+        logger.success(f"Finalized transcript: {self.tid}")

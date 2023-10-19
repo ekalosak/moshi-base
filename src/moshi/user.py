@@ -2,13 +2,15 @@
 from datetime import datetime
 
 from google.cloud.firestore import Client
+from loguru import logger
 from pydantic import BaseModel, Field
 
 from .storage import FB, DocPath
 
 class Streak(BaseModel):
     count: int=0
-    last: datetime=Field(help="Last time user completed a lesson.", default_factory=datetime.now)
+    last: datetime=Field(None, help="Last time user completed a lesson.")
+    tid: str=Field(None, help="Last transcript id.")
 
 class User(FB):
     """Models the user profile."""
@@ -22,10 +24,10 @@ class User(FB):
     def bcp47(self) -> str:
         return self.language
 
-    @classmethod
-    def from_uid(cls, uid: str, db: Client) -> 'User':
-        return super().read(DocPath(f'users/{uid}'), db)
-
     @property
     def docpath(self) -> DocPath:
         return DocPath(f'users/{self.uid}')
+
+    @classmethod
+    def from_uid(cls, uid: str, db: Client) -> 'User':
+        return super().read(DocPath(f'users/{uid}'), db)
