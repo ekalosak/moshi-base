@@ -131,11 +131,17 @@ class FB(Versioned, ABC):
                 logger.debug(f"Updated with kwargs derived from {docpath}: {dat}")
         return cls(**dat)
 
-    def refresh(self, db: Client) -> None:
-        """ Refresh the document from Firestore. """
+    def refresh(self, db: Client, **kwargs) -> None:
+        """ Refresh the object attributes using the latest available document from Firestore.
+        Beware the local FB cache, it may have not been updated yet.
+        Beware that this will overwrite any unsaved local changes.
+        """
         logger.debug(f"Refreshing {self.docpath} from Firestore.")
         dat = self.docref(db).get().to_dict()
         logger.debug(f"Got data from Fb: {dat}")
+        if kwargs:
+            logger.debug(f"Updating with kwargs: {kwargs}")
+            dat.update(**kwargs)
         self.__init__(**dat)
         logger.debug(f"Refreshed {self.docpath} from Firestore.")
 
@@ -145,14 +151,14 @@ class FB(Versioned, ABC):
             AttributeError: If docpath is not set.
             AlreadyExists: If the document already exists.
         """
-        return self.docref(db).create(self.to_fb(), **kwargs)
+        return self.docref(db).create(self.to_json(), **kwargs)
 
     def set(self, db: Client, **kwargs):
         """ Write over the document in FirestoreFirebase. See also merge.
         Raises:
             AttributeError: If docpath is not set.
         """
-        return self.docref(db).set(self.to_fb(), **kwargs)
+        return self.docref(db).set(self.to_json(), **kwargs)
 
     def merge(self, db: Client, **kwargs):
         """ Set the document in Firestore using the merge option.
@@ -162,14 +168,14 @@ class FB(Versioned, ABC):
         if kwargs.get('merge') is False:
             logger.warning("merge=False is not allowed. Overriding to merge=True.")
         kwargs['merge'] = True
-        return self.docref(db).set(self.to_fb(), **kwargs)
+        return self.docref(db).set(self.to_json(), **kwargs)
 
     def update(self, db: Client, **kwargs):
         """ Update the document in Firestore.
         Raises:
             AttributeError: If docpath is not set.
         """
-        payload = self.to_fb()
+        payload = self.to_fb()  # NOTE this is a flattened dict, required so other attr remain unmodified, see the docref's update docs for more info on why flattened dict is required.
         with logger.contextualize(dbpath=self.docpath, dbproject=db.project):
             logger.debug(f"Updating with payload: {payload}")
         return self.docref(db).update(payload, **kwargs)

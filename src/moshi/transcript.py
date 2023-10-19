@@ -277,6 +277,7 @@ class Transcript(FB):
             self.messages.append(Message(**msg.to_dict()))
         self.messages = sorted(self.messages, key=lambda msg: msg.created_at)
 
+    # TODO make msgs the list, messages the dict, and have their setter/getter methods keep them sync'd and ref'ing the same object.
     def _read_messages(self, db: Client) -> None:
         """ Read the messages from Firestore. Use this when the transcript is final. """
         doc = self.docref(db).get()
@@ -304,6 +305,9 @@ class Transcript(FB):
         transc = Transcript(**kwargs)
         transc._read_messages(db)
         return transc
+
+    def refresh(self, db: Client):
+        super().refresh(db, uid=self.uid, tid=self.tid)
 
     # def create(self, db: Client, **kwargs) -> None:
     #     """ Create the document in Firestore if it doesn't exist.
