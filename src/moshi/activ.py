@@ -3,14 +3,13 @@ For design terms, see: https://refactoring.guru/design-patterns/catalog
 """
 import enum
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
-from functools import cached_property
 from typing import Generic, TypeVar
 
 from google.cloud.firestore import Client
 from loguru import logger
 from pydantic import field_validator, Field, ValidationInfo, computed_field
 
+from . import utils
 from .language import Language
 from .msg import Message
 from .prompt import Prompt
@@ -34,7 +33,7 @@ class ActT(str, enum.Enum):
 T = TypeVar('T', bound=ActT)
 
 def default_pid(atp: ActT, n=6) -> str:
-    tod = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    tod = utils.utcnow().strftime("%Y%m%d-%H%M%S")
     return random_string(n) + '-' + atp.value + '-' + tod
 
 def default_aid(atp: ActT) -> str:

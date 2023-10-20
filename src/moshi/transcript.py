@@ -24,6 +24,7 @@ from google.cloud.exceptions import Conflict
 from loguru import logger
 from pydantic import BaseModel, Field, field_validator, ValidationInfo, computed_field
 
+from . import utils
 from .activ import ActT, Plan
 from .grade import Grade
 from .log import traced
@@ -65,7 +66,7 @@ def median(lst: list[T]) -> T:
         return lst[n//2]
 
 class Transcript(FB):
-    created_at: datetime = Field(default_factory=datetime.utcnow, help='Time of creation.')
+    created_at: datetime = Field(default_factory=utils.utcnow, help='Time of creation.')
     messages: list[Message] = None
     aid: str = Field(help='Activity ID.')
     atp: ActT = Field(help='Activity type.')
@@ -174,8 +175,17 @@ class Transcript(FB):
     def last_updated(self) -> datetime:
         """ Get the last updated time from the messages, if there are messages. Otherwise get the created_at time. """
         if not self.messages:
+            logger.debug(f"No messages in transcript, returning created_at: {self.created_at}")
             return self.created_at
-        return max(msg.created_at for msg in self.messages)
+        dt = None
+        _msg = None
+        for msg in self.msgs:
+            if not dt or msg.created_at > dt:
+                dt = msg.created_at
+                _msg = msg
+        logger.debug(f"Got last_updated from messages: {_msg}: {dt}")
+        return dt
+        # return max(msg.created_at for msg in self.messages)
 
     @classmethod
     def from_plan(cls, plan: Plan) -> 'Transcript':

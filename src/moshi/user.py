@@ -4,6 +4,7 @@ from datetime import datetime
 from google.cloud.firestore import Client
 from pydantic import BaseModel, Field
 
+from . import utils
 from .storage import FB, DocPath
 
 class Streak(BaseModel):
@@ -18,7 +19,7 @@ class User(FB):
     language: str
     native_language: str
     streak: Streak=Field(default_factory=Streak)
-    created_at: datetime=Field(default_factory=datetime.utcnow)
+    created_at: datetime=Field(default_factory=utils.utcnow)
 
     @property
     def bcp47(self) -> str:

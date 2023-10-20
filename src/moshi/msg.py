@@ -1,11 +1,11 @@
 """Models for messages."""
 from datetime import datetime
 from enum import Enum
-from typing import Generic, TypeVar
 
-from pydantic import Field, field_validator, BaseModel
+from pydantic import Field
 from loguru import logger
 
+from . import utils
 from .audio import AudioStorage
 from .grade import Scores
 from .log import LOG_COLORIZE
@@ -48,7 +48,7 @@ class Role(str, Enum):
         return cls(MOSHI_ROLES[role])
 
 class Message(Mappable):
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utils.utcnow)
     role: Role
     body: str
     audio: AudioStorage = None

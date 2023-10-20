@@ -1,10 +1,11 @@
 """ This data model for vocabulary holds the user's usage of terms over time.
 """
-import datetime as d
+from datetime import datetime
 
 from pydantic import BaseModel, Field
 
 from moshi.storage import FB
+from moshi import utils
 from .base import Vocab
 
 class Usage(BaseModel):
@@ -12,14 +13,14 @@ class Usage(BaseModel):
     tid: str = Field(help="The transcript id. /users/<uid>/transcripts/<tid>. ")
     mid: str = Field(help="The message id. Key in .tdoc.msgs field.")
     used_correctly: bool = Field(help="Whether the user used the term correctly.")
-    when: d.datetime = Field(help="When the user used the term.", default_factory=d.datetime.now)
+    when: datetime = Field(help="When the user used the term.", default_factory=utils.utcnow)
 
 class UsageV(Vocab, FB):
    """ Represents a vocabulary term in the usage tracking system. Stored as /users/<uid>/vocab-<bcp47>/<term> doc.
    """
    usgs: list[Usage] = Field(help="Times the user used the term.")
-   first: d.datetime = Field(help="The first time the user used the term.", default_factory=d.datetime.now)
-   last: d.datetime = Field(help="The last time the user used the term.", default_factory=d.datetime.now)
+   first: datetime = Field(help="The first time the user used the term.", default_factory=utils.utcnow)
+   last: datetime = Field(help="The last time the user used the term.", default_factory=utils.utcnow)
 
    @property
    def count(self, tid: str=None) -> int:
