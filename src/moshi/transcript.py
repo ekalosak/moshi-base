@@ -15,8 +15,8 @@ After the session terminates, the umsgs and amsgs are merged into the Transcript
     under the 'msgs' attribute, and the document is 'moved' (copied and deleted) to /users/<uid>/final/<tid>.
 This complexity allows different enrichment functionality to be applied to the messages after the session terminates e.g. translation, summarization, subsequent lesson planning, etc. Moreover, it allows the avoidance of unnecessarily loading the live-session functionality when the session is not live and updates are made.
 """
+from datetime import datetime
 from itertools import chain
-from lib2to3.pgen2 import grammar
 from typing import TypeVar
 
 from google.cloud.firestore import Client, CollectionReference
@@ -29,7 +29,6 @@ from .grade import Grade
 from .log import traced
 from .msg import Message
 from .storage import FB, DocPath
-from .user import User
 from .utils import id_prefix
 
 def _a2int(audio_name: str) -> int:
@@ -66,6 +65,7 @@ def median(lst: list[T]) -> T:
         return lst[n//2]
 
 class Transcript(FB):
+    created_at: datetime = Field(default_factory=datetime.utcnow, help='Time of creation.')
     messages: list[Message] = None
     aid: str = Field(help='Activity ID.')
     atp: ActT = Field(help='Activity type.')
@@ -77,7 +77,8 @@ class Transcript(FB):
     grade: Grade=Field(None, help='Overall grade. Created upon finalization.')
     topics: list[str]=Field(None, help='Topic tags. Created upon finalization.')
     assessment: str=Field(None, help='A brief assessment of user language skill. Created upon finalization.')
-    status: str = Field('live', help='Transcript status. One of "live", "final".')
+    status: str = Field('live', help='Transcript status. One of "live", "final", or "empty".')
+    feedback: str = Field(None, help='User feedback. One of "good", "bad", "none", or "abandoned". Created upon finalization.')
 
     @property
     def msgs(self):
@@ -168,6 +169,13 @@ class Transcript(FB):
     @property
     def docpath(self) -> DocPath:
         return Transcript.get_docpath(self.uid, self.tid)
+
+    @property
+    def last_updated(self) -> datetime:
+        """ Get the last updated time from the messages, if there are messages. Otherwise get the created_at time. """
+        if not self.messages:
+            return self.created_at
+        return max(msg.created_at for msg in self.messages)
 
     @classmethod
     def from_plan(cls, plan: Plan) -> 'Transcript':
@@ -356,5 +364,5 @@ class Transcript(FB):
             dp.to_docref(db).create({})
         except Conflict:
             logger.debug(f"Status {dp} already exists.")
-        logger.success(f"Finalized transcript: {self.tid}")
+        logger.info(f"Finalized transcript: status={self.status} feedback={self.feedback}")
         return self.status

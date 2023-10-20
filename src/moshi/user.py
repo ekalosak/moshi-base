@@ -2,7 +2,6 @@
 from datetime import datetime
 
 from google.cloud.firestore import Client
-from loguru import logger
 from pydantic import BaseModel, Field
 
 from .storage import FB, DocPath
@@ -19,6 +18,7 @@ class User(FB):
     language: str
     native_language: str
     streak: Streak=Field(default_factory=Streak)
+    created_at: datetime=Field(default_factory=datetime.utcnow)
 
     @property
     def bcp47(self) -> str:
