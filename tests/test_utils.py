@@ -4,6 +4,12 @@ import pytest
 
 from moshi import utils
 
+def test_utcnow():
+    dt = utils.utcnow()
+    assert isinstance(dt, datetime)
+    assert dt.tzinfo is not None
+    assert dt.timetz().isoformat().endswith("+00:00")
+
 def test_flatten():
     inp_dict = {"foo": {"bar": 1}}
     exp_out = {"foo.bar": 1}

@@ -9,6 +9,12 @@ def _toRFC3339(dt: datetime):
         dt = dt.replace(tzinfo=timezone.utc)
     return dt.isoformat()
 
+def utcnow() -> datetime:
+    """ Get the current UTC datetime, avoiding the bullshit of datetime.utcnow().
+    See https://blog.ganssle.io/articles/2019/11/utcnow.html for more details.
+    """
+    return datetime.now(timezone.utc)
+
 def random_string(length: int=6) -> str:
     """ Generate a random string of ASCII letters. """
     import random
