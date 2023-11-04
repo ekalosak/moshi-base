@@ -51,6 +51,7 @@ class Message(Mappable):
     created_at: datetime = Field(default_factory=utils.utcnow)
     role: Role
     body: str
+    mid: str = None
     audio: AudioStorage = None
     translation: str = None
     vocab: dict[str, dict[str, str]] = None
@@ -58,6 +59,7 @@ class Message(Mappable):
     score: Scores = None
 
     def __init__(self, role: Role, body: str, **kwargs):
+        logger.debug("DEPRECATION NOTICE: migrate to message(role, body, **kwargs) function. REASON: docstring popup in vscode is not the auto-generated one from pydantic.")
         super().__init__(role=role, body=body, **kwargs)
 
     def __str__(self):
@@ -73,7 +75,9 @@ class Message(Mappable):
     @property
     def mvs(self) -> list[MsgV]:
         """ Get the MsgV values for the message's vocab. """
-        return [MsgV(term=k, **v) for k, v in self.vocab.items()]
+        if self.vocab:
+            return [MsgV(term=k, **v) for k, v in self.vocab.items()]
+        return []
 
     @classmethod
     def from_string(cls, body: str, role: Role=Role.USR):
@@ -110,3 +114,7 @@ class Message(Mappable):
             role=Role.from_json(completion['role']),
             body=completion['content'],
         )
+
+def message(role: str, body: str, **kwargs) -> Message:
+    """Conveinece function to create a Message from a role and body."""
+    return Message(role=Role(role), body=body, **kwargs)

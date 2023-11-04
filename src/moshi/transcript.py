@@ -255,6 +255,10 @@ class Transcript(FB):
     @traced
     def add_msg(self, msg: Message, db: Client, create_in_subcollection: bool=True) -> str:
         """ Add a message to the transcript. Also adds it to the appropriate subcollection.
+        Args:
+            msg: The message to add.
+            db: The Firestore client.
+            create_in_subcollection: Whether to create the message in the subcollection. If False, only creates the message in the transcript doc body so no Functions will be triggered. Default True.
         Returns:
             The message ID.
         """
@@ -265,6 +269,9 @@ class Transcript(FB):
         if self.messages is None:
             self.messages = []
         msg_id = msg.role.value.upper() + str(len(self.messages))
+        if msg.mid:
+            logger.warning(f"Message {msg} already has an ID, overwriting with {msg_id}.")
+        msg.mid = msg_id
         self.messages.append(msg)
         self.update(db)
         if create_in_subcollection:
@@ -314,7 +321,7 @@ class Transcript(FB):
             logger.debug(f"Transcript {self.docpath} has no messages.")
             msgs = []
         else:
-            msgs = [Message(**msg) for msg in raw_msgs.values()]
+            msgs = [Message(**msg, mid=mid) for mid, msg in raw_msgs.items()]
         self.messages = sorted(msgs, key=lambda msg: msg.created_at)
 
     @classmethod

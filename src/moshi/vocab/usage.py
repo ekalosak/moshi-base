@@ -12,11 +12,12 @@ class Usage(BaseModel):
     """ One usage of a term. """
     tid: str = Field(help="The transcript id. /users/<uid>/transcripts/<tid>. ")
     mid: str = Field(help="The message id. Key in .tdoc.msgs field.")
-    used_correctly: bool = Field(help="Whether the user used the term correctly.")
+    used_correctly: bool = Field(None, help="Whether the user used the term correctly.")
     when: datetime = Field(help="When the user used the term.", default_factory=utils.utcnow)
 
-class UsageV(Vocab, FB):
-   """ Represents a vocabulary term in the usage tracking system. Stored as /users/<uid>/vocab-<bcp47>/<term> doc.
+class UsageV(Vocab):
+   """ Represents a vocabulary term in the usage tracking system. Stored in the /users/<uid>/vocab/<bcp47> doc.
+   User vocab is dict[str, UsageV]
    """
    usgs: list[Usage] = Field(help="Times the user used the term.")
    first: datetime = Field(help="The first time the user used the term.", default_factory=utils.utcnow)
@@ -46,3 +47,10 @@ class UsageV(Vocab, FB):
    def pct_correct(self) -> float:
       """ Percentage of times the user used the term correctly. """
       return self.correct / self.count
+
+   def add_usage(self, usage: Usage):
+      """ Update the usage tracking with a new usage. """
+      self.usgs.append(usage)
+      self.last = usage.when
+      if not self.first:
+         self.first = usage.when

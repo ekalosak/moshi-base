@@ -6,7 +6,7 @@ from .grade import Level
 from .language import Language
 from .log import setup_loguru, failed, traced
 from .model import CompletionM, ChatM
-from .msg import Message, Role, OPENAI_ROLES, MOSHI_ROLES, ROLE_COLORS
+from .msg import Message, Role, OPENAI_ROLES, MOSHI_ROLES, ROLE_COLORS, message
 from .prompt import Prompt
 from .transcript import Transcript
 from .user import User
