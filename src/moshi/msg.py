@@ -59,7 +59,7 @@ class Message(Mappable):
     score: Scores = None
 
     def __init__(self, role: Role, body: str, **kwargs):
-        logger.debug("DEPRECATION NOTICE: migrate to message(role, body, **kwargs) function. REASON: docstring popup in vscode is not the auto-generated one from pydantic.")
+        logger.opt(depth=1).debug("DEPRECATION NOTICE: migrate to message(role, body, **kwargs) function. REASON: docstring popup in vscode is not the auto-generated one from pydantic.")
         super().__init__(role=role, body=body, **kwargs)
 
     def __str__(self):

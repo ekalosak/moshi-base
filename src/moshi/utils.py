@@ -63,8 +63,11 @@ def flatten(dat: dict) -> dict:
     res = {}
     for k, v in dat.items():
         if isinstance(v, dict):
-            for k2, v2 in flatten(v).items():
-                res[f"{k}.{k2}"] = v2
+            if not v:
+                res[k] = {}
+            else:
+                for k2, v2 in flatten(v).items():
+                    res[f"{k}.{k2}"] = v2
         else:
             res[k] = v
     return res

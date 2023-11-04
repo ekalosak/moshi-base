@@ -262,22 +262,21 @@ class Transcript(FB):
         Returns:
             The message ID.
         """
-        logger.debug(f"Adding message to transcript: {msg}")
+        logger.debug(f"Adding message to transcript: {msg.to_dict()}")
         if self.status == 'final':
             raise ValueError(f"Cannot add message to final transcript: {self.docpath}")
         assert self.status == 'live', f"Invalid status for transcript: {self.status}"
         if self.messages is None:
             self.messages = []
-        msg_id = msg.role.value.upper() + str(len(self.messages))
-        if msg.mid:
-            logger.warning(f"Message {msg} already has an ID, overwriting with {msg_id}.")
-        msg.mid = msg_id
+        msg_id = msg.mid or msg.role.value.upper() + str(len(self.messages))
+        msg.mid = None
         self.messages.append(msg)
         self.update(db)
         if create_in_subcollection:
             self._send_msg_to_subcollection(msg, msg_id, db)
         else:
-            logger.warning(f"Not creating message in subcollection, only in transcript doc body. No Functions will be triggered. Message: {msg}")
+            with logger.contextualize(**msg.to_dict()):
+                logger.warning(f"Not creating message in subcollection, only in transcript doc body. No Functions will be triggered.")
         return msg_id
 
     @traced
@@ -292,7 +291,7 @@ class Transcript(FB):
             doc = self.docref(db)
             doc.update({
                 'messages': {
-                    mid: msg.model_dump_json(exclude_none=True),
+                    mid: msg.model_dump(exclude_none=True),
                 }
             })
             logger.debug("Updated message in transcript.")

@@ -63,6 +63,9 @@ class User(FB):
         else:
             usgvoc = doc.to_dict()
         # print(f"before update: usgvoc={usgvoc}")
+        # usgvoc = {}
+        # for k, v in _usgvoc.items():
+        #     usgvoc[k] = UsageV(**v, term=k)
         usgvoc = {k: UsageV(**v) for k, v in usgvoc.items()}  # all user's vocab
         total_new = 0
         for msg in tra.messages:

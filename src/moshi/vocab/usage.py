@@ -15,7 +15,7 @@ class Usage(BaseModel):
     used_correctly: bool = Field(None, help="Whether the user used the term correctly.")
     when: datetime = Field(help="When the user used the term.", default_factory=utils.utcnow)
 
-class UsageV(Vocab):
+class UsageV(BaseModel):
    """ Represents a vocabulary term in the usage tracking system. Stored in the /users/<uid>/vocab/<bcp47> doc.
    User vocab is dict[str, UsageV]
    """
