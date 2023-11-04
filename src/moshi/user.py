@@ -43,8 +43,9 @@ class User(FB):
         if not doc.exists:
             logger.debug(f"User {self.uid} has no vocabulary yet.")
             return None
-        logger.debug(f"User vocabulary found. len(doc)={len(doc)}")
-        return {k: UsageV(**v) for k, v in doc.to_dict().items()}
+        dat = doc.to_dict()
+        logger.debug(f"User vocabulary found. len(doc.to_dict())={len(dat)}")
+        return {k: UsageV(**v, term=k) for k, v in dat.items()}
 
     @classmethod
     def from_uid(cls, uid: str, db: Client) -> 'User':
