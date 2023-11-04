@@ -62,31 +62,31 @@ class User(FB):
             usgvoc = {}
         else:
             usgvoc = doc.to_dict()
-        print(f"before update: usgvoc={usgvoc}")
+        # print(f"before update: usgvoc={usgvoc}")
         usgvoc = {k: UsageV(**v) for k, v in usgvoc.items()}  # all user's vocab
         total_new = 0
         for msg in tra.messages:
-            print(f'msg={msg}')
-            print(f'msg dict: {msg.model_dump()}')
+            # print(f'msg={msg}')
+            # print(f'msg dict: {msg.model_dump()}')
             new_in_msg = 0
             for msgv in msg.mvs:
                 usg = Usage(tid=tra.tid, mid=msg.mid)
-                print(f'usg={usg}')
+                # print(f'usg={usg}')
                 if msgv.term in usgvoc:
-                    print('not new, updating...')
+                    # print('not new, updating...')
                     usgvoc[msgv.term].add_usage(Usage(tid=tra.tid, mid=msg.mid))
                 else:
-                    print('new, creating...')
+                    # print('new, creating...')
                     usgvoc[msgv.term] = UsageV(term=msgv.term, usgs=[usg], first=msg.created_at, last=msg.created_at)
-                    logger.debug(f"User used {msgv.term} for the first time.")
+                    logger.debug(f"User used '{msgv.term}' for the first time.")
                     new_in_msg += 1
-                print(f'after update/create: usgvoc[{msgv.term}]={usgvoc[msgv.term]}')
+                # print(f'after update/create: usgvoc[{msgv.term}]={usgvoc[msgv.term]}')
             if new_in_msg > 0:
                 logger.debug(f"User used {new_in_msg} new terms in a message")
                 total_new += new_in_msg
         if total_new > 0:
             logger.info(f"User used {total_new} new terms in this session.")
-        print(f"after all terms updated: usgvoc={usgvoc}")
+        # print(f"after all terms updated: usgvoc={usgvoc}")
         pld = {k: v.model_dump(exclude_none=True, exclude=['term']) for k, v in usgvoc.items()}
         docr.set(pld, merge=True)
         logger.info("Updated user vocabulary.")

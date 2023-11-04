@@ -315,13 +315,18 @@ class Transcript(FB):
             raise ValueError(f"selfript document {self.docpath} does not exist in Firebase.")
         dat = doc.to_dict()
         logger.debug(f"Got transcript {doc.id} from Fb: {dat}")
+        msgs = []
         try:
             raw_msgs: dict[str, dict[str, str]] = dat['messages']
         except KeyError:
             logger.debug(f"Transcript {self.docpath} has no messages.")
-            msgs = []
         else:
-            msgs = [Message(**msg, mid=mid) for mid, msg in raw_msgs.items()]
+            for mid, _msg in raw_msgs.items():
+                if 'mid' in _msg:
+                    _msg.pop('mid')
+                msg = Message(**_msg, mid=mid)
+                msgs.append(msg)
+            # msgs = [Message(**msg, mid=mid) for mid, msg in raw_msgs.items()]
         self.messages = sorted(msgs, key=lambda msg: msg.created_at)
 
     @classmethod
