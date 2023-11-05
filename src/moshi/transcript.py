@@ -308,11 +308,10 @@ class Transcript(FB):
             logger.debug(f"Got message from Fb: {msgd.id}: {dat}")
             self.messages[msgd.id] = Message(**dat)
 
-    def _read_messages(self, db: Client) -> None:
+    def _read_messages(self, doc: DocumentSnapshot) -> None:
         """ Read the messages from Firestore into self.messages. """
-        doc = self.docref(db).get()
         if not doc.exists:
-            raise ValueError(f"selfript document {self.docpath} does not exist in Firebase.")
+            raise ValueError(f"Transcript document {self.docpath} does not exist in Firebase.")
         dat = doc.to_dict()
         logger.debug(f"Got transcript {doc.id} from Fb: {dat}")
         try:
@@ -335,8 +334,10 @@ class Transcript(FB):
             raise ValueError(f"Document {docpath} does not exist in Firebase.")
         kwargs = cls._kwargs_from_docpath(docpath)
         kwargs.update(tdoc.to_dict())
+        if 'messages' in kwargs:
+            kwargs.pop('messages')
         transc = Transcript(**kwargs)
-        transc._read_messages(db)
+        transc._read_messages(tdoc)
         return transc
 
     def refresh(self, db: Client):
