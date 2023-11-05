@@ -342,17 +342,6 @@ class Transcript(FB):
     def refresh(self, db: Client):
         super().refresh(db, uid=self.uid, tid=self.tid)
 
-    # def create(self, db: Client, **kwargs) -> None:
-    #     """ Create the document in Firestore if it doesn't exist.
-    #     Does NOT create the messages in the subcollections.
-    #     Raises:
-    #         AttributeError: If docpath is not set.
-    #         AlreadyExists: If the document already exists.
-    #     """
-    #     payload = self.to_json()
-    #     self.docref(db).create(payload, **kwargs)
-    #     logger.debug(f"Created transcript: {self.docpath}")
-
     def delete(self, db: Client, **kwargs) -> None:
         """ Delete the document in Firestore. """
         for colnm in ('amsgs', 'umsgs'):
