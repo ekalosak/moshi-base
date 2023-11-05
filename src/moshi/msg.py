@@ -51,7 +51,6 @@ class Message(Mappable):
     created_at: datetime = Field(default_factory=utils.utcnow)
     role: Role
     body: str
-    mid: str = None
     audio: AudioStorage = None
     translation: str = None
     vocab: dict[str, dict[str, str]] = None

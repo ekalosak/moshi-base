@@ -21,6 +21,7 @@ from typing import TypeVar
 
 from google.cloud.firestore import Client, CollectionReference
 from google.cloud.exceptions import Conflict
+from google.cloud.firestore import DocumentReference, DocumentSnapshot
 from loguru import logger
 from pydantic import BaseModel, Field, field_validator, ValidationInfo, computed_field
 
@@ -66,8 +67,8 @@ def median(lst: list[T]) -> T:
         return lst[n//2]
 
 class Transcript(FB):
+    messages: dict[str, Message] = Field(default_factory=dict)
     created_at: datetime = Field(default_factory=utils.utcnow, help='Time of creation.')
-    messages: list[Message] = None
     aid: str = Field(help='Activity ID.')
     atp: ActT = Field(help='Activity type.')
     pid: str = Field(help='Plan ID.')
@@ -82,8 +83,11 @@ class Transcript(FB):
     feedback: str = Field(None, help='User feedback. One of "good", "bad", "none", or "abandoned". Created upon finalization.')
 
     @property
-    def msgs(self):
-        return self.messages
+    def msgs(self) -> list[Message]:
+        """ Get the list of messages, sorted by date, from this transcript. """
+        if not self.messages:
+            return []
+        return sorted(self.messages.values(), key=lambda msg: msg.created_at)
 
     def to_templatable(self, roles=['ast', 'usr']) -> str:
         """ Convert the transcript to a string that can be used in a template.
@@ -117,7 +121,8 @@ class Transcript(FB):
             logger.debug(f"Not enough messages (nmsg={nmsg} < 4) in transcript, cannot compute scores.")
             return None
         _all: dict[str, list[int]] = {}
-        for msg in self.messages:
+        for msg in self.messages.values():
+            msg: Message
             if msg.role != 'usr':
                 continue
             if scos := msg.score:
@@ -185,7 +190,6 @@ class Transcript(FB):
                 _msg = msg
         logger.debug(f"Got last_updated from messages: {_msg}: {dt}")
         return dt
-        # return max(msg.created_at for msg in self.messages)
 
     @classmethod
     def from_plan(cls, plan: Plan) -> 'Transcript':
@@ -227,7 +231,7 @@ class Transcript(FB):
         if 'messages' in js:
             js['messages'] = {
                 msg.role.value.upper() + str(i): msg.to_json()
-                for i, msg in enumerate(self.messages)
+                for i, msg in enumerate(self.msgs)
             }
         return js
 
@@ -266,11 +270,8 @@ class Transcript(FB):
         if self.status == 'final':
             raise ValueError(f"Cannot add message to final transcript: {self.docpath}")
         assert self.status == 'live', f"Invalid status for transcript: {self.status}"
-        if self.messages is None:
-            self.messages = []
-        msg_id = msg.mid or msg.role.value.upper() + str(len(self.messages))
-        msg.mid = None
-        self.messages.append(msg)
+        msg_id = msg.role.value.upper() + str(len(self.messages))
+        self.messages[msg_id] = msg
         self.update(db)
         if create_in_subcollection:
             self._send_msg_to_subcollection(msg, msg_id, db)
@@ -301,20 +302,19 @@ class Transcript(FB):
         logger.warning("Using _read_subcollections results in up to 50x the number of reads per transcript load event.")
         umsgs = self.docref(db).collection('umsgs').stream()
         amsgs = self.docref(db).collection('amsgs').stream()
-        for msg in chain(umsgs, amsgs):
-            logger.debug(f"Got message from Fb: {msg.to_dict()}")
-            self.messages.append(Message(**msg.to_dict()))
-        self.messages = sorted(self.messages, key=lambda msg: msg.created_at)
+        for msgd in chain(umsgs, amsgs):
+            msgd: DocumentSnapshot
+            dat = msgd.to_dict()
+            logger.debug(f"Got message from Fb: {msgd.id}: {dat}")
+            self.messages[msgd.id] = Message(**dat)
 
-    # TODO make msgs the list, messages the dict, and have their setter/getter methods keep them sync'd and ref'ing the same object.
     def _read_messages(self, db: Client) -> None:
-        """ Read the messages from Firestore. Use this when the transcript is final. """
+        """ Read the messages from Firestore into self.messages. """
         doc = self.docref(db).get()
         if not doc.exists:
             raise ValueError(f"selfript document {self.docpath} does not exist in Firebase.")
         dat = doc.to_dict()
         logger.debug(f"Got transcript {doc.id} from Fb: {dat}")
-        msgs = []
         try:
             raw_msgs: dict[str, dict[str, str]] = dat['messages']
         except KeyError:
@@ -322,11 +322,10 @@ class Transcript(FB):
         else:
             for mid, _msg in raw_msgs.items():
                 if 'mid' in _msg:
-                    _msg.pop('mid')
-                msg = Message(**_msg, mid=mid)
-                msgs.append(msg)
-            # msgs = [Message(**msg, mid=mid) for mid, msg in raw_msgs.items()]
-        self.messages = sorted(msgs, key=lambda msg: msg.created_at)
+                    _mid = _msg.pop('mid')
+                    logger.warning(f"Message {mid} has an unexpected `mid` attribute in its FB data: '{_mid}'. The former will be used.")
+                msg = Message(**_msg)
+                self.messages[mid] = msg
 
     @classmethod
     def read(cls, docpath: DocPath, db: Client) -> "Transcript":
