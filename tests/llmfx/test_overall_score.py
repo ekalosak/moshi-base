@@ -47,14 +47,20 @@ def tra(msgs, pla):
 def test_grade(tra: Transcript):
     gd = score.grade(tra) 
     print(gd)
-    assert isinstance(gd, Grade)
+    if tra.msgs:
+        assert isinstance(gd, Grade)
+    else:
+        assert gd is None
 
 
 @pytest.mark.openai
-def test_skill_assess(tra):
+def test_skill_assess(tra: Transcript):
     skills = score.summarize_skills(tra)
     print(skills)
-    assert isinstance(skills, str)
+    if tra.messages:
+        assert isinstance(skills, str)
+    else:
+        assert skills is None
 
 @pytest.mark.openai
 def test_split_str_wk():

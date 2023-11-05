@@ -1,9 +1,8 @@
 from pathlib import Path
 
 from loguru import logger
-from typing import TypeVar
 
-from moshi import Message, Prompt, traced
+from moshi import Message, Prompt, traced, message
 from moshi.exceptions import ScoreParseError
 from moshi.grade import Rankable, YesNo, Level, Score
 from .base import PROMPT_DIR
@@ -35,7 +34,7 @@ def _score(msg: str, pro: Path | Prompt, score_as: Rankable=Level, **kwargs) -> 
     pro.template(RANKING=score_as.to_ranking())
     if kwargs:
         pro.template(**kwargs)
-    msg = Message('usr', msg)
+    msg = message('usr', msg)
     pro.msgs.append(msg)
     logger.debug(f"Getting score for: {msg}")
     _sco = pro.complete().body

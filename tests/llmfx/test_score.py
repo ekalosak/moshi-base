@@ -27,12 +27,12 @@ def test_level():
     ("Gargantuan alternative grandeur paroxysm", Level.EXPERT),
 ])
 def test_vocab(msg, esco):
-    sco, expl = msg_score.score_vocab(msg)
+    sco = msg_score.score_vocab(msg)
     print(f"Vocab score: {msg} -> {sco}")
-    print(f"Explanation: {expl}")
-    assert isinstance(expl, str)
-    assert isinstance(sco, Level)
-    assert abs(sco - esco) <= 1, "Level mismatch."
+    print(f"Explanation: {sco.explain}")
+    assert isinstance(sco.explain, str)
+    assert isinstance(sco.score, Level)
+    assert abs(sco.score - esco) <= 1, "Level mismatch."
 
 @pytest.mark.openai
 @pytest.mark.parametrize('msg, esco', [
@@ -43,12 +43,12 @@ def test_vocab(msg, esco):
     ("Jeff has a great sense of humor, developed in his early childhood", Level.EXPERT),
 ])
 def test_grammar(msg, esco: Level):
-    sco, expl = msg_score.score_grammar(msg)
+    sco = msg_score.score_grammar(msg)
     print(f"Grammar score: {msg} -> {sco}")
-    print(f"Explanation: {expl}")
-    assert isinstance(expl, str)
-    assert isinstance(sco, Level)
-    assert abs(sco - esco) <= 1, "Level mismatch."
+    print(f"Explanation: {sco.explain}")
+    assert isinstance(sco.explain, str)
+    assert isinstance(sco.score, Level)
+    assert abs(sco.score - esco) <= 1, "Level mismatch."
 
 
 @pytest.mark.openai
@@ -58,12 +58,12 @@ def test_grammar(msg, esco: Level):
     ("Knowing me, I can be Chuck ", YesNo.NO),
 ])
 def test_idiom(msg, esco: YesNo):
-    sco, expl = msg_score.score_idiom(msg)
+    sco = msg_score.score_idiom(msg)
     print(f"Idiom score: {msg} -> {sco}")
-    print(f"Explanation: {expl}")
-    assert isinstance(expl, str)
-    assert isinstance(sco, YesNo)
-    assert abs(sco - esco) <= 1, "Score mismatch."
+    print(f"Explanation: {sco.explain}")
+    assert isinstance(sco.explain, str)
+    assert isinstance(sco.score, YesNo)
+    assert abs(sco.score - esco) <= 1, "Score mismatch."
 
 @pytest.mark.openai
 @pytest.mark.parametrize('msg, esco', [
@@ -72,12 +72,12 @@ def test_idiom(msg, esco: YesNo):
     ("Hello, it's nice to meet you", YesNo.YES)
 ])
 def test_polite(msg, esco):
-    sco, expl = msg_score.score_polite(msg)
+    sco = msg_score.score_polite(msg)
     print(f"Politeness score: {msg} -> {sco}")
-    print(f"Explanation: {expl}")
-    assert isinstance(expl, str)
-    assert isinstance(sco, YesNo)
-    assert abs(sco - esco) <= 1, "Score mismatch."
+    print(f"Explanation: {sco.explain}")
+    assert isinstance(sco.explain, str)
+    assert isinstance(sco.score, YesNo)
+    assert abs(sco.score - esco) <= 1, "Score mismatch."
 
 @pytest.mark.openai
 @pytest.mark.parametrize('msgs, esco', [
@@ -86,9 +86,9 @@ def test_polite(msg, esco):
     ([message('sys', "Pretend you're a duck"), message('ast', "Hi, I'm George."), message('usr', "Quack quack")], YesNo.MOSTLY),
 ])
 def test_context(msgs, esco):
-    sco, expl = msg_score.score_context(msgs)
+    sco = msg_score.score_context(msgs)
     print(f"Context appropriate score: {msgs} -> {sco}")
-    print(f"Explanation: {expl}")
-    assert isinstance(expl, str)
+    print(f"Explanation: {sco.explain}")
+    assert isinstance(sco.explain, str)
     assert isinstance(sco, YesNo)
-    assert abs(sco - esco) <= 1, "Score mismatch."
+    assert abs(sco.score - esco) <= 1, "Score mismatch."

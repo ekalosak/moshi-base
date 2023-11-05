@@ -3,7 +3,7 @@ from loguru import logger
 from moshi import traced
 from moshi.grade import Grade
 from moshi.language import Language
-from moshi.msg import Message
+from moshi.msg import message
 from moshi.prompt import Prompt
 from moshi.transcript import Transcript
 
@@ -41,7 +41,7 @@ def split_into_str_and_weak(skill_summary: str) -> tuple[str, str]:
     if not skill_summary:
         return ''
     pro = Prompt.from_file(SPLIT_PROMPT_FILE)
-    pro.msgs = pro.msgs + [Message('usr', skill_summary)]
+    pro.msgs = pro.msgs + [message('usr', skill_summary)]
     res = pro.complete(presence_penalty=-2.0, stop=['\n\n']).body.strip()
     logger.success(f"Split skills into strengths and weaknesses: {res}")
     st, wk = res.split('\n')

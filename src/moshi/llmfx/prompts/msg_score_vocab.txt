@@ -5,5 +5,5 @@ sys: For example, "now tea milk" -> "CHILD; common household words, basic tempor
 sys: For example, "powerhouse mitochondria cell" -> "ADULT; slightly specialized biology knowledge".
 sys: For example, "Battery arbitrary sauteed exemplary" -> "ADULT; specialized culinary term, rarified adjectives".
 sys: For example, "pyruvate glycolysis" -> "EXPERT; specialized biochemical terms"
-sys: Do not grade based on grammar. It does not matter if the message makes sense at all. Grade based on the individual words by themselves.
+sys: Do not grade based on grammar. It does not matter if the message makes sense at all. Grade based on the difficulty of individual words by themselves.
 sys: Respond only with the ranking and explanation, separated by a semicolon as in the examples.
