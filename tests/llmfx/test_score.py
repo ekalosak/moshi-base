@@ -22,7 +22,7 @@ def test_level():
     ("widgywadgDNA", Level.ERROR),
     ("milk", Level.BABY),
     ("applesauce", Level.CHILD),
-    ("In oregano seven query jib", Level.ADULT),
+    ("In oregano seven query jib", Level.CHILD),
     ("Criminal rats overtaken city", Level.ADULT),
     ("Gargantuan alternative grandeur paroxysm", Level.EXPERT),
 ])

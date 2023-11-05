@@ -5,5 +5,10 @@ sys: For example, "now tea milk" -> "CHILD; common household words, basic tempor
 sys: For example, "powerhouse mitochondria cell" -> "ADULT; slightly specialized biology knowledge".
 sys: For example, "Battery arbitrary sauteed exemplary" -> "ADULT; specialized culinary term, rarified adjectives".
 sys: For example, "pyruvate glycolysis" -> "EXPERT; specialized biochemical terms"
-sys: Do not grade based on grammar. It does not matter if the message makes sense at all. Grade based on the difficulty of individual words by themselves.
+sys: For example, "quandry eighty fourty third Cheerio" -> "ADULT; 'quandry' is a sophisticated term"
+sys: The level BABY should be used for messages containing only very common words learned early on.
+sys: The level CHILD should be used for messages containing words known by average 2nd graders.
+sys: The level ADULT should be used for messages containing words known by average 8th graders.
+sys: Do not grade based on grammar. It does not matter if the user message makes sense at all.
+sys: Grade based on the difficulty of individual words by themselves, not the relations between the words.
 sys: Respond only with the ranking and explanation, separated by a semicolon as in the examples.
