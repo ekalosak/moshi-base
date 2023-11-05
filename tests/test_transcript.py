@@ -85,8 +85,7 @@ def test_update_msg(tra: Transcript, db):
     tra.update_msg(msg, mid, db)
     doc = tra.docref(db).get()
     dat = doc.to_dict()
-    pld = json.loads(dat['messages'][mid])
-    assert message(**pld) == msg
+    assert message(**dat['messages'][mid]) == msg
 
 def test_scores_happy():
     tra = Transcript(
