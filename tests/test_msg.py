@@ -1,5 +1,5 @@
-from moshi.msg import Message, Score, Scores
-from moshi.grade import Level, YesNo
+from moshi.grade import Level, YesNo, Score, Scores
+from moshi.msg import Message
 
 def test_to_json():
     msg = Message('usr', 'hello')
