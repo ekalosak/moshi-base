@@ -70,6 +70,8 @@ class User(FB):
         total_new = 0
         update = {}
         for mid, msg in tra.messages.items():
+            if msg.role != 'usr':
+                continue
             new_in_msg = 0
             for msgv in msg.mvs:
                 usg = Usage(tid=tra.tid, mid=mid)
