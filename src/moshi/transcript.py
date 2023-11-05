@@ -119,8 +119,7 @@ class Transcript(FB):
             logger.debug("No messages in transcript, cannot compute scores.")
             return None
         _all: dict[str, list[int]] = {}
-        for msg in self.messages.values():
-            msg: Message
+        for msg in self.messages.values():  # no need to sort, we're just aggregating
             if msg.role != 'usr':
                 continue
             if scos := msg.score:

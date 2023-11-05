@@ -115,11 +115,14 @@ def test_scores_null():
         bcp47='en-MX',
         status='live',
     )
-    tra.messages = [
-        message('usr', 'hello', score=Scores(vocab=Score(Level.CHILD))),
-        message('usr', 'hello', score=Scores(vocab=Score(Level.ERROR), grammar=Score(Level.CHILD))),
-    ]
-    assert not tra.scores
+    tra.add_msgs([
+            message('usr', 'hello', score=Scores(vocab=Score(Level.CHILD))),
+            message('usr', 'hello', score=Scores(vocab=Score(Level.ERROR), grammar=Score(Level.CHILD))),
+        ])
+    scos = tra.scores
+    assert isinstance(scos, ScoresT)
+    assert scos.vocab.n == 2
+    assert scos.grammar.n == 1
 
 def test_to_templatable_no_messages():
     tra = Transcript(
