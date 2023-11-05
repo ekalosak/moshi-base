@@ -9,7 +9,7 @@ from google.cloud import firestore
 from loguru import logger
 import pytest
 
-from moshi import model, Message, Role, Prompt, Function, FuncCall
+from moshi import model, message, Role, Prompt, Function, FuncCall
 from moshi.activ import MinA, UnstrA
 
 GCLOUD_PROJECT = os.getenv("GCLOUD_PROJECT", "demo-test")
@@ -61,9 +61,9 @@ def prompt(function):
     return Prompt(
         mod=model.ChatM.GPT35TURBO,
         msgs=[
-            Message(Role.SYS, "Only use the functions you have been provided with."),
-            Message(Role.SYS, "Be polite."),
-            Message(Role.USR, "Hello."),
+            message(Role.SYS, "Only use the functions you have been provided with."),
+            message(Role.SYS, "Be polite."),
+            message(Role.USR, "Hello."),
         ],
         functions=[function],
         function_call=FuncCall(func="get_topic"),

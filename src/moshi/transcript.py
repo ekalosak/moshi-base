@@ -257,12 +257,12 @@ class Transcript(FB):
             logger.debug(f"Added message to transcript.")
     
     @traced
-    def add_msg(self, msg: Message, db: Client, create_in_subcollection: bool=True) -> str:
+    def add_msg(self, msg: Message, db: Client=None, create_in_subcollection: bool=True) -> str:
         """ Add a message to the transcript. Also adds it to the appropriate subcollection.
         Args:
             msg: The message to add.
-            db: The Firestore client.
-            create_in_subcollection: Whether to create the message in the subcollection. If False, only creates the message in the transcript doc body so no Functions will be triggered. Default True.
+            db: The Firestore client. If None, msg added only to self.messages.
+            create_in_subcollection: Whether to create the message in the subcollection. If False, only creates the message in the transcript doc body so no Functions will be triggered. Default True. Ignored if db is None.
         Returns:
             The message ID.
         """
@@ -272,13 +272,19 @@ class Transcript(FB):
         assert self.status == 'live', f"Invalid status for transcript: {self.status}"
         msg_id = msg.role.value.upper() + str(len(self.messages))
         self.messages[msg_id] = msg
-        self.update(db)
-        if create_in_subcollection:
-            self._send_msg_to_subcollection(msg, msg_id, db)
-        else:
-            with logger.contextualize(**msg.to_dict()):
-                logger.warning(f"Not creating message in subcollection, only in transcript doc body. No Functions will be triggered.")
+        if db:
+            self.update(db)
+            if create_in_subcollection:
+                self._send_msg_to_subcollection(msg, msg_id, db)
+            else:
+                with logger.contextualize(**msg.to_dict()):
+                    logger.warning(f"Not creating message in subcollection, only in transcript doc body. No Functions will be triggered.")
         return msg_id
+
+    def add_msgs(self, msgs, db=None, cisubcol=True):
+        """ Add multiple messages to the transcript. See `add_msg` for details. """
+        for msg in msgs:
+            self.add_msg(msg, db, cisubcol)
 
     @traced
     def update_msg(self, msg: Message, mid: str, db: Client) -> None:

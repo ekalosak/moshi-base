@@ -4,6 +4,7 @@ import json
 import pytest
 from google.cloud.firestore import Client, DocumentSnapshot
 
+from moshi.msg import message
 from moshi.transcript import ScoresT, Transcript, Message, ActT
 from moshi.grade import Scores, Score, Grade, YesNo, Level
 
@@ -41,17 +42,21 @@ def test_create_no_msg(tra: Transcript, db: Client):
 
 @pytest.mark.fb
 def test_create_with_msg(tra: Transcript, db: Client):
-    tra.messages = [Message('usr', 'hello')]
+    tra.add_msg(message('usr', 'hello'))
     tra.create(db)
     doc = tra.docref(db).get()
     assert doc.exists
     from pprint import pprint; pprint(doc.to_dict())
     print(doc.id)
+    dat = doc.to_dict()
+    assert 'messages' in dat
+    assert len(dat['messages']) == 1
+    assert dat['messages'].__next__() == 'usr: hello'
 
 @pytest.mark.fb
 def test_add_msg(tra: Transcript, db):
     tra.create(db)
-    msg = Message('usr', 'hello')
+    msg = message('usr', 'hello')
     if tra.status == 'final':
         with pytest.raises(ValueError):
             tra.add_msg(msg, db)
@@ -59,12 +64,12 @@ def test_add_msg(tra: Transcript, db):
         mid = tra.add_msg(msg, db)
         doc: DocumentSnapshot = tra.docref(db).collection('umsgs').document(mid).get()
         dat = doc.to_dict()
-        assert Message(**dat) == msg
+        assert message(**dat) == msg
 
 @pytest.mark.fb
 def test_update_msg(tra: Transcript, db):
     tra.create(db)
-    msg = Message('usr', 'hello')
+    msg = message('usr', 'hello')
     if tra.status == 'final':
         with pytest.raises(ValueError):
             mid = tra.add_msg(msg, db, create_in_subcollection=False)
@@ -75,7 +80,7 @@ def test_update_msg(tra: Transcript, db):
     doc = tra.docref(db).get()
     dat = doc.to_dict()
     pld = json.loads(dat['messages'][mid])
-    assert Message(**pld) == msg
+    assert message(**pld) == msg
 
 def test_scores_happy():
     tra = Transcript(
@@ -86,13 +91,15 @@ def test_scores_happy():
         bcp47='en-MX',
         status='live',
     )
-    tra.messages = [
-        Message('usr', 'hello', score=Scores(vocab=Score(Level.CHILD))),
-        Message('usr', 'hello', score=Scores(vocab=Score(Level.ERROR), grammar=Score(Level.CHILD))),
-        Message('usr', 'hello', score=Scores(vocab=Score(Level.ADULT), grammar=Score(Level.CHILD))),
-        Message('usr', 'hello'),
-        Message('usr', 'hello', score=Scores(vocab=Score(Level.ADULT), grammar=Score(Level.CHILD))),
+    messages = [
+        message('usr', 'hello', score=Scores(vocab=Score(Level.CHILD))),
+        message('usr', 'hello', score=Scores(vocab=Score(Level.ERROR), grammar=Score(Level.CHILD))),
+        message('usr', 'hello', score=Scores(vocab=Score(Level.ADULT), grammar=Score(Level.CHILD))),
+        message('usr', 'hello'),
+        message('usr', 'hello', score=Scores(vocab=Score(Level.ADULT), grammar=Score(Level.CHILD))),
     ]
+    for msg in messages:
+        tra.add_msg(msg)
     scos = tra.scores
     assert isinstance(scos, ScoresT)
     assert scos.vocab.median > Level.CHILD
@@ -144,10 +151,12 @@ def test_to_templatable_with_messages():
         strengths=['test_strength1', 'test_strength2'],
         focus=['test_focus1', 'test_focus2']
     )
-    tra.messages = [
-        Message('usr', 'hello'),
-        Message('ast', 'hi')
+    messages = [
+        message('usr', 'hello'),
+        message('ast', 'hi'),
     ]
+    for msg in messages:
+        tra.add_msg(msg)
     assert tra.to_templatable() == 'usr: hello\nast: hi'
 
 def test_to_templatable_with_multiple_messages():
@@ -164,10 +173,11 @@ def test_to_templatable_with_multiple_messages():
         strengths=['test_strength1', 'test_strength2'],
         focus=['test_focus1', 'test_focus2']
     )
-    tra.messages = [
-        Message('usr', 'hello'),
-        Message('ast', 'hi'),
-        Message('usr', 'how are you?'),
-        Message('ast', 'I am doing well, thank you for asking.')
-    ]
+    for msg in [
+            message('usr', 'hello'),
+            message('ast', 'hi'),
+            message('usr', 'how are you?'),
+            message('ast', 'I am doing well, thank you for asking.')
+        ]:
+        tra.add_msg(msg)
     assert tra.to_templatable() == 'usr: hello\nast: hi\nusr: how are you?\nast: I am doing well, thank you for asking.'

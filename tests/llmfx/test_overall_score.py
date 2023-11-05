@@ -1,6 +1,6 @@
 import pytest
 
-from moshi import Message
+from moshi import Message, message
 from moshi.activ import MinPl
 from moshi.grade import Grade
 from moshi.llmfx import tra_score as score
@@ -14,21 +14,21 @@ def pla():
     )
 
 _msgs1 = [
-    Message('ast', "Hello, world!"),
-    Message('usr', "Hey what's up, I'm Mars."),
-    Message('ast', "Ah, and I, Jupiter."),
-    Message('usr', "Celestial, my dude."),
-    Message('ast', "Indeed, my friend."),
-    Message('usr', "So, what's the deal with the sun?"),
-    Message('ast', "It's a star some minutes away."),
+    message('ast', "Hello, world!"),
+    message('usr', "Hey what's up, I'm Mars."),
+    message('ast', "Ah, and I, Jupiter."),
+    message('usr', "Celestial, my dude."),
+    message('ast', "Indeed, my friend."),
+    message('usr', "So, what's the deal with the sun?"),
+    message('ast', "It's a star some minutes away."),
 ]
 _msgs2 = [
-    Message('ast', "¿Que quieres beber?"),
-    Message('usr', "Donde estas el biblioteca"),
+    message('ast', "¿Que quieres beber?"),
+    message('usr', "Donde estas el biblioteca"),
 ]
 _msgs3 = [
-    Message('ast', "逃げろ、火山が噴火した"),
-    Message('usr', "すみません、火山って何ですか？"),
+    message('ast', "逃げろ、火山が噴火した"),
+    message('usr', "すみません、火山って何ですか？"),
 ]
 
 @pytest.fixture(params=[_msgs1, _msgs2, _msgs3, []], ids=['celestial', 'troglodyte', 'newb', 'empty'])
@@ -38,7 +38,7 @@ def msgs(request) -> list[Message]:
 @pytest.fixture
 def tra(msgs, pla):
     tra = Transcript.from_plan(pla)
-    tra.messages = msgs
+    tra.add_msgs(msgs)
     print(tra.to_templatable())
     return tra
 

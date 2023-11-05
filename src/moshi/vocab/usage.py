@@ -6,7 +6,6 @@ from pydantic import BaseModel, Field
 
 from moshi.storage import FB
 from moshi import utils
-from .base import Vocab
 
 class Usage(BaseModel):
     """ One usage of a term. """

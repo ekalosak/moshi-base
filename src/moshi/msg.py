@@ -57,9 +57,9 @@ class Message(Mappable):
     grammar: str = None
     score: Scores = None
 
-    def __init__(self, role: Role, body: str, **kwargs):
-        logger.opt(depth=1).debug("DEPRECATION NOTICE: migrate to message(role, body, **kwargs) function. REASON: docstring popup in vscode is not the auto-generated one from pydantic.")
-        super().__init__(role=role, body=body, **kwargs)
+    # def __init__(self, role: Role, body: str, **kwargs):
+    #     logger.opt(depth=1).debug("DEPRECATION NOTICE: migrate to message(role, body, **kwargs) function. REASON: docstring popup in vscode is not the auto-generated one from pydantic.")
+    #     super().__init__(role=role, body=body, **kwargs)
 
     def __str__(self):
         """Print message colorized based on message 'role'."""
@@ -80,7 +80,7 @@ class Message(Mappable):
 
     @classmethod
     def from_string(cls, body: str, role: Role=Role.USR):
-        return cls(role, body)
+        return cls(role=role, body=body)
 
     def to_openai(self):
         return {

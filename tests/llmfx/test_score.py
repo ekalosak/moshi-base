@@ -1,6 +1,6 @@
 import pytest
 
-from moshi import Message
+from moshi import message
 from moshi.grade import Level, YesNo
 from moshi.llmfx import msg_score
 
@@ -81,9 +81,9 @@ def test_polite(msg, esco):
 
 @pytest.mark.openai
 @pytest.mark.parametrize('msgs, esco', [
-    ([Message('ast', "Hi, I'm George."), Message('usr', "Hi George, I'm Charlie.")], YesNo.YES),
-    ([Message('ast', "Hi, I'm George."), Message('usr', "Quack quack")], YesNo.NO),
-    ([Message('sys', "Pretend you're a duck"), Message('ast', "Hi, I'm George."), Message('usr', "Quack quack")], YesNo.MOSTLY),
+    ([message('ast', "Hi, I'm George."), message('usr', "Hi George, I'm Charlie.")], YesNo.YES),
+    ([message('ast', "Hi, I'm George."), message('usr', "Quack quack")], YesNo.NO),
+    ([message('sys', "Pretend you're a duck"), message('ast', "Hi, I'm George."), message('usr', "Quack quack")], YesNo.MOSTLY),
 ])
 def test_context(msgs, esco):
     sco, expl = msg_score.score_context(msgs)
