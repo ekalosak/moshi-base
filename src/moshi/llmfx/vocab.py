@@ -48,7 +48,7 @@ def extract_pos(msg: str, retry=3) -> dict[str, str]:
         NOTE multiple pos are separated by commas.
     """
     pro = Prompt.from_file(POS_PROMPT_FILE)
-    pro.template(UTT=msg)
+    pro.msgs.append(message('usr', msg))
     for msg in pro.msgs:
         print(msg)
     _poss = pro.complete(stop=None).body.split("\n")

@@ -1,12 +1,14 @@
 # Get the parts of speech for each word in the utterance.
-# Args:
-#   UTT: The utterance to split into parts of speech.
+# Usage:
+#   Append a usr message to the end.
 sys: Split an utterance into the parts of speech.
 sys: For example, when the input is "Hola, soy de Mexico", the output should be:\
 Hola; interjection\
 soy; verb\
 de; preposition\
 Mexico; noun
-# sys: Split this utterance into parts of speech: "Hello, my name is George."
-sys: Split this utterance into vocabulary terms: "{{UTT}}"
+sys: For example, when the input is "私は行った", the output should be:\
+私; noun\
+は; topic marker\
+行った; verb
 sys: Respond only with the list, formatted as in the example.
