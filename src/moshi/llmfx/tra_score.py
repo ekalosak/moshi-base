@@ -17,11 +17,16 @@ for pf in [GRADE_PROMPT_FILE, SKILLS_PROMPT_FILE, SPLIT_PROMPT_FILE]:
         raise FileNotFoundError(f"Prompt file {pf} not found.")
 
 @traced
-def grade(tra: Transcript) -> Grade:
-    """Grade the user's overall capabilities."""
-    if not tra.messages or len(tra.messages) < 3:
-        logger.debug(f"Transcript has {len(tra.messages)} < 3 messages, skipping grading.")
-        return ''
+def grade(tra: Transcript) -> Grade | None:
+    """Grade the user's overall capabilities.
+    Args:
+        tra (Transcript): The transcript to grade.
+    Returns:
+        Grade: The grade.
+        None: If the transcript is empty.
+    """
+    if not tra.messages:
+        return None
     pro = Prompt.from_file(GRADE_PROMPT_FILE)
     pro.template(GRADES=Grade.to_ranking())
     pro.msgs = tra.msgs + pro.msgs
@@ -43,12 +48,16 @@ def split_into_str_and_weak(skill_summary: str) -> tuple[str, str]:
     return st, wk
 
 @traced
-def summarize_skills(tra: Transcript) -> str:
-    """Assess the user's strengths and weaknesses."""
-    # TODO FUTURE provide user name and ast char name to prompt
-    if not tra.messages or len(tra.messages) < 3:
-        logger.debug(f"Transcript has {len(tra.messages)} < 3 messages, skipping skill assessment.")
-        return ''
+def summarize_skills(tra: Transcript) -> str | None:
+    """Assess the user's strengths and weaknesses.
+    Args:
+        tra (Transcript): The transcript to assess.
+    Returns:
+        str: The skill summary.
+        None: If the transcript is empty.
+    """
+    if not tra.msgs:
+        return None
     pro = Prompt.from_file(SKILLS_PROMPT_FILE)
     pro.template(
         LANGUAGE=Language(tra.bcp47).name,
