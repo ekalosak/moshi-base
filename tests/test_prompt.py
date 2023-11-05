@@ -3,7 +3,7 @@ from typing import Callable
 
 import pytest
 
-from moshi import Prompt, model, Message, Role, Function, Parameters
+from moshi import Prompt, model, Role, Function, Parameters, message
 from moshi.prompt import _concatenate_multiline, _parse_lines, _get_function, _load_lines, Prompt
 from moshi import utils
 
@@ -22,10 +22,10 @@ def test_parse_lines(prompt_file: Path, get_topic: Callable, function: Function)
     lines = _load_lines(prompt_file)
     prompt_contents = _parse_lines(lines, [get_topic])
     expected_messages = [
-        Message(Role.SYS, "Only use the functions you have been provided with."),
+        message(Role.SYS, "Only use the functions you have been provided with."),
         function,
-        Message(Role.SYS, "Be polite."),
-        Message(Role.USR, "Hello."),
+        message(Role.SYS, "Be polite."),
+        message(Role.USR, "Hello."),
     ]
     for pmsg, emsg in zip(prompt_contents, expected_messages):
         if isinstance(emsg, Function):
@@ -49,9 +49,9 @@ def test_from_file(prompt: Prompt, prompt_file: Path, get_topic: Callable, get_n
     prompt = Prompt.from_file(prompt_file, [get_topic, get_name])
     assert prompt.mod == model.ChatM.GPT35TURBO
     expected_messages = [
-        Message(Role.SYS, "Only use the functions you have been provided with."),
-        Message(Role.SYS, "Be polite."),
-        Message(Role.USR, "Hello."),
+        message(Role.SYS, "Only use the functions you have been provided with."),
+        message(Role.SYS, "Be polite."),
+        message(Role.USR, "Hello."),
     ]
     for pmsg, emsg in zip(prompt.msgs, expected_messages):
         if isinstance(emsg, Function):
@@ -71,32 +71,32 @@ def test_from_file(prompt: Prompt, prompt_file: Path, get_topic: Callable, get_n
 
 @pytest.mark.parametrize('pld', ["World", 123])
 def test_template_happy(pld: str):
-    msg = Message('sys', "Hello, {{NAME}}!")
+    msg = message('sys', "Hello, {{NAME}}!")
     pro = Prompt(msgs=[msg])
     pro.template(NAME=pld)
     assert pro.msgs[0].body == f"Hello, {pld}!"
 
 def test_template_fail_case():
-    msg = Message('sys', "Hello, {{NAME}}!")
+    msg = message('sys', "Hello, {{NAME}}!")
     pro = Prompt(msgs=[msg])
     with pytest.raises(ValueError):
         pro.template(name="World")
 
 def test_template_fail_whitespace():
-    msg = Message('sys', "Hello, {{ NAME }}!")
+    msg = message('sys', "Hello, {{ NAME }}!")
     pro = Prompt(msgs=[msg])
     with pytest.raises(ValueError):
         pro.template(name="World")
 
 def test_template_fail_dne():
-    msg = Message('sys', "Hello, World!")
+    msg = message('sys', "Hello, World!")
     pro = Prompt(msgs=[msg])
     with pytest.raises(ValueError):
         pro.template(name="World")
 
 @pytest.mark.gcp
 def test_translate():
-    msg = Message('sys', "Hello, World!")
+    msg = message('sys', "Hello, World!")
     pro = Prompt(msgs=[msg])
     print(f"Before: {pro}")
     pro.translate("es-MX")

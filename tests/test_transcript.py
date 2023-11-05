@@ -5,8 +5,8 @@ import pytest
 from google.cloud.firestore import Client, DocumentSnapshot
 
 from moshi.msg import message
-from moshi.transcript import ScoresT, Transcript, Message, ActT
-from moshi.grade import Scores, Score, Grade, YesNo, Level
+from moshi.transcript import ScoresT, Transcript, ActT
+from moshi.grade import Scores, Score, Grade, Level
 
 @pytest.fixture(params=['live', 'final'])
 def status(request) -> str:
@@ -116,8 +116,8 @@ def test_scores_null():
         status='live',
     )
     tra.messages = [
-        Message('usr', 'hello', score=Scores(vocab=Score(Level.CHILD))),
-        Message('usr', 'hello', score=Scores(vocab=Score(Level.ERROR), grammar=Score(Level.CHILD))),
+        message('usr', 'hello', score=Scores(vocab=Score(Level.CHILD))),
+        message('usr', 'hello', score=Scores(vocab=Score(Level.ERROR), grammar=Score(Level.CHILD))),
     ]
     assert not tra.scores
 
