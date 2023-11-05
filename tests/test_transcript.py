@@ -4,7 +4,7 @@ import json
 import pytest
 from google.cloud.firestore import Client, DocumentSnapshot
 
-from moshi.msg import message
+from moshi.msg import Message, message
 from moshi.transcript import ScoresT, Transcript, ActT
 from moshi.grade import Scores, Score, Grade, Level
 
@@ -42,6 +42,10 @@ def test_create_no_msg(tra: Transcript, db: Client):
 
 @pytest.mark.fb
 def test_create_with_msg(tra: Transcript, db: Client):
+    if tra.status == 'final':
+        with pytest.raises(ValueError):
+            tra.add_msg(message('usr', 'hello'))
+        return
     tra.add_msg(message('usr', 'hello'))
     tra.create(db)
     doc = tra.docref(db).get()
@@ -51,7 +55,9 @@ def test_create_with_msg(tra: Transcript, db: Client):
     dat = doc.to_dict()
     assert 'messages' in dat
     assert len(dat['messages']) == 1
-    assert dat['messages'].__next__() == 'usr: hello'
+    msg = Message(**next(iter(dat['messages'].values())))
+    assert msg.role == 'usr'
+    assert msg.body == 'hello'
 
 @pytest.mark.fb
 def test_add_msg(tra: Transcript, db):

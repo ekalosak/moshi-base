@@ -264,9 +264,8 @@ class Transcript(FB):
             The message ID.
         """
         logger.debug(f"Adding message to transcript: {msg.to_dict()}")
-        if self.status == 'final':
-            raise ValueError(f"Cannot add message to final transcript: {self.docpath}")
-        assert self.status == 'live', f"Invalid status for transcript: {self.status}"
+        if self.status != 'live':
+            raise ValueError(f"Cannot add message to transcript with status={self.status}: {self.docpath}")
         msg_id = msg.role.value.upper() + str(len(self.messages))
         self.messages[msg_id] = msg
         if db:
