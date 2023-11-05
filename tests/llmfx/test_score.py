@@ -90,5 +90,5 @@ def test_context(msgs, esco):
     print(f"Context appropriate score: {msgs} -> {sco}")
     print(f"Explanation: {sco.explain}")
     assert isinstance(sco.explain, str)
-    assert isinstance(sco, YesNo)
+    assert isinstance(sco.score, YesNo)
     assert abs(sco.score - esco) <= 1, "Score mismatch."
