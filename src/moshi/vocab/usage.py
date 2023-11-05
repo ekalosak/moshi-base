@@ -43,8 +43,11 @@ class UsageV(BaseModel):
       return len([u for u in self.usgs if (u.used_correctly is not None and not u.used_correctly)])
 
    @property
-   def pct_correct(self) -> float:
-      """ Percentage of times the user used the term correctly. """
+   def pct_correct(self) -> float | None:
+      """ Percentage of times the user used the term correctly.
+      Returns:
+         float: The percentage of times the user used the term correctly.
+      """
       return self.correct / self.count
 
    def add_usage(self, usage: Usage):
