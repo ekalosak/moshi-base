@@ -4,6 +4,7 @@ from loguru import logger
 
 from moshi import Message
 from moshi.activ import MinA, MinPl, UnstrA, UnstrPl, pid2plan
+from moshi.msg import message
 
 
 @pytest.fixture
@@ -51,14 +52,14 @@ def unstrpl(unstra: UnstrA, uid: str) -> UnstrPl:
 
 @pytest.mark.fb
 def test_unstra_reply_wrong_plan_type(unstra: UnstrA, minpl: MinPl, db: Client):
-    umsg = Message('usr', "Hello!")
+    umsg = message('usr', "Hello!")
     with pytest.raises(TypeError):
         unstra.reply([umsg], minpl)
 
 @pytest.mark.fb
 @pytest.mark.openai
 def test_unstra_reply(unstra: UnstrA, unstrpl: UnstrPl, db: Client):
-    umsg = Message('usr', "Hello!")
+    umsg = message('usr', "Hello!")
     amsg = unstra.reply([umsg], unstrpl)
     assert isinstance(amsg, Message)
     assert amsg.role == 'ast'
