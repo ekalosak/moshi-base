@@ -47,6 +47,7 @@ class ScoreT(BaseModel):
     """ A single transcript's scores, aggregated into a median and MAD. """
     median: float
     mad: float
+    n: int
 
 class ScoresT(BaseModel):
     vocab: ScoreT = None
@@ -117,9 +118,6 @@ class Transcript(FB):
         if not self.messages:
             logger.debug("No messages in transcript, cannot compute scores.")
             return None
-        elif (nmsg := len(self.messages)) < 4:
-            logger.debug(f"Not enough messages (nmsg={nmsg} < 4) in transcript, cannot compute scores.")
-            return None
         _all: dict[str, list[int]] = {}
         for msg in self.messages.values():
             msg: Message
@@ -143,7 +141,7 @@ class Transcript(FB):
         scost_pld = {}
         for name in ('vocab', 'grammar', 'idiom', 'polite', 'context'):
             if name in medians:
-                scost_pld[name] = ScoreT(median=medians[name], mad=mads[name])
+                scost_pld[name] = ScoreT(median=medians[name], mad=mads[name], n=len(_all[name]))
         return ScoresT(**scost_pld)
 
     @field_validator('tid', mode='before')

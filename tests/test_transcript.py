@@ -104,7 +104,7 @@ def test_scores_happy():
     assert isinstance(scos, ScoresT)
     assert scos.vocab.median > Level.CHILD
     assert scos.vocab.median < Level.ADULT
-    assert scos.grammar is None
+    assert scos.grammar.n == 3
 
 def test_scores_null():
     tra = Transcript(
