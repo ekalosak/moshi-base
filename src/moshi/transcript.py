@@ -374,7 +374,7 @@ class Transcript(FB):
         """
         self.status = 'empty'
         if self.messages:
-            if any(msg.role == 'usr' for msg in self.messages):
+            if any(msg.role == 'usr' for msg in self.msgs):
                 self.status = 'final'
         self.update(db)
         logger.debug(f"Updated transcript status to: {self.status}")
