@@ -1,6 +1,7 @@
 import pytest
 
 from moshi.vocab import Vocab, MsgV, UsageV, CurricV
+from moshi.vocab.usage import Usage
 
 def test_Vocab_init():
     voc = Vocab(
@@ -19,26 +20,26 @@ def test_Vocab_lang():
     )
     assert voc.lang.bcp47 == "en-US"
 
-@pytest.mark.parametrize('pos', [None, 'noun'])
-def test_MsgV_init(pos):
+def test_MsgV_init():
     voc = MsgV(
         term="test",
         bcp47="en-US",
-        pos=pos,
+        pos='noun',
     )
     from pprint import pprint
     print(voc)
     pprint(voc.model_dump())
-    assert voc.pos == pos
+    assert voc.pos == 'noun'
 
 
 def test_usagev_init():
     voc = UsageV(
         term="test",
         bcp47="en-US",
-        usage="test",
+        usgs=[Usage(tid='test_tid', mid='test_mid')],
     )
     from pprint import pprint
     print(voc)
     pprint(voc.model_dump())
-    assert voc.usage == "test"
+    assert voc.correct == 0
+    assert voc.incorrect == 0

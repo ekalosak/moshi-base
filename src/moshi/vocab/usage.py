@@ -40,7 +40,7 @@ class UsageV(BaseModel):
    @property
    def incorrect(self) -> int:
       """ Number of times the user used the term incorrectly. """
-      return len([u for u in self.usgs if not u.used_correctly])
+      return len([u for u in self.usgs if (u.used_correctly is not None and not u.used_correctly)])
 
    @property
    def pct_correct(self) -> float:
