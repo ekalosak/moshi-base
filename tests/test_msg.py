@@ -1,8 +1,8 @@
 from moshi.grade import Level, YesNo, Score, Scores
-from moshi.msg import Message
+from moshi.msg import message
 
 def test_to_json():
-    msg = Message('usr', 'hello')
+    msg = message('usr', 'hello')
     pld = msg.to_json()
     assert isinstance(pld, dict)
     assert pld['role'] == 'usr'

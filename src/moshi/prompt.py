@@ -19,7 +19,7 @@ from . import model
 from .exceptions import CompletionError, TemplateNotSubstitutedError
 from .func import FuncCall, Function
 from .language import Language
-from .msg import Message, Role, MOSHI_ROLES
+from .msg import Message, Role, MOSHI_ROLES, message
 from .storage import Mappable
 
 enc: tiktoken.Encoding
@@ -67,7 +67,7 @@ def _parse_lines(
         else:
             text = ":".join(parts[1:])
             text = text.strip()
-            res = Message(role, text)
+            res = message(role, text)
     return [res] + _parse_lines(lines[1:], available_functions)
 
 
