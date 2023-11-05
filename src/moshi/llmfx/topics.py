@@ -1,8 +1,14 @@
+""" Extract topics from a transcript.
+Constants:
+    PROMPT_FILE: Path = PROMPT_DIR / "topics_extract.txt"
+Functions:
+    extract(tra: Transcript) -> list[str]
+"""
 from loguru import logger
-from moshi.activ import Plan, pid2plan
+
 from moshi.language import Language
 from moshi.llmfx.base import PROMPT_DIR
-from moshi.msg import Message
+from moshi.msg import message
 from moshi.prompt import Prompt
 from moshi.transcript import Transcript
 from moshi import traced
@@ -22,7 +28,7 @@ def extract(tra: Transcript) -> list[str]:
         LANGUAGE=Language(tra.bcp47).name,
         MAX_RESPONSES='five',
     )
-    pro.msgs.append(Message('usr', txt))
+    pro.msgs.append(message('usr', txt))
     topics: list[str] = pro.complete().body.split(", ")
     logger.success(f"Extracted topics: {topics}")
     return topics

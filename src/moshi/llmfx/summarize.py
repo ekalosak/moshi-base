@@ -6,11 +6,11 @@ Example usage:
     >>> from moshi.msg import Message
     >>> from summarize import summarize
     >>> msgs = [
-    ...     Message(body="Hello!", sender="Alice", created_at=0),
-    ...     Message(body="Hi there!", sender="Bob", created_at=1),
-    ...     Message(body="How are you?", sender="Alice", created_at=2),
-    ...     Message(body="I'm good, thanks. How about you?", sender="Bob", created_at=3),
-    ...     Message(body="I'm doing well too, thanks for asking.", sender="Alice", created_at=4),
+    ...     message(body="Hello!", sender="Alice", created_at=0),
+    ...     message(body="Hi there!", sender="Bob", created_at=1),
+    ...     message(body="How are you?", sender="Alice", created_at=2),
+    ...     message(body="I'm good, thanks. How about you?", sender="Bob", created_at=3),
+    ...     message(body="I'm doing well too, thanks for asking.", sender="Alice", created_at=4),
     ... ]
     >>> summary = summarize(msgs, nwords=5)
     >>> print(summary)

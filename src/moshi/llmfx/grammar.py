@@ -1,6 +1,6 @@
 from loguru import logger
 
-from moshi import Message, Prompt, traced
+from moshi import message, Prompt, traced
 from .base import PROMPT_DIR
 
 PROMPT_FILE = PROMPT_DIR / "grammar.txt"
@@ -11,7 +11,7 @@ if not PROMPT_FILE.exists():
 def explain(msg: str) -> str:
     """ Explain the grammar of a message. """
     pro = Prompt.from_file(PROMPT_FILE)
-    pro.msgs.append(Message('usr', msg))
+    pro.msgs.append(message('usr', msg))
     logger.debug(f"Explaining grammar of message: {msg}")
     res = pro.complete().body
     logger.success(f"Explained grammar of message: {res}")

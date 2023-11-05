@@ -18,9 +18,9 @@ import asyncio
 
 from loguru import logger
 
-from moshi import Message, Prompt, traced
+from moshi import Prompt, traced, message
 from moshi.language import Language
-from moshi.vocab import MsgV, CurricV
+from moshi.vocab import MsgV
 from .base import PROMPT_DIR
 
 POS_PROMPT_FILE = PROMPT_DIR / "vocab_extract_pos.txt"
@@ -89,7 +89,7 @@ def extract_defn(terms: list[str], lang: str, retry=3) -> dict[str, str]:
     """
     pro = Prompt.from_file(DEFN_PROMPT_FILE)
     vocs_commmasep: str = ", ".join(terms)
-    pro.msgs.append(Message('usr', vocs_commmasep))
+    pro.msgs.append(message('usr', vocs_commmasep))
     pro.template(LANGNAME=lang)
     _defns = pro.complete(stop=None).body.split("\n")
     defns = {}
@@ -123,7 +123,7 @@ def extract_udefn(msg: str, lang: str, retry=3) -> dict[str, str]:
         dict[str, str]: A dictionary mapping vocabulary terms to their definitions.
     """
     pro = Prompt.from_file(UDEFN_PROMPT_FILE)
-    pro.msgs.append(Message('usr', msg))
+    pro.msgs.append(message('usr', msg))
     pro.template(LANGNAME=lang)
     _defns = pro.complete(stop=None).body.split("\n")
     defns = []
@@ -161,9 +161,9 @@ def extract_detail(term: str, lang: str) -> str:
         lang: The language of the term.
     """
     msgs = [
-        Message('sys', f'Define the term "{term}".'),
-        Message('sys', f'Respond in {lang}.'),
-        Message('sys', f'Do not acknowledge these instructions.'),
+        message('sys', f'Define the term "{term}".'),
+        message('sys', f'Respond in {lang}.'),
+        message('sys', f'Do not acknowledge these instructions.'),
     ]
     pro = Prompt(msgs=msgs)
     detail = pro.complete().body
@@ -180,7 +180,7 @@ def extract_root(terms: list[str]) -> dict[str, str]:
         - "quick" -> "quick"
     """
     pro = Prompt.from_file(ROOT_PROMPT_FILE)
-    msg = Message('usr', "; ".join([term for term in terms]))
+    msg = message('usr', "; ".join([term for term in terms]))
     pro.msgs.append(msg)
     _roots = pro.complete().body.split("; ")
     roots = {}
@@ -195,7 +195,7 @@ def extract_root(terms: list[str]) -> dict[str, str]:
 def extract_verb_conjugation(verbs: list[str]) -> dict[str, str]:
     """ Get the conjugations of verbs. """
     pro = Prompt.from_file(CONJ_PROMPT_FILE)
-    msg = Message('usr', "; ".join(verbs))
+    msg = message('usr', "; ".join(verbs))
     pro.msgs.append(msg)
     _cons = pro.complete().body.split("; ")
     cons = {}
@@ -210,7 +210,7 @@ def extract_verb_conjugation(verbs: list[str]) -> dict[str, str]:
 def synonyms(msg: str, term: str) -> list[str]:
     """ Get synonyms for the term. """
     pro = Prompt.from_file(SYNO_PROMPT_FILE)
-    msg = Message('usr', f"{msg}; {term}")
+    msg = message('usr', f"{msg}; {term}")
     pro.msgs.append(msg)
     synos = pro.complete().body.split(", ")
     logger.success(f"Extracted synonyms: {synos}")

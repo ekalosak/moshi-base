@@ -11,7 +11,7 @@ from pydantic import field_validator, Field, ValidationInfo, computed_field
 
 from . import utils
 from .language import Language
-from .msg import Message
+from .msg import Message, message
 from .prompt import Prompt
 from .storage import FB, DocPath
 from .utils import random_string
@@ -192,7 +192,7 @@ class MinA(Act[ActT.MIN]):
         """ This is to be called when a user message arrives. """
         if not isinstance(plan, MinPl):
             raise TypeError(f"Plan {plan.pid} is not a MinPl.")
-        return Message('ast', "Hello, world!")
+        return message('ast', "Hello, world!")
 
 class UnstrA(Act[ActT.UNSTRUCTURED]):
     """ Most basic "functional" activity. Uses completion to generate a reply. """

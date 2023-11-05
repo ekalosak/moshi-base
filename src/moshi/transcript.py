@@ -160,8 +160,10 @@ class Transcript(FB):
         elif isinstance(v, list):
             if isinstance(v[0], dict):
                 return [Message(**msg) for msg in v]
-            else:
+            elif isinstance(v[0], Message):
                 return v
+            else:
+                raise ValueError(f"Invalid type for messages: {type(v[0])}")
         else:
             raise ValueError(f"Invalid type for messages: {type(v)}")
 
