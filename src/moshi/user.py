@@ -1,6 +1,7 @@
 """This module provides a datamodel of the user profile."""
 from datetime import datetime
 
+from firestore_size.calculate import document_size
 from google.cloud.firestore import Client
 from loguru import logger
 from pydantic import BaseModel, Field
@@ -64,36 +65,39 @@ class User(FB):
             dat = {}
         else:
             dat = doc.to_dict()
-        # warn if dat is larger than 800KiB (Firestore limit is 1MiB)
-        if docsize := fssize.document_size(dat) > 800 * 1024:
-            logger.warning(f"User vocabulary is {docsize} bytes, which is larger than 800KiB. Be aware of Firestore's 1MiB limit - there is no pagination implemented in this version.")
+        # track vocabulary doc size as it is singular per user per language; warn if we approach 1MiB Firestore limit
+        docsize = document_size(dat) 
+        with logger.contextualize(uid=self.uid, tid=tra.tid, bcp47=self.bcp47, docsize=doc):
+            logger.debug(f"User vocabulary found with {len(dat)} terms (size={docsize} bytes in FS).")
+            if docsize > 800 * 1024:
+                logger.warning(f"User vocabulary is {docsize} bytes, which is larger than 800KiB. Be aware of Firestore's 1MiB limit - there is no pagination implemented in this version.")
         # parse doc data into all user's vocab
         usgvoc = {k: UsageV(**v) for k, v in dat.items()}
         # update usage of user's vocab
         total_new = 0
         update = {}
         for mid, msg in tra.messages.items():
-            if msg.role != 'usr':
-                continue
-            new_in_msg = 0
-            for msgv in msg.mvs:
-                usg = Usage(tid=tra.tid, mid=mid)
-                if msgv.term in usgvoc:
-                    logger.debug(f"User used '{msgv.term}' again.")
-                    usgvoc[msgv.term].add_usage(usg)
-                    update[msgv.term]: UsageV = usgvoc[msgv.term]
-                else:
-                    logger.debug(f"User used '{msgv.term}' for the first time.")
-                    usgvoc[msgv.term] = UsageV(term=msgv.term, usgs=[usg], first=msg.created_at, last=msg.created_at)
-                    new_in_msg += 1
-            if new_in_msg > 0:
-                with logger.contextualize(mid=mid, tid=tra.tid):
-                    logger.debug(f"User used {new_in_msg} new terms in this message.")
-                total_new += new_in_msg
-        if total_new > 0:
-            with logger.contextualize(tid=tra.tid):
+            with logger.contextualize(mid=mid, uid=self.uid, tid=tra.tid, bcp47=self.bcp47):
+                if msg.role != 'usr':
+                    continue
+                new_in_msg = 0
+                for msgv in msg.mvs:
+                    usg = Usage(tid=tra.tid, mid=mid)
+                    if msgv.term in usgvoc:
+                        logger.debug(f"User used '{msgv.term}' again.")
+                        usgvoc[msgv.term].add_usage(usg)
+                        update[msgv.term]: UsageV = usgvoc[msgv.term]
+                    else:
+                        logger.debug(f"User used '{msgv.term}' for the first time.")
+                        usgvoc[msgv.term] = UsageV(term=msgv.term, usgs=[usg], first=msg.created_at, last=msg.created_at)
+                        new_in_msg += 1
+                if new_in_msg > 0:
+                    with logger.contextualize(mid=mid, tid=tra.tid):
+                        logger.debug(f"User used {new_in_msg} new terms in this message.")
+                    total_new += new_in_msg
+        with logger.contextualize(uid=self.uid, tid=tra.tid, bcp47=self.bcp47):
+            if total_new > 0:
                 logger.info(f"User used {total_new} new terms in this session.")
-        pld = {k: v.model_dump(exclude_none=True) for k, v in usgvoc.items()}
-        docr.set(pld, merge=True)
-        with logger.contextualize(uid=self.uid, tid=tra.tid):
+            pld = {k: v.model_dump(exclude_none=True) for k, v in usgvoc.items()}
+            docr.set(pld, merge=True)
             logger.info("Updated user vocabulary.")
