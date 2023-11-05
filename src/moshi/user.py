@@ -52,7 +52,7 @@ class User(FB):
         return super().read(DocPath(f'users/{uid}'), db)
 
     def update_vocab(self, tra: Transcript, db: Client):
-        """ Extract the vocab from the transcript and update the user's vocab doc. """
+        """ Extract the vocab from the transcript and update the user's tracked vocab. """
         # edge cases
         if not any(msg.mvs for msg in tra.msgs):
             logger.debug("Transcript has no vocab. Not updating user vocabulary.")
@@ -64,6 +64,9 @@ class User(FB):
             dat = {}
         else:
             dat = doc.to_dict()
+        # warn if dat is larger than 800KiB (Firestore limit is 1MiB)
+        if docsize := fssize.document_size(dat) > 800 * 1024:
+            logger.warning(f"User vocabulary is {docsize} bytes, which is larger than 800KiB. Be aware of Firestore's 1MiB limit - there is no pagination implemented in this version.")
         # parse doc data into all user's vocab
         usgvoc = {k: UsageV(**v) for k, v in dat.items()}
         # update usage of user's vocab
