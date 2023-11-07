@@ -15,6 +15,7 @@ Example usage:
     >>> assert vocs[0].defn == "A reference to the speaker or writer."
 """
 import asyncio
+import json
 
 from loguru import logger
 
@@ -182,12 +183,14 @@ def extract_root(terms: list[str]) -> dict[str, str]:
     pro = Prompt.from_file(ROOT_PROMPT_FILE)
     msg = message('usr', "; ".join([term for term in terms]))
     pro.msgs.append(msg)
-    _roots = pro.complete().body.split("; ")
-    roots = {}
-    if len(_roots) != len(terms):
-        raise VocabParseError(f"Completion returned different number of terms: {terms} -> {_roots}")
-    for term, root in zip(terms, _roots):
-        roots[term] = root
+    compl = pro.complete(
+        # model="gpt-4-1106-preview",
+        model="gpt-3.5-turbo-1106",
+        response_format={'type': 'json_object'},
+    )
+    roots = json.loads(compl.body)
+    if len(roots) != len(terms):
+        raise VocabParseError(f"Completion returned different number of terms: {terms} -> {roots}")
     logger.success(f"Extracted roots: {roots}")
     return roots
 
@@ -226,7 +229,7 @@ def _extract_all_async(terms: list[str], verbs: list[str], lang: str):
     """
     async def _get_core():
         td = asyncio.to_thread(extract_defn, terms, lang)
-        tr = asyncio.to_thread(extract_root, terms)
+        tr = asyncio.to_thread(extract_root, terms)  # TODO get roots for adverbs, adjectives, etc. - this can't get fed ALL terms, only verbs and similarly 'rooted' terms.
         tc = asyncio.to_thread(extract_verb_conjugation, verbs)
         return await asyncio.gather(td, tr, tc)
     async def _get_details():

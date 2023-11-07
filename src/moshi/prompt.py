@@ -125,8 +125,18 @@ class Prompt(Mappable):
 
     @classmethod
     def from_lines(
-        cls, lines: list[str], available_functions: list[Callable] = []
+        cls, lines: list[str], available_functions: list[Callable] = [], **kwargs,
     ) -> "Prompt":
+        """Create an instance of Prompt from the lines of a prompt file.
+        Args:
+            - lines: the lines of a prompt file.
+            - available_functions: the list of available functions.
+            - kwargs: kwargs to pass to the Prompt constructor.
+        """
+        if 'msgs' in kwargs:
+            logger.warning('msgs in kwargs will be overwritten.')
+        if 'functions' in kwargs:
+            logger.warning('msgs in kwargs will be overwritten.')
         raw_prompt = _parse_lines(lines, available_functions)
         mod = None
         msgs = []
@@ -140,16 +150,17 @@ class Prompt(Mappable):
                 funcs.append(item)
             else:
                 raise ValueError(f"Unknown item type: {item}")
-        kwargs = {
-            "msgs": msgs,
-            "functions": funcs,
-        }
+        kwargs["msgs"] = msgs
+        kwargs["functions"] = funcs
         if mod:
-            kwargs["mod"] = mod.value
+            if 'mod' in kwargs:
+                logger.warning(f"model found in prompt file, but also provided in kwargs, using the one from kwargs: {kwargs['mod']}")
+            else:
+                kwargs["mod"] = mod.value
         return cls(**kwargs)
 
     @classmethod
-    def from_file(cls, fp: Path, available_functions: list[Callable] = []) -> "Prompt":
+    def from_file(cls, fp: Path, available_functions: list[Callable] = [], **kwargs) -> "Prompt":
         """ Parse a prompt file in this format:
         ```
         sys: Only use the functions you have been provided with.
@@ -158,9 +169,13 @@ class Prompt(Mappable):
         usr: Hello, how are you?
         ```
         Lines starting with '#' are ignored.
+        Args:
+            - fp: the path to the prompt file.
+            - available_functions: the list of available functions.
+            - kwargs: kwargs to pass to the Prompt constructor.
         """
         lines = _load_lines(fp)
-        return cls.from_lines(lines, available_functions)
+        return cls.from_lines(lines, available_functions, **kwargs)
 
     def _biases(self, vocab: list[str], bias=5.0) -> dict[str, float]:
         """ Convert the vocab into a map from tokens to logit_biases.
@@ -267,6 +282,8 @@ class Prompt(Mappable):
         kwargs["n"] = kwargs.get("n", 1)
         kwargs["max_tokens"] = kwargs.get("max_tokens", 128)
         kwargs["stop"] = kwargs.get("stop", ["\n"])  # , '?', '!', '。'])
+        if 'model' not in kwargs:
+            kwargs['model'] = self.model
         if check_user:
             if self.msgs[-1].role == "ast":
                 logger.debug("Last message is 'ast', nothing to do.")
@@ -284,7 +301,6 @@ class Prompt(Mappable):
         logger.debug(f"retry_count={retry_count}")
         try:
             response = openai.ChatCompletion.create(
-                model=self.model,
                 messages=[msg.to_openai() for msg in self.msgs],
                 logit_bias=logit_bias,
                 **kwargs,

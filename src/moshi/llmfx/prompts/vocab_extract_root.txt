@@ -1,7 +1,8 @@
 # Get the root form for each term.
 # Usage:
 #   Append a usr message with a semicolon-separated list of terms e.g. "fue; estaba; rapidamente"
+#   Use JSON mode: https://platform.openai.com/docs/guides/text-generation/json-mode
 sys: Respond with the root forms of the terms provided.
-sys: For example, if provided "fue; estaba; gordito", respond with "ir; estar; gordo".
-sys: For example, "running; ran; quickly; quick" would respond with "run; run; quick; quick".
-sys: Respond only with the semicolon-separated list of root forms.
+sys: For example, if provided "fue; estaba; gordito", respond with "{'fue': 'ir', 'estaba': 'estar', 'gordito': gordo'}".
+sys: For example, "running; ran; quickly; quick" would respond with "{'running': 'run', 'ran': run', 'quickly': 'quick', 'quick': 'quick'}".
+sys: Respond only with the valid JSON mapping input terms to their root forms, formatted as in the examples.

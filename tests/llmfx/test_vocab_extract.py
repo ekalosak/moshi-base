@@ -67,10 +67,11 @@ def test_vocab_extract_detail():
 
 @pytest.mark.openai
 def test_vocab_extract_root():
-    terms = ["行った", "明るく"]
+    terms = ["行った", "明るく", "brightly", "lamentablemente"]
+    expected_roots = ["行く", "明るい", "bright", "lamentable"]
     roots = vocab.extract_root(terms)
     print(roots)
-    for (term, root), exprt in zip(roots.items(), ["行く", "明るい"]):
+    for (term, root), exprt in zip(roots.items(), expected_roots):
         assert term in terms
         assert isinstance(root, str)
         assert utils.similar(root, exprt) > 0.5
