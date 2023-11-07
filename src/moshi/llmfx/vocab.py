@@ -189,6 +189,7 @@ def extract_root(terms: list[str]) -> dict[str, str]:
     for term, root in zip(terms, _roots):
         roots[term] = root
     logger.success(f"Extracted roots: {roots}")
+    return roots
 
 
 @traced
@@ -262,10 +263,10 @@ def extract_all(msg: str, bcp47: str, detail: bool=False) -> dict[str, dict]:
     result = {}
     for term in terms:
         result[term] = {
-            'pos': poss[term],
-            'defn': defns[term],
-            'root': roots[term],
-            'con': cons[term],
+            'pos': poss.get(term),
+            'defn': defns.get(term),
+            'root': roots.get(term),
+            'con': cons.get(term),
             'detail': details.get(term),
         }
     return result
