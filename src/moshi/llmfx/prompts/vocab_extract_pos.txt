@@ -1,14 +1,10 @@
 # Get the parts of speech for each word in the utterance.
 # Usage:
 #   Append a usr message to the end.
-sys: Split an utterance into the parts of speech.
-sys: For example, when the input is "Hola, soy de Mexico", the output should be:\
-Hola; interjection\
-soy; verb\
-de; preposition\
-Mexico; noun
-sys: For example, when the input is "私は行った", the output should be:\
-私; noun\
-は; topic marker\
-行った; verb
-sys: Respond only with the list, formatted as in the example.
+sys: Return the parts of speech annotations for the terms provided in the user message.
+sys: For example, "{'msg': 'Hola, soy de Mexico', 'terms': ['hola', 'soy', 'de', 'Mexico']}" should yield \
+"{'hola': 'interjection', 'soy': 'verb', 'de': 'preposition', 'Mexico': 'noun'}".
+sys: For example, "{'msg': '私は行った', 'terms': ['私', 'は', '行った']}" should yield \
+"{'私': 'noun', 'は': 'topic marker', '行った': 'verb'}".
+sys: Respond only with valid JSON, formatted as in the examples.
+sys: The keys for the returned JSON must match the input terms.

@@ -60,44 +60,24 @@ def extract_terms(msg: str) -> list[str]:
     return terms
 
 @traced
-def extract_pos(msg: str, retry=3) -> dict[str, str]:
+def extract_pos(msg: str, terms: list[str]) -> dict[str, str]:
     """ Get the parts of speech of the vocab terms in an utterance.
     Args:
         msg (str): The message to extract vocabulary from.
+        terms (list[str]): The vocabulary terms to extract parts of speech for.
     Returns:
         poss (dict[str, str]): A dict of vocabulary terms to their parts of speech.
-        NOTE multiple pos are separated by commas.
     """
     pro = Prompt.from_file(POS_PROMPT_FILE)
-    pro.msgs.append(message('usr', msg))
-    for msg in pro.msgs:
-        print(msg)
-    _poss = pro.complete(stop=None).body.split("\n")
-    poss = []
+    msgpld = {'msg': msg, 'terms': terms}
+    pro.msgs.append(message('usr', json.dumps(msgpld)))
+    _poss: str = pro.complete(stop=None).body
     try:
-        for v in _poss:
-            try:
-                term, pos = v.split(";")
-            except ValueError as exc:
-                raise VocabParseError(f"Failed to parse vocabulary term: {v}") from exc
-            else:
-                poss.append((term.strip(), pos.strip()))
-    except VocabParseError as exc:
-        if retry > 0:
-            logger.warning(exc)
-            logger.debug(f"Retrying with {retry-1} retries left.")
-            return extract_pos(msg, retry=retry-1)
-        else:
-            raise exc
+        poss: dict[str, str] = json.loads(_poss)
+    except json.JSONDecodeError as exc:
+        raise VocabParseError(f"Failed to parse vocabulary terms: {_poss}") from exc
     logger.success(f"Extracted parts of speech: {poss}")
-    result = {}
-    for term, pos in poss:
-        if term in result:
-            if pos not in result[term]:
-                result[term] += f", {pos}"
-        else:
-            result[term] = pos
-    return result
+    return poss
 
 @traced
 def extract_defn(terms: list[str], lang: str, retry=3) -> dict[str, str]:

@@ -58,14 +58,25 @@ def test_vocab_extract_terms(msg: str, eterms: list[str]):
             incorrect_terms += 1
     assert incorrect_terms == 0, f"Extracted {incorrect_terms} incorrect terms."
 
-@pytest.mark.parametrize("msg", ["I went to the store."])
+@pytest.mark.parametrize("msg,terms", [
+    (
+        "I went to the store.",
+        ['I', 'went', 'to', 'the', 'store']
+    ),
+    (
+        "店に行った",
+        ['店', 'に', '行った']
+    ),
+])
 @pytest.mark.openai
-def test_vocab_extract_pos(msg: str):
-    vocs = vocab.extract_pos(msg)
+def test_vocab_extract_pos(msg: str, terms: list[str]):
+    vocs: dict[str, str] = vocab.extract_pos(msg, terms)
     pprint(vocs)
-    for term, v in vocs.items():
-        assert isinstance(term, str)
-        assert isinstance(v, str)
+    assert isinstance(vocs, dict), "Invalid return type for extract_pos, expected a dict."
+    for term, pos in vocs.items():
+        assert isinstance(term, str), "Invalid term type."
+        assert isinstance(pos, str), "Invalid pos type."
+    assert set(vocs.keys()) == set(terms), "Extracted different terms."
 
 @pytest.mark.openai
 def test_vocab_extract_defn():
