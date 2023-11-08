@@ -60,6 +60,7 @@ def test_vocab_extract_terms(msg: str, eterms: list[str]):
             incorrect_terms += 1
     assert incorrect_terms == 0, f"Extracted {incorrect_terms} incorrect terms."
 
+# TODO Check that this test works
 @pytest.mark.parametrize("msg,terms", [
     (
         "I went to the store.",
@@ -80,6 +81,7 @@ def test_vocab_extract_pos(msg: str, terms: list[str]):
         assert isinstance(pos, str), "Invalid pos type."
     assert set(vocs.keys()) == set(terms), "Extracted different terms."
 
+# TODO update for response_format JSON
 @pytest.mark.openai
 def test_vocab_extract_defn():
     lang = Language("en-US")
