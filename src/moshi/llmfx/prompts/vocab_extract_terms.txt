@@ -3,6 +3,12 @@
 #   Append a usr message to the end.
 sys: Split the user message into individual vocabulary terms.
 sys: Do not include punctuation.
-sys: For example, when the input is "Hola, soy de Mexico", the output should be "['hola', 'soy', 'de', 'Mexico']".
-sys: For example, when the input is "私は行った", the output should be: "['私', 'は', '行った']".
-sys: Respond only with the list of vocabulary terms in valid JSON, formatted as in the example.
+sys: Split apart honorifics and modifiers, for example "ケンさん" should yield "{'ケン': null, 'さん': null}".
+sys: Do not split compound terms, for example "bug-like" should yield "{'bug-like': null}".
+sys: For example, "Hola, soy de Mexico" should yield "{'hola': null, 'soy': null, 'de': null, 'Mexico': null}".
+sys: For example, "私は行った" should yield "{'私': null, 'は': null, '行った': null}".
+sys: For example, "Thank you!" should yield "{'thank': null, 'you': null}".
+sys: For example, "おはようございます" should yield "{'おはよう': null, 'ございます': null}".
+sys: For example, "お願いします" should yield "{'お願い': null, 'します': null}".
+sys: For example, "これを読んで下さい" should yield
+sys: Respond only with the vocabulary terms in valid JSON, formatted as in the examples.

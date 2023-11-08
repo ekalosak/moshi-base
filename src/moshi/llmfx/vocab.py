@@ -36,6 +36,8 @@ for pf in PROMPT_FILES:
     if not pf.exists():
         raise FileNotFoundError(f"Prompt file {pf} not found.")
 
+JSON_COMPAT_MODEL = "gpt-3.5-turbo-1106"
+
 class VocabParseError(Exception):
     """ Raised when a vocabulary term cannot be parsed. """
     pass
@@ -45,13 +47,15 @@ def extract_terms(msg: str) -> list[str]:
     """ Split the message into vocabulary terms. Does not include punctuation. """
     pro = Prompt.from_file(TERMS_PROMPT_FILE)
     pro.msgs.append(message('usr', msg))
-    for msg in pro.msgs:
-        print(msg)
-    _terms: str = pro.complete(stop=None).body
+    _terms: str = pro.complete(
+        model=JSON_COMPAT_MODEL,
+        response_format={'type': 'json_object'},
+    ).body
     try:
-        terms: list[str] = json.loads(_terms)
+        terms: dict[str, None] = json.loads(_terms)
     except json.JSONDecodeError as exc:
         raise VocabParseError(f"Failed to parse vocabulary terms: {_terms}") from exc
+    terms = list(terms.keys())
     logger.success(f"Extracted vocabulary terms: {terms}")
     return terms
 
@@ -200,8 +204,7 @@ def extract_root(terms: list[str]) -> dict[str, str]:
     msg = message('usr', "; ".join([term for term in terms]))
     pro.msgs.append(msg)
     compl = pro.complete(
-        # model="gpt-4-1106-preview",
-        model="gpt-3.5-turbo-1106",
+        model=JSON_COMPAT_MODEL,
         response_format={'type': 'json_object'},
     )
     roots = json.loads(compl.body)
