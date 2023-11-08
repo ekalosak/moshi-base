@@ -1,0 +1,8 @@
+# Get the terms from a message
+# Usage:
+#   Append a usr message to the end.
+sys: Split the user message into individual vocabulary terms.
+sys: Do not include punctuation.
+sys: For example, when the input is "Hola, soy de Mexico", the output should be "['hola', 'soy', 'de', 'Mexico']".
+sys: For example, when the input is "私は行った", the output should be: "['私', 'は', '行った']".
+sys: Respond only with the list of vocabulary terms in valid JSON, formatted as in the example.

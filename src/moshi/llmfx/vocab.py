@@ -24,13 +24,14 @@ from moshi.language import Language
 from moshi.vocab import MsgV
 from .base import PROMPT_DIR
 
+TERMS_PROMPT_FILE = PROMPT_DIR / "vocab_extract_terms.txt"
 POS_PROMPT_FILE = PROMPT_DIR / "vocab_extract_pos.txt"
 DEFN_PROMPT_FILE = PROMPT_DIR / "vocab_extract_defn.txt"
 ROOT_PROMPT_FILE = PROMPT_DIR / "vocab_extract_root.txt"
 CONJ_PROMPT_FILE = PROMPT_DIR / "vocab_extract_verb_conjugation.txt"
 UDEFN_PROMPT_FILE = PROMPT_DIR / "vocab_extract_microdefn.txt"
 SYNO_PROMPT_FILE = PROMPT_DIR / "vocab_extract_synonyms.txt"
-PROMPT_FILES = [POS_PROMPT_FILE, DEFN_PROMPT_FILE, ROOT_PROMPT_FILE, CONJ_PROMPT_FILE, UDEFN_PROMPT_FILE, SYNO_PROMPT_FILE]
+PROMPT_FILES = [TERMS_PROMPT_FILE, POS_PROMPT_FILE, DEFN_PROMPT_FILE, ROOT_PROMPT_FILE, CONJ_PROMPT_FILE, UDEFN_PROMPT_FILE, SYNO_PROMPT_FILE]
 for pf in PROMPT_FILES:
     if not pf.exists():
         raise FileNotFoundError(f"Prompt file {pf} not found.")
@@ -38,6 +39,21 @@ for pf in PROMPT_FILES:
 class VocabParseError(Exception):
     """ Raised when a vocabulary term cannot be parsed. """
     pass
+
+@traced
+def extract_terms(msg: str) -> list[str]:
+    """ Split the message into vocabulary terms. Does not include punctuation. """
+    pro = Prompt.from_file(TERMS_PROMPT_FILE)
+    pro.msgs.append(message('usr', msg))
+    for msg in pro.msgs:
+        print(msg)
+    _terms: str = pro.complete(stop=None).body
+    try:
+        terms: list[str] = json.loads(_terms)
+    except json.JSONDecodeError as exc:
+        raise VocabParseError(f"Failed to parse vocabulary terms: {_terms}") from exc
+    logger.success(f"Extracted vocabulary terms: {terms}")
+    return terms
 
 @traced
 def extract_pos(msg: str, retry=3) -> dict[str, str]:

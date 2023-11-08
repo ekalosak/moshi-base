@@ -1,4 +1,4 @@
-from math import exp
+from math import e, exp
 from pprint import pprint
 import time
 
@@ -11,11 +11,13 @@ from moshi.vocab import MsgV
 
 @pytest.mark.parametrize('pf', vocab.PROMPT_FILES)
 def test_parse_prompt(pf):
+    """ Test that each prompt file can be parsed. """
     pro = Prompt.from_file(pf)
 
 @pytest.mark.openai
 @pytest.mark.slow
 def test_extract():
+    """ Test that vocab terms can be extracted from a message. """
     msg = "私は行った"
     bcp47 = "ja-JP"
     t0 = time.time()
@@ -35,6 +37,26 @@ def test_extract():
             assert v["root"] is not None
             assert v["con"] is not None
     assert got_verb, "No verb was extracted from the message '私は行った', expected precisely one: '行く'."
+
+@pytest.mark.parametrize("msg,eterms", [
+    (
+        "こんにちは、ケンと呼んでください。",
+        ["こんにちは", "ケン", "と", "呼んで", "ください"]
+    ),
+])
+@pytest.mark.openai
+def test_vocab_extract_terms(msg: str, eterms: list[str]):
+    terms: list[str] = vocab.extract_terms(msg)
+    print(f"extracted terms: {terms}")
+    assert isinstance(terms, list), "Invalid return type for extract_terms, expected a list."
+    assert len(terms) == len(eterms), "Extracted different number of terms."
+    incorrect_terms = 0
+    for term, eterm in zip(terms, eterms):
+        assert isinstance(term, str), "Invalid term type."
+        if term != eterm:
+            print(f"term: {term} != eterm: {eterm}")
+            incorrect_terms += 1
+    assert incorrect_terms == 0, f"Extracted {incorrect_terms} incorrect terms."
 
 @pytest.mark.parametrize("msg", ["I went to the store."])
 @pytest.mark.openai
