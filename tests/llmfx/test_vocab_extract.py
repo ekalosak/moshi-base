@@ -14,9 +14,11 @@ def test_parse_prompt(pf):
     """ Test that each prompt file can be parsed. """
     pro = Prompt.from_file(pf)
 
+
+# TODO update for response_format JSON
 @pytest.mark.openai
 @pytest.mark.slow
-def test_extract():
+def test_extract_all():
     """ Test that vocab terms can be extracted from a message. """
     msg = "私は行った"
     bcp47 = "ja-JP"
@@ -67,7 +69,7 @@ def test_vocab_extract_terms(msg: str, eterms: list[str]):
         "店に行った",
         ['店', 'に', '行った']
     ),
-])
+], ids=["en", "ja"])
 @pytest.mark.openai
 def test_vocab_extract_pos(msg: str, terms: list[str]):
     vocs: dict[str, str] = vocab.extract_pos(msg, terms)
@@ -81,15 +83,17 @@ def test_vocab_extract_pos(msg: str, terms: list[str]):
 @pytest.mark.openai
 def test_vocab_extract_defn():
     lang = Language("en-US")
+    msg = 'I went.'
     terms = ['I', 'went']
     pprint(terms)
-    defns = vocab.extract_defn(terms=terms, lang=lang.name)
+    defns = vocab.extract_defn(msg, terms, lang=lang.name)
     pprint(defns)
     for term, defn in defns.items():
         assert term in terms
         assert isinstance(defn, str)
     assert len(defns) == len(terms)
 
+# TODO update for response_format JSON
 @pytest.mark.openai
 def test_vocab_extract_detail():
     term = "volcán"
@@ -98,6 +102,7 @@ def test_vocab_extract_detail():
     print(detail)
     assert isinstance(detail, str)
 
+# TODO update for response_format JSON
 @pytest.mark.openai
 def test_vocab_extract_root():
     terms = ["行った", "明るく", "brightly", "lamentablemente"]
@@ -109,6 +114,7 @@ def test_vocab_extract_root():
         assert isinstance(root, str)
         assert utils.similar(root, exprt) > 0.5
 
+# TODO update for response_format JSON
 @pytest.mark.openai
 def test_vocab_extract_verb_conjugation():
     term = "行った"
@@ -118,6 +124,7 @@ def test_vocab_extract_verb_conjugation():
     assert term in cons
     assert utils.similar(cons[term], "past") == 1.0
 
+# TODO update for response_format JSON
 @pytest.mark.openai
 @pytest.mark.parametrize('term', ["行った", "明るく"])
 def test_synonym(term):
@@ -126,6 +133,7 @@ def test_synonym(term):
     assert len(synos) > 0
     assert all([isinstance(syno, str) for syno in synos])
 
+# TODO update for response_format JSON
 @pytest.mark.openai
 def test_extract_msgv():
     msg = "I went to the store and bought some milk."

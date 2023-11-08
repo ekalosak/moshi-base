@@ -59,6 +59,7 @@ def extract_terms(msg: str) -> list[str]:
     logger.success(f"Extracted vocabulary terms: {terms}")
     return terms
 
+# TODO update for response_format JSON
 @traced
 def extract_pos(msg: str, terms: list[str]) -> dict[str, str]:
     """ Get the parts of speech of the vocab terms in an utterance.
@@ -79,6 +80,7 @@ def extract_pos(msg: str, terms: list[str]) -> dict[str, str]:
     logger.success(f"Extracted parts of speech: {poss}")
     return poss
 
+# TODO update for response_format JSON
 @traced
 def extract_defn(terms: list[str], lang: str, retry=3) -> dict[str, str]:
     """ Get the brief definitions of the vocab terms.
@@ -114,6 +116,7 @@ def extract_defn(terms: list[str], lang: str, retry=3) -> dict[str, str]:
     logger.success(f"Extracted definitions: {defns}")
     return defns
 
+# TODO update for response_format JSON
 @traced
 def extract_udefn(msg: str, lang: str, retry=3) -> dict[str, str]:
     """ Get a very short (micro) definitions of the vocab terms.
@@ -152,8 +155,7 @@ def extract_udefn(msg: str, lang: str, retry=3) -> dict[str, str]:
             result[term] = defn
     return result
 
-
-
+# TODO update for response_format JSON
 @traced
 def extract_detail(term: str, lang: str) -> str:
     """ Get more information on the vocabulary term.
@@ -171,6 +173,7 @@ def extract_detail(term: str, lang: str) -> str:
     logger.success(f"Extracted detail: {detail}")
     return detail
 
+# TODO update for response_format JSON
 @traced
 def extract_root(terms: list[str]) -> dict[str, str]:
     """ Get the root forms of verbs, adverbs, adjectives, and any similar parts of speech.
@@ -193,7 +196,7 @@ def extract_root(terms: list[str]) -> dict[str, str]:
     logger.success(f"Extracted roots: {roots}")
     return roots
 
-
+# TODO update for response_format JSON
 @traced
 def extract_verb_conjugation(verbs: list[str]) -> dict[str, str]:
     """ Get the conjugations of verbs. """
@@ -209,6 +212,7 @@ def extract_verb_conjugation(verbs: list[str]) -> dict[str, str]:
     logger.success(f"Extracted verb conjugations: {cons}")
     return cons
 
+# TODO update for response_format JSON
 @traced
 def synonyms(msg: str, term: str) -> list[str]:
     """ Get synonyms for the term. """
@@ -219,6 +223,7 @@ def synonyms(msg: str, term: str) -> list[str]:
     logger.success(f"Extracted synonyms: {synos}")
     return synos
 
+# TODO update for response_format JSON
 def _extract_all_async(terms: list[str], verbs: list[str], lang: str):
     """ Helper function for extract_all.
     Args:
@@ -244,6 +249,7 @@ def _extract_all_async(terms: list[str], verbs: list[str], lang: str):
     (defns, roots, cons), details = asyncio.run(_all())
     return defns, roots, cons, details
 
+# TODO update for response_format JSON
 @traced
 def extract_all(msg: str, bcp47: str, detail: bool=False) -> dict[str, dict]:
     """ Extract vocabulary terms from a message. This sequences a number of OpenAI API requests proportional to the number of vocab terms in the message. This is a convenience function that calls the other extract functions in this module.
@@ -273,6 +279,7 @@ def extract_all(msg: str, bcp47: str, detail: bool=False) -> dict[str, dict]:
         }
     return result
 
+# TODO update for response_format JSON
 @traced
 def extract_msgv(msg: str, bcp47: str) -> list[MsgV]:
     """ Extract the min info required for a session, annotated in the transcript. Should be fast even without async, only needs 2 API calls.
