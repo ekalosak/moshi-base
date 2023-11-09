@@ -125,13 +125,12 @@ def extract_defn(msg: str, terms: list[str], lang: str) -> dict[str, str]:
         VocabParseError: If the LLM fails to reproduce the terms in its result.
     """
     pro = Prompt.from_file(DEFN_PROMPT_FILE)
-    _msgpld = {'msg': msg, 'terms': terms}
-    msgpld = json.dumps(_msgpld)
+    msgpld = str({'msg': msg, 'terms': terms})
     logger.debug(f"msgpld: {msgpld}")
     pro.msgs.append(message('usr', msgpld))
     pro.template(LANGNAME=lang)
     _defns = pro.complete(
-        model=JSON_COMPAT_MODEL_4,
+        model=JSON_COMPAT_MODEL_3,
         response_format={'type': 'json_object'},
         vocab=terms,
         stop=None,
@@ -148,44 +147,36 @@ def extract_defn(msg: str, terms: list[str], lang: str) -> dict[str, str]:
     logger.success(f"Extracted definitions: {defns}")
     return defns
 
-# TODO update for response_format JSON
 @traced
-def extract_udefn(msg: str, lang: str, retry=3) -> dict[str, str]:
+def extract_udefn(msg: str, terms: list[str], lang: str) -> dict[str, str]:
     """ Get a very short (micro) definitions of the vocab terms.
     Args:
         msg: The message to extract vocabulary from.
+        terms: The vocabulary terms to get definitions for.
         lang: The name of the language e.g. 'English'.
     Returns:
         dict[str, str]: A dictionary mapping vocabulary terms to their definitions.
+    Raises:
+        VocabParseError: If we cant parse the LLM result.
     """
     pro = Prompt.from_file(UDEFN_PROMPT_FILE)
-    pro.msgs.append(message('usr', msg))
+    pld = str({'msg': msg, 'terms': terms})
+    logger.debug(f"msgpld: {pld}")
+    pro.msgs.append(message('usr', pld))
     pro.template(LANGNAME=lang)
-    _defns = pro.complete(stop=None).body.split("\n")
-    defns = []
+    _udefns = pro.complete(
+        model=JSON_COMPAT_MODEL_3,
+        response_format={'type': 'json_object'},
+        vocab=terms,
+        stop=None,
+        max_tokens=256,
+    ).body
     try:
-        for _d in _defns:
-            try:
-                term, defn = _d.split(";")
-            except ValueError as exc:
-                raise VocabParseError(f"Failed to parse vocabulary term: {_d}") from exc
-            else:
-                defns.append((term.strip(), defn.strip()))
-    except VocabParseError as exc:
-        if retry > 0:
-            logger.warning(exc)
-            logger.debug(f"Retrying with {retry-1} retries left.")
-            return extract_defn(msg, retry=retry-1)
-        else:
-            raise exc
-    logger.success(f"Extracted definitions: {defns}")
-    result = {}
-    for term, defn in defns:
-        if term in result:
-            result[term] += f"; {defn}"
-        else:
-            result[term] = defn
-    return result
+        udefns = json.loads(_udefns)
+    except json.JSONDecodeError as exc:
+        raise VocabParseError(f"Failed to parse vocabulary terms: {_udefns}") from exc
+    logger.success(f"Extracted micro-definitions: {udefns}")
+    return udefns
 
 # TODO update for response_format JSON
 @traced

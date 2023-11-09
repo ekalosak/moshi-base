@@ -102,6 +102,28 @@ def test_vocab_extract_defn(msg: str, terms: list[str], lang: Language):
     assert len(defns) == len(terms), "Got different number of definitions than the number of terms provided."
     assert set(defns.keys()) == set(terms), "Got different defined terms than the terms provided."
 
+@pytest.mark.parametrize("msg,terms,lang", [
+    (
+        'I went.',
+        ['I', 'went'],
+        Language("en-US")
+    ),
+    (
+        '店に行った',
+        ['店', 'に', '行った'],
+        Language("ja-JP")
+    )
+], ids=["en", "ja"])
+@pytest.mark.openai
+def test_vocab_extract_udefn(msg: str, terms: list[str], lang: Language):
+    udefns: dict[str, str] = vocab.extract_udefn(msg, terms, lang=lang.name)
+    pprint(udefns)
+    for term, udefn in udefns.items():
+        assert term in terms
+        assert isinstance(udefn, str)
+    assert len(udefns) == len(terms), "Got different number of definitions than the number of terms provided."
+    assert set(udefns.keys()) == set(terms), "Got different defined terms than the terms provided."
+
 # TODO update for response_format JSON
 @pytest.mark.openai
 def test_vocab_extract_detail():
