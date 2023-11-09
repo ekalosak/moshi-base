@@ -60,7 +60,6 @@ def test_vocab_extract_terms(msg: str, eterms: list[str]):
             incorrect_terms += 1
     assert incorrect_terms == 0, f"Extracted {incorrect_terms} incorrect terms."
 
-# TODO Check that this test works
 @pytest.mark.parametrize("msg,terms", [
     (
         "I went to the store.",
@@ -87,13 +86,13 @@ def test_vocab_extract_defn():
     lang = Language("en-US")
     msg = 'I went.'
     terms = ['I', 'went']
-    pprint(terms)
-    defns = vocab.extract_defn(msg, terms, lang=lang.name)
+    defns: dict[str, str] = vocab.extract_defn(msg, terms, lang=lang.name)
     pprint(defns)
     for term, defn in defns.items():
         assert term in terms
         assert isinstance(defn, str)
-    assert len(defns) == len(terms)
+    assert len(defns) == len(terms), "Got different number of definitions than the number of terms provided."
+    assert set(list(defns.keys())) == set(terms), "Got different defined terms than the terms provided."
 
 # TODO update for response_format JSON
 @pytest.mark.openai

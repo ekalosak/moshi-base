@@ -36,7 +36,8 @@ for pf in PROMPT_FILES:
     if not pf.exists():
         raise FileNotFoundError(f"Prompt file {pf} not found.")
 
-JSON_COMPAT_MODEL = "gpt-3.5-turbo-1106"
+# JSON_COMPAT_MODEL = "gpt-3.5-turbo-1106"
+JSON_COMPAT_MODEL = "gpt-4-1106-preview"
 
 class VocabParseError(Exception):
     """ Raised when a vocabulary term cannot be parsed. """
@@ -55,11 +56,11 @@ def extract_terms(msg: str) -> list[str]:
         terms: dict[str, None] = json.loads(_terms)
     except json.JSONDecodeError as exc:
         raise VocabParseError(f"Failed to parse vocabulary terms: {_terms}") from exc
-    terms = list(terms.keys())
+    terms: list[str] = list(terms.keys())
+    terms = [term.strip() for term in terms]
     logger.success(f"Extracted vocabulary terms: {terms}")
     return terms
 
-# TODO update for response_format JSON
 @traced
 def extract_pos(msg: str, terms: list[str]) -> dict[str, str]:
     """ Get the parts of speech of the vocab terms in an utterance.
@@ -72,12 +73,19 @@ def extract_pos(msg: str, terms: list[str]) -> dict[str, str]:
     pro = Prompt.from_file(POS_PROMPT_FILE)
     msgpld = {'msg': msg, 'terms': terms}
     pro.msgs.append(message('usr', json.dumps(msgpld)))
-    _poss: str = pro.complete(stop=None).body
+    _poss: str = pro.complete(
+        model=JSON_COMPAT_MODEL,
+        response_format={'type': 'json_object'},
+        presence_penalty=-1.0,
+    ).body
     try:
         poss: dict[str, str] = json.loads(_poss)
     except json.JSONDecodeError as exc:
         raise VocabParseError(f"Failed to parse vocabulary terms: {_poss}") from exc
+    poss = {term.strip(): pos.strip() for term, pos in poss.items()}
     logger.success(f"Extracted parts of speech: {poss}")
+    if not set(poss.keys()) == set(terms):
+        breakpoint()
     return poss
 
 # TODO update for response_format JSON

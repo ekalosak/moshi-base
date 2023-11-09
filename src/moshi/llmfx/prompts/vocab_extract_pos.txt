@@ -6,5 +6,5 @@ sys: For example, "{'msg': 'Hola, soy de Mexico', 'terms': ['hola', 'soy', 'de',
 "{'hola': 'interjection', 'soy': 'verb', 'de': 'preposition', 'Mexico': 'noun'}".
 sys: For example, "{'msg': '私は行った', 'terms': ['私', 'は', '行った']}" should yield \
 "{'私': 'noun', 'は': 'topic marker', '行った': 'verb'}".
+sys: The keys for the returned JSON must match the input terms. Do not, for example, change the conjugation of any verbs.
 sys: Respond only with valid JSON, formatted as in the examples.
-sys: The keys for the returned JSON must match the input terms.
