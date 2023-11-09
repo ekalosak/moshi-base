@@ -178,7 +178,6 @@ def extract_udefn(msg: str, terms: list[str], lang: str) -> dict[str, str]:
     logger.success(f"Extracted micro-definitions: {udefns}")
     return udefns
 
-# TODO update for response_format JSON
 @traced
 def extract_detail(term: str, lang: str) -> str:
     """ Get more information on the vocabulary term.
@@ -196,7 +195,6 @@ def extract_detail(term: str, lang: str) -> str:
     logger.success(f"Extracted detail: {detail}")
     return detail
 
-# TODO update for response_format JSON
 @traced
 def extract_root(terms: list[str]) -> dict[str, str]:
     """ Get the root forms of verbs, adverbs, adjectives, and any similar parts of speech.
@@ -210,7 +208,7 @@ def extract_root(terms: list[str]) -> dict[str, str]:
     msg = message('usr', "; ".join([term for term in terms]))
     pro.msgs.append(msg)
     compl = pro.complete(
-        model=JSON_COMPAT_MODEL,
+        model=JSON_COMPAT_MODEL_3,
         response_format={'type': 'json_object'},
     )
     roots = json.loads(compl.body)

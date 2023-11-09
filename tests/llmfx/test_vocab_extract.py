@@ -133,7 +133,6 @@ def test_vocab_extract_detail():
     print(detail)
     assert isinstance(detail, str)
 
-# TODO update for response_format JSON
 @pytest.mark.openai
 def test_vocab_extract_root():
     terms = ["行った", "明るく", "brightly", "lamentablemente"]
