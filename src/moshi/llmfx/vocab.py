@@ -86,15 +86,15 @@ def extract_pos(msg: str, terms: list[str]) -> dict[str, str]:
         VocabParseError: If the LLM fails to reproduce the terms in its result.
     """
     pro = Prompt.from_file(POS_PROMPT_FILE)
-    _msgpld = {'msg': msg, 'terms': terms}
-    msgpld = json.dumps(_msgpld)
+    msgpld = str({'msg': msg, 'terms': terms})
     logger.debug(f"msgpld: {msgpld}")
     pro.msgs.append(message('usr', msgpld))
     _poss: str = pro.complete(
-        model=JSON_COMPAT_MODEL_4,
+        model=JSON_COMPAT_MODEL_3,
         response_format={'type': 'json_object'},
         presence_penalty=-1.0,
         vocab=terms,
+        stop=None,
     ).body
     try:
         poss: dict[str, str] = json.loads(_poss)
