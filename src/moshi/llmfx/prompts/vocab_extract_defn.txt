@@ -1,11 +1,14 @@
 # Get the definitions of the words in the utterance.
 # Usage:
-#   Append a single usr message with the comma separated terms to the end of the prompt msgs.
-sys: For each term, return the definition.
-sys: For example, when the user provides "Hola, soy, de, Mexico", the system should return:\
-Hola; una manera amigable y cordial de iniciar una conversación o establecer contacto con otra persona\
-soy; una forma conjugada del verbo "ser" que se utiliza para expresar la identidad o estado actual de la persona que habla en el presente\
-de; se utiliza para indicar una relación de posesión, origen, pertenencia, causa, dirección, y muchas otras relaciones espaciales o temporales\
-Mexico; México es un país situado en América del Norte
-sys: Respond only with the list, formatted as in the example.
+#   Append a single usr message with the JSON 
+#   Template 'LANGNAME' to e.g. 'English'.
+sys: For each term, provide a brief definition.
+sys: For example, "{'msg': 'Hola, soy de Mexico', 'terms': ['Hola', 'soy', 'de', 'Mexico']}" should yield: \
+"{'Hola': 'una manera amigable y cordial de iniciar una conversación o establecer contacto con otra persona', \
+'soy': 'una forma conjugada del verbo \"ser\" que se utiliza para expresar la identidad o estado actual de la persona que habla en el presente', \
+'de': 'se utiliza para indicar una relación de posesión, origen, pertenencia, causa, dirección, y muchas otras relaciones espaciales o temporales', \
+'Mexico', 'un país situado en América del Norte'}"
+sys: Respond only with the valid JSON response, formatted as in the example.
+sys: Use the 'msg' field to better understand the linguistic context for each term.
+sys: Make sure to define precisely those terms provided in the 'terms' field.
 sys: Respond in {{LANGNAME}}.

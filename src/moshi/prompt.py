@@ -22,7 +22,7 @@ from .language import Language
 from .msg import Message, Role, MOSHI_ROLES, message
 from .storage import Mappable
 
-enc: tiktoken.Encoding
+enc: tiktoken.Encoding = None
 
 
 def _get_function(func_name: str, available_functions: list[Callable]) -> Function:
@@ -184,10 +184,11 @@ class Prompt(Mappable):
             - model: the model to use for encoding.
             - bias: the bias to use for each token.
         """
+        global enc
         if not enc:
-            enc = tiktoken.encoding_for_model(model)
+            enc = tiktoken.encoding_for_model(self.model)
         tokens = {}
-        with logger.contextualize(model=model):
+        with logger.contextualize(model=self.model):
             for voc in vocab:
                 tok = enc.encode(voc)
                 tokens[voc] = tok

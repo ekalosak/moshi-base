@@ -36,8 +36,8 @@ for pf in PROMPT_FILES:
     if not pf.exists():
         raise FileNotFoundError(f"Prompt file {pf} not found.")
 
-# JSON_COMPAT_MODEL = "gpt-3.5-turbo-1106"
-JSON_COMPAT_MODEL = "gpt-4-1106-preview"
+JSON_COMPAT_MODEL_3 = "gpt-3.5-turbo-1106"
+JSON_COMPAT_MODEL_4 = "gpt-4-1106-preview"
 
 class VocabParseError(Exception):
     """ Raised when a vocabulary term cannot be parsed. """
@@ -49,7 +49,7 @@ def extract_terms(msg: str) -> list[str]:
     pro = Prompt.from_file(TERMS_PROMPT_FILE)
     pro.msgs.append(message('usr', msg))
     _terms: str = pro.complete(
-        model=JSON_COMPAT_MODEL,
+        model=JSON_COMPAT_MODEL_4,
         response_format={'type': 'json_object'},
     ).body
     try:
@@ -61,6 +61,19 @@ def extract_terms(msg: str) -> list[str]:
     logger.success(f"Extracted vocabulary terms: {terms}")
     return terms
 
+def _fix_pos(raw_result: str, terms: list[str]) -> dict[str, str]:
+    """If the LLM fails to reproduce the terms in its result, this function applies a heuristic to match the terms to the parts of speech. Simply, it replaces the keys in the result with the terms in order."""
+    poss: dict[str, str] = {}
+    if len(terms) != len(raw_result.split(',')):
+        raise VocabParseError(f"Failed to match terms to parts of speech as they are of different lengths: {terms} != {raw_result}")
+    for term, _pos in zip(terms, raw_result.split(',')):
+        try:
+            _, pos = _pos.split(':')
+        except ValueError as exc:
+            raise VocabParseError(f"Failed to parse vocabulary term: {_pos}") from exc
+        poss[term] = pos.strip('\n\r\'" ')
+    return poss
+
 @traced
 def extract_pos(msg: str, terms: list[str]) -> dict[str, str]:
     """ Get the parts of speech of the vocab terms in an utterance.
@@ -69,58 +82,69 @@ def extract_pos(msg: str, terms: list[str]) -> dict[str, str]:
         terms (list[str]): The vocabulary terms to extract parts of speech for.
     Returns:
         poss (dict[str, str]): A dict of vocabulary terms to their parts of speech.
+    Raises:
+        VocabParseError: If the LLM fails to reproduce the terms in its result.
     """
     pro = Prompt.from_file(POS_PROMPT_FILE)
-    msgpld = {'msg': msg, 'terms': terms}
-    pro.msgs.append(message('usr', json.dumps(msgpld)))
+    _msgpld = {'msg': msg, 'terms': terms}
+    msgpld = json.dumps(_msgpld)
+    logger.debug(f"msgpld: {msgpld}")
+    pro.msgs.append(message('usr', msgpld))
     _poss: str = pro.complete(
-        model=JSON_COMPAT_MODEL,
+        model=JSON_COMPAT_MODEL_4,
         response_format={'type': 'json_object'},
         presence_penalty=-1.0,
+        vocab=terms,
     ).body
     try:
         poss: dict[str, str] = json.loads(_poss)
     except json.JSONDecodeError as exc:
         raise VocabParseError(f"Failed to parse vocabulary terms: {_poss}") from exc
     poss = {term.strip(): pos.strip() for term, pos in poss.items()}
+    if set(poss.keys()) != set(terms):
+        logger.warning(f"Extracted parts of speech do not match terms: {poss} != {terms}")
+        if len(poss) == len(terms):
+            logger.debug("Applying heuristic to match terms to parts of speech, replacing keys in order.")
+            poss = _fix_pos(_poss, terms)
+        else:
+            raise VocabParseError(f"Failed to match terms to parts of speech as they are of different lengths: {poss} != {terms}")
     logger.success(f"Extracted parts of speech: {poss}")
-    if not set(poss.keys()) == set(terms):
-        breakpoint()
     return poss
 
-# TODO update for response_format JSON
+# TODO allow returning only a subset of terms' definitions for e.g. unpaid users (because the max_tokens will clip the result)
 @traced
-def extract_defn(terms: list[str], lang: str, retry=3) -> dict[str, str]:
+def extract_defn(msg: str, terms: list[str], lang: str) -> dict[str, str]:
     """ Get the brief definitions of the vocab terms.
     Args:
+        msg: The message to extract vocabulary from, providing linguistic context.
         terms: The vocabulary terms to get definitions for: ['if', 'and', 'it', 'Constantinople']
         lang: The name of the language e.g. 'English'.
     Returns:
         dict[str, str]: A dictionary mapping vocabulary terms to their definitions.
+    Raises:
+        VocabParseError: If the LLM fails to reproduce the terms in its result.
     """
     pro = Prompt.from_file(DEFN_PROMPT_FILE)
-    vocs_commmasep: str = ", ".join(terms)
-    pro.msgs.append(message('usr', vocs_commmasep))
+    _msgpld = {'msg': msg, 'terms': terms}
+    msgpld = json.dumps(_msgpld)
+    logger.debug(f"msgpld: {msgpld}")
+    pro.msgs.append(message('usr', msgpld))
     pro.template(LANGNAME=lang)
-    _defns = pro.complete(stop=None).body.split("\n")
-    defns = {}
+    _defns = pro.complete(
+        model=JSON_COMPAT_MODEL_4,
+        response_format={'type': 'json_object'},
+        vocab=terms,
+        stop=None,
+        max_tokens=1028,
+    ).body
     try:
-        if len(_defns) != len(terms):
-            raise VocabParseError(f"Completion returned different number of terms: {vocs_commmasep} -> {_defns}")
-        for _d in _defns:
-            try:
-                term, defn = _d.split(";")
-            except ValueError as exc:
-                raise VocabParseError(f"Failed to parse vocabulary term: {_d}") from exc
-            else:
-                defns[term.strip()] = defn.strip()
-    except VocabParseError as exc:
-        if retry > 0:
-            logger.warning(exc)
-            logger.debug(f"Retrying with {retry-1} retries left.")
-            return extract_defn(terms, lang, retry=retry-1)
-        else:
-            raise exc
+        defns = json.loads(_defns)
+    except json.JSONDecodeError as exc:
+        raise VocabParseError(f"Failed to parse vocabulary terms: {_defns}") from exc
+    else:
+        defns = {term.strip(): defn.strip() for term, defn in defns.items()}
+    if len(defns) != len(terms):
+        raise VocabParseError(f"Completion returned different number of terms: {terms} -> {defns}")
     logger.success(f"Extracted definitions: {defns}")
     return defns
 

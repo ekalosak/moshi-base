@@ -80,19 +80,27 @@ def test_vocab_extract_pos(msg: str, terms: list[str]):
         assert isinstance(pos, str), "Invalid pos type."
     assert set(vocs.keys()) == set(terms), "Extracted different terms."
 
-# TODO update for response_format JSON
+@pytest.mark.parametrize("msg,terms,lang", [
+    (
+        'I went.',
+        ['I', 'went'],
+        Language("en-US")
+    ),
+    (
+        '店に行った',
+        ['店', 'に', '行った'],
+        Language("ja-JP")
+    )
+], ids=["en", "ja"])
 @pytest.mark.openai
-def test_vocab_extract_defn():
-    lang = Language("en-US")
-    msg = 'I went.'
-    terms = ['I', 'went']
+def test_vocab_extract_defn(msg: str, terms: list[str], lang: Language):
     defns: dict[str, str] = vocab.extract_defn(msg, terms, lang=lang.name)
     pprint(defns)
     for term, defn in defns.items():
         assert term in terms
         assert isinstance(defn, str)
     assert len(defns) == len(terms), "Got different number of definitions than the number of terms provided."
-    assert set(list(defns.keys())) == set(terms), "Got different defined terms than the terms provided."
+    assert set(defns.keys()) == set(terms), "Got different defined terms than the terms provided."
 
 # TODO update for response_format JSON
 @pytest.mark.openai
