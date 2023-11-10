@@ -22,4 +22,4 @@ sys: For example:\
     ast: こんにちは、外のシダを見ましたか？\
     usr: ごめんなさい、シダって何ですか？\
 would receive: KINDERGARTEN
-sys: Respond only with one of: {{GRADES}}
+sys: Respond only with one of these uppercase English string literals: "{{GRADES}}".

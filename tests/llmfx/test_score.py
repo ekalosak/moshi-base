@@ -55,7 +55,7 @@ def test_grammar(msg, esco: Level):
 @pytest.mark.parametrize('msg, esco', [
     ("My name's Gregory, but please call me Greg.", YesNo.YES),
     ("Oregano is a favored herb", YesNo.SOMEWHAT),
-    ("Knowing me, I can be Chuck ", YesNo.NO),
+    ("Knowing me, I can be Chuck ", YesNo.SLIGHT),
 ])
 def test_idiom(msg, esco: YesNo):
     sco = msg_score.score_idiom(msg)

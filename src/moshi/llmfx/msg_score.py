@@ -18,15 +18,18 @@ for pf in PROMPT_FILES:
         raise FileNotFoundError(f"Prompt file {pf} not found.")
 
 @traced
-def _score(msg: str, pro: Path | Prompt, score_as: Rankable=Level, **kwargs) -> Score:
+def _score(msgs: list[Message] | str, pro: Path | Prompt, score_as: Rankable=Level, **kwargs) -> Score:
     """ Score a message using a prompt file.
     Args:
-        msg: The message to score.
+        msgs: The messages to score. Typically only one msg.
         pro: The prompt file or prompt to use.
         score_as: The type of score to return.
         **kwargs: The keyword arguments to pass to the prompt as template variables.
             The RANKING variable is automatically set to the ranking of the score type (e.g. Level.to_ranking()).
     """
+    if isinstance(msgs, str):
+        logger.warning("Deprecated: Passing a string to _score() is deprecated. Use a list of messages instead.")
+        msgs = [message('usr', msgs)]
     if isinstance(pro, Path):
         logger.debug(f"Loading prompt from file: {pro}")
         pro = Prompt.from_file(pro)
@@ -34,9 +37,8 @@ def _score(msg: str, pro: Path | Prompt, score_as: Rankable=Level, **kwargs) -> 
     pro.template(RANKING=score_as.to_ranking())
     if kwargs:
         pro.template(**kwargs)
-    msg = message('usr', msg)
-    pro.msgs.append(msg)
-    logger.debug(f"Getting score for: {msg}")
+    pro.msgs.extend(msgs)
+    logger.debug(f"Getting score for: {msgs}")
     _sco = pro.complete().body
     logger.debug(f"Got score: {_sco}")
     try:
@@ -48,8 +50,9 @@ def _score(msg: str, pro: Path | Prompt, score_as: Rankable=Level, **kwargs) -> 
     return Score(sco, expl)
 
 @traced
-def score_vocab(msg: str) -> Score:
+def score_vocab(msg: list[Message] | str) -> Score:
     """ Score the user's use of vocabulary in an utterance.
+    Args:
     """
     return _score(msg, VOCAB_PROMPT_FILE)
 
@@ -75,8 +78,4 @@ def score_idiom(msg: str) -> Score:
 def score_context(msgs: list[Message]) ->  Score:
     """ Score the user's utterance for context.
     """
-    pld = ""
-    for msg in msgs:
-        pld += f"{msg.role.name}: {msg.body}\n"
-    pld.strip()
-    return _score(pld, CONTEXT_PROMPT_FILE, score_as=YesNo)
+    return _score(msgs, CONTEXT_PROMPT_FILE, score_as=YesNo)
