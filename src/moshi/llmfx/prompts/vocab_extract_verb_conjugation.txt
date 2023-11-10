@@ -1,6 +1,6 @@
 # Get the conjugation of a verb
 # Usage:
-#   Append a usr message with a semicolon-separated list of verbs e.g. "fue; estaba"
+#   list[str] - Append a usr message with a string representation of the list of verbs.
 sys: Respond with the names of the conjugations of the verbs.
-sys: For example, if provided "fue; estaba", respond with "past; imperfect".
-sys: Respond only with the semicolon-separated list of conjugations.
+sys: For example: "['fue', 'estaba']" should yield "{'fue': 'past', 'estaba': 'imperfect'}".
+sys: Respond only with the valid JSON map from terms to conjugations, formatted as in the example.

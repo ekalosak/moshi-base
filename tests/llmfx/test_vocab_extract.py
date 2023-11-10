@@ -144,15 +144,18 @@ def test_vocab_extract_root():
         assert isinstance(root, str)
         assert utils.similar(root, exprt) > 0.5
 
-# TODO update for response_format JSON
 @pytest.mark.openai
 def test_vocab_extract_verb_conjugation():
-    term = "行った"
-    cons = vocab.extract_verb_conjugation([term])
-    print(cons)
+    verbs = ["行った"]
+    econs = ["past"]
+    cons: dict[str: str] = vocab.extract_verb_conjugation(verbs)
+    pprint(cons)
     assert isinstance(cons, dict)
-    assert term in cons
-    assert utils.similar(cons[term], "past") == 1.0
+    assert len(cons) == len(econs), "Got different number of conjugations than the number of verbs provided."
+    for verb, econ in zip(verbs, econs):
+        assert verb in verbs, "LLM returned a conjugation for a verb that was not provided."
+        con: str = cons[verb]
+        assert utils.similar(con, econ) == 1.0 or con.startswith(econ), "Got different conjugation than expected for '{verb}': got='{con}', expected='{econ}'."
 
 # TODO update for response_format JSON
 @pytest.mark.openai

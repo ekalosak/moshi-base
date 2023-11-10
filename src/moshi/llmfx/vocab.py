@@ -217,19 +217,22 @@ def extract_root(terms: list[str]) -> dict[str, str]:
     logger.success(f"Extracted roots: {roots}")
     return roots
 
-# TODO update for response_format JSON
 @traced
 def extract_verb_conjugation(verbs: list[str]) -> dict[str, str]:
     """ Get the conjugations of verbs. """
     pro = Prompt.from_file(CONJ_PROMPT_FILE)
-    msg = message('usr', "; ".join(verbs))
+    msg = message('usr', str(verbs))
     pro.msgs.append(msg)
-    _cons = pro.complete().body.split("; ")
-    cons = {}
-    if len(_cons) != len(verbs):
-        raise VocabParseError(f"Completion returned different number of terms: {verbs} -> {_cons}")
-    for verb, con in zip(verbs, _cons):
-        cons[verb] = con
+    _cons = pro.complete(
+        model=JSON_COMPAT_MODEL_3,
+        response_format={'type': 'json_object'},
+    ).body
+    try:
+        cons: dict[str, str] = json.loads(_cons)
+    except json.JSONDecodeError as exc:
+        raise VocabParseError(f"Failed to parse vocabulary terms: {_cons}") from exc
+    if set(cons.keys()) != set(verbs):
+        logger.warning(f"Extracted conjugations do not match verbs: {cons} != {verbs}")
     logger.success(f"Extracted verb conjugations: {cons}")
     return cons
 
