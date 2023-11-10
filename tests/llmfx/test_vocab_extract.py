@@ -15,31 +15,6 @@ def test_parse_prompt(pf):
     pro = Prompt.from_file(pf)
 
 
-# TODO update for response_format JSON
-@pytest.mark.openai
-@pytest.mark.slow
-def test_extract_all():
-    """ Test that vocab terms can be extracted from a message. """
-    msg = "私は行った"
-    bcp47 = "ja-JP"
-    t0 = time.time()
-    vocs = vocab.extract_all(msg, bcp47=bcp47, detail=False)
-    print(f"Extracted {len(vocs)} vocab terms in {time.time()-t0:.2f} seconds.")
-    pprint(vocs)
-    assert len(vocs) == 3
-    assert "私" in vocs
-    assert vocs["私"]["pos"] == "pronoun" 
-    got_verb = False
-    for term, v in vocs.items():
-        assert v['defn'] is not None
-        assert v['pos'] is not None
-        if v["pos"] == "verb":
-            assert not got_verb, "Only one verb should be extracted from the message '私は行った'."
-            got_verb = True
-            assert v["root"] is not None
-            assert v["con"] is not None
-    assert got_verb, "No verb was extracted from the message '私は行った', expected precisely one: '行く'."
-
 @pytest.mark.parametrize("msg,eterms", [
     (
         "こんにちは、ケンと呼んでください。",
@@ -190,3 +165,28 @@ def test_extract_msgv():
                 assert msgv.udefn == mv.udefn
                 assert msgv.bcp47 == mv.bcp47
     assert matched >= len(expected_msgvs)
+
+# TODO update for response_format JSON
+@pytest.mark.openai
+@pytest.mark.slow
+def test_extract_all():
+    """ Test that vocab terms can be extracted from a message. """
+    msg = "私は行った"
+    bcp47 = "ja-JP"
+    t0 = time.time()
+    vocs = vocab.extract_all(msg, bcp47=bcp47, detail=False)
+    print(f"Extracted {len(vocs)} vocab terms in {time.time()-t0:.2f} seconds.")
+    pprint(vocs)
+    assert len(vocs) == 3
+    assert "私" in vocs
+    assert vocs["私"]["pos"] == "pronoun" 
+    got_verb = False
+    for term, v in vocs.items():
+        assert v['defn'] is not None
+        assert v['pos'] is not None
+        if v["pos"] == "verb":
+            assert not got_verb, "Only one verb should be extracted from the message '私は行った'."
+            got_verb = True
+            assert v["root"] is not None
+            assert v["con"] is not None
+    assert got_verb, "No verb was extracted from the message '私は行った', expected precisely one: '行く'."
