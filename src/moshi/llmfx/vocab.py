@@ -22,6 +22,7 @@ from loguru import logger
 from moshi import Prompt, traced, message
 from moshi.language import Language
 from moshi.vocab import MsgV
+from moshi.vocab.curric import CurricV
 from .base import PROMPT_DIR
 
 TERMS_PROMPT_FILE = PROMPT_DIR / "vocab_extract_terms.txt"
@@ -205,11 +206,13 @@ def extract_root(terms: list[str]) -> dict[str, str]:
         - "quick" -> "quick"
     """
     pro = Prompt.from_file(ROOT_PROMPT_FILE)
-    msg = message('usr', "; ".join([term for term in terms]))
+    msg = message('usr', str(terms))
     pro.msgs.append(msg)
     compl = pro.complete(
         model=JSON_COMPAT_MODEL_3,
         response_format={'type': 'json_object'},
+        presence_penalty=-0.8,
+        top_p=0.9,  # cut out low probability roots
     )
     roots = json.loads(compl.body)
     if len(roots) != len(terms):
@@ -246,6 +249,7 @@ def synonyms(msg: str, term: str) -> list[str]:
     _syns = pro.complete(
         model=JSON_COMPAT_MODEL_3,
         response_format={'type': 'json_object'},
+        presence_penalty=1.8,
     ).body
     try:
         syns: list[str] = json.loads(_syns)
@@ -287,60 +291,52 @@ def extract_msgv(msg: str, bcp47: str) -> list[MsgV]:
     lang = Language(bcp47)
     return _extract_msgv_async(msg, lang)
 
-# TODO update for response_format JSON
-def _extract_all_async(terms: list[str], verbs: list[str], lang: str):
-    """ Helper function for extract_all.
+# TODO extract also: detail, phonetic, examples, level, and grade
+# TODO implement get_examples, get_level, get_grade, get_phonetic
+def _extract_curric_async(msg: str, terms: list[str], lang: str) -> list[CurricV]:
+    """ 
     Args:
+        msg: The message to extract vocabulary from.
         terms: The vocabulary terms to extract.
         verbs: The verbs as subset of terms.
         lang: The language to extract definitions in e.g. 'English'.
     """
-    logger.warning("This function is not yet updated for response_format JSON. Expect high failure rate.")
-    async def _get_core():
-        td = asyncio.to_thread(extract_defn, terms, lang)
-        tr = asyncio.to_thread(extract_root, terms)  # TODO get roots for adverbs, adjectives, etc. - this can't get fed ALL terms, only verbs and similarly 'rooted' terms.
-        tc = asyncio.to_thread(extract_verb_conjugation, verbs)
-        return await asyncio.gather(td, tr, tc)
-    async def _get_details():
-        coros = []
+    async def _get_pos_and_conju(terms: list[str]) -> tuple[dict[str, str], dict[str, str]]:
+        poss = await asyncio.to_thread(extract_pos, msg, terms)
+        verbs = [term for term in terms if poss.get(term) == 'verb']
+        cons = await asyncio.to_thread(extract_verb_conjugation, verbs)
+        return poss, cons
+    async def _get_curricv(msg: str, terms: list[str], lang: str) -> list[CurricV]:
+        async with asyncio.TaskGroup() as tg:
+            t1 = tg.create_task(asyncio.to_thread(extract_defn, msg, terms, lang), name="defn")
+            t2 = tg.create_task(asyncio.to_thread(extract_udefn, msg, terms, lang), name="udefn")
+            t3 = tg.create_task(asyncio.to_thread(extract_root, terms), name="root")
+            t4 = tg.create_task(_get_pos_and_conju(terms), name="pos_conju")
+        defns, udefs, roots, (poss, cons) = t1.result(), t2.result(), t3.result(), t4.result() 
+        currics = []
         for term in terms:
-            thread = asyncio.to_thread(extract_detail, term, lang)
-            coros.append(thread)
-        details: list[str] = await asyncio.gather(*coros)
-        assert len(details) == len(terms)
-        return {term: detail for term, detail in zip(terms, details)}
-    async def _all():
-        return await asyncio.gather(_get_core(), _get_details())
-    (defns, roots, cons), details = asyncio.run(_all())
-    return defns, roots, cons, details
+            currics.append(CurricV(
+                bcp47=lang,
+                term=term,
+                defn=defns.get(term),
+                udefn=udefs.get(term),
+                root=roots.get(term),
+                pos=poss.get(term),
+                conju=cons.get(term, ''),
+            ))
+        return currics
+    return asyncio.run(_get_curricv(msg, terms, lang))
 
-# TODO update for response_format JSON
 @traced
-def extract_all(msg: str, bcp47: str, detail: bool=False) -> dict[str, dict]:
+def extract_all(msg: str, bcp47: str) -> dict[str, CurricV]:
     """ Extract vocabulary terms from a message. This sequences a number of OpenAI API requests proportional to the number of vocab terms in the message. This is a convenience function that calls the other extract functions in this module.
     Args:
         msg (str): The message to extract vocabulary from.
         bcp47 (str): The BCP-47 language code of the message.
+    Returns:
+        list[CurricV]: A list of vocabulary terms with their definitions, parts of speech, roots, conjugations, and details.
     """
-    logger.warning("This function is not yet updated for response_format JSON. Expect high failure rate.")
     lang = Language(bcp47).name
-    poss: dict[str, str] = extract_pos(msg)  # NOTE need to do this first because downstream completions are designed around separated terms
-    logger.info(f"Extracted parts of speech: {poss}")
-    terms = list(poss.keys())
-    logger.info(f"Extracted terms: {terms}")
-    verbs = list(set([term for term, pos in poss.items() if pos == "verb"]))
-    logger.info(f"Extracted verbs: {verbs}")
-    defns, roots, cons, details = _extract_all_async(terms, verbs, lang)
-    logger.info(f"Extracted definitions: {defns}")
-    logger.info(f"Extracted roots: {roots}")
-    logger.info(f"Extracted verbs' conjugations: {cons}")
-    result = {}
-    for term in terms:
-        result[term] = {
-            'pos': poss.get(term),
-            'defn': defns.get(term),
-            'root': roots.get(term),
-            'con': cons.get(term),
-            'detail': details.get(term),
-        }
-    return result
+    terms = extract_terms(msg)
+    currics = _extract_curric_async(msg, terms, lang) 
+    return {curric.term: curric for curric in currics}

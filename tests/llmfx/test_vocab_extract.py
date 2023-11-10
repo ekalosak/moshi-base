@@ -8,6 +8,7 @@ from moshi import Prompt, utils
 from moshi.language import Language
 from moshi.llmfx import vocab
 from moshi.vocab import MsgV
+from moshi.vocab.curric import CurricV
 
 @pytest.mark.parametrize('pf', vocab.PROMPT_FILES)
 def test_parse_prompt(pf):
@@ -188,8 +189,6 @@ def test_extract_msgv(msg: str, bcp47: str, expected_msgvs: list[MsgV], nterms: 
                 assert msgv.pos == mv.pos, "Got different part of speech for the same term."
     assert matched == len(expected_msgvs), "Failed to extract some expected vocab terms."
 
-# TODO update for response_format JSON
-@pytest.mark.skip(reason="Not yet updated for JSON response format.")
 @pytest.mark.openai
 @pytest.mark.slow
 def test_extract_all():
@@ -197,19 +196,19 @@ def test_extract_all():
     msg = "私は行った"
     bcp47 = "ja-JP"
     t0 = time.time()
-    vocs = vocab.extract_all(msg, bcp47=bcp47, detail=False)
+    vocs: dict[str, CurricV] = vocab.extract_all(msg, bcp47)
     print(f"Extracted {len(vocs)} vocab terms in {time.time()-t0:.2f} seconds.")
     pprint(vocs)
     assert len(vocs) == 3
     assert "私" in vocs
-    assert vocs["私"]["pos"] == "pronoun" 
+    assert vocs["私"].pos == "pronoun" 
     got_verb = False
     for term, v in vocs.items():
-        assert v['defn'] is not None
-        assert v['pos'] is not None
-        if v["pos"] == "verb":
+        assert v.defn is not None
+        assert v.pos is not None
+        if v.pos == "verb":
             assert not got_verb, "Only one verb should be extracted from the message '私は行った'."
             got_verb = True
-            assert v["root"] is not None
-            assert v["con"] is not None
+            assert v.root is not None
+            assert v.conju is not None
     assert got_verb, "No verb was extracted from the message '私は行った', expected precisely one: '行く'."
