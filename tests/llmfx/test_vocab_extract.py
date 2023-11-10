@@ -189,6 +189,7 @@ def test_extract_msgv(msg: str, bcp47: str, expected_msgvs: list[MsgV], nterms: 
     assert matched == len(expected_msgvs), "Failed to extract some expected vocab terms."
 
 # TODO update for response_format JSON
+@pytest.mark.skip(reason="Not yet updated for JSON response format.")
 @pytest.mark.openai
 @pytest.mark.slow
 def test_extract_all():

@@ -295,6 +295,7 @@ def _extract_all_async(terms: list[str], verbs: list[str], lang: str):
         verbs: The verbs as subset of terms.
         lang: The language to extract definitions in e.g. 'English'.
     """
+    logger.warning("This function is not yet updated for response_format JSON. Expect high failure rate.")
     async def _get_core():
         td = asyncio.to_thread(extract_defn, terms, lang)
         tr = asyncio.to_thread(extract_root, terms)  # TODO get roots for adverbs, adjectives, etc. - this can't get fed ALL terms, only verbs and similarly 'rooted' terms.
@@ -321,6 +322,7 @@ def extract_all(msg: str, bcp47: str, detail: bool=False) -> dict[str, dict]:
         msg (str): The message to extract vocabulary from.
         bcp47 (str): The BCP-47 language code of the message.
     """
+    logger.warning("This function is not yet updated for response_format JSON. Expect high failure rate.")
     lang = Language(bcp47).name
     poss: dict[str, str] = extract_pos(msg)  # NOTE need to do this first because downstream completions are designed around separated terms
     logger.info(f"Extracted parts of speech: {poss}")
