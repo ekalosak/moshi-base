@@ -254,6 +254,39 @@ def synonyms(msg: str, term: str) -> list[str]:
     logger.success(f"Extracted synonyms for '{term}': {syns}")
     return syns
 
+async def _get_terms(msg: str) -> list[str]:
+    return await asyncio.to_thread(extract_terms, msg)
+
+async def _get_msgv_parts(msg: str, terms: list[str], lang: Language) -> tuple[dict[str, str], dict[str, str]]:
+    """ Get the pos and udefn for each term in the message. """
+    async with asyncio.TaskGroup() as tg:
+        t1 = tg.create_task(asyncio.to_thread(extract_udefn, msg, terms, lang.name), name="udefn")
+        t2 = tg.create_task(asyncio.to_thread(extract_pos, msg, terms), name="pos")
+    udefs, poss = t1.result(), t2.result()
+    return udefs, poss
+
+def _extract_msgv_async(msg: str, lang: Language) -> list[MsgV]:
+    async def _get_msgv(msg: str, lang: Language) -> list[MsgV]:
+        terms = await _get_terms(msg)
+        udefs, poss = await _get_msgv_parts(msg, terms, lang)
+        msgvs = []
+        for term in terms:
+            msgvs.append(MsgV(
+                bcp47=lang.bcp47,
+                term=term,
+                pos=poss.get(term),
+                udefn=udefs.get(term),
+            ))
+        return msgvs
+    return asyncio.run(_get_msgv(msg, lang))
+
+@traced
+def extract_msgv(msg: str, bcp47: str) -> list[MsgV]:
+    """ Extract the min info required for a session, annotated in the transcript.
+    """
+    lang = Language(bcp47)
+    return _extract_msgv_async(msg, lang)
+
 # TODO update for response_format JSON
 def _extract_all_async(terms: list[str], verbs: list[str], lang: str):
     """ Helper function for extract_all.
@@ -309,16 +342,3 @@ def extract_all(msg: str, bcp47: str, detail: bool=False) -> dict[str, dict]:
             'detail': details.get(term),
         }
     return result
-
-# TODO update for response_format JSON
-@traced
-def extract_msgv(msg: str, bcp47: str) -> list[MsgV]:
-    """ Extract the min info required for a session, annotated in the transcript. Should be fast even without async, only needs 2 API calls.
-    """
-    lang = Language(bcp47)
-    udefns = extract_udefn(msg, lang.name)
-    poss = extract_pos(msg)
-    for term in poss:
-        if term not in udefns:
-            udefns[term] = ""
-    return [MsgV(bcp47=bcp47, term=term, pos=pos, udefn=udefns[term]) for term, pos in poss.items()]

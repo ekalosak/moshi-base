@@ -157,30 +157,36 @@ def test_synonym(msg: str, term: str):
     assert len(synos) > 0
     assert all([isinstance(syno, str) for syno in synos])
 
-# TODO update for response_format JSON
 @pytest.mark.openai
-def test_extract_msgv():
-    msg = "I went to the store and bought some milk."
-    bcp47 = "en-US"
+@pytest.mark.parametrize(
+    "msg,bcp47,expected_msgvs,nterms",
+    [
+        (
+            "I went to the store and bought some milk.",
+            "en-US",
+            [
+                MsgV(bcp47="en-US", term="went", pos="verb", udefn=""),
+                MsgV(bcp47="en-US", term="store", pos="noun", udefn=""),
+                MsgV(bcp47="en-US", term="bought", pos="verb", udefn=""),
+                MsgV(bcp47="en-US", term="milk", pos="noun", udefn=""),
+            ],
+            9,
+        ),
+    ],
+    ids=["en"],
+)
+def test_extract_msgv(msg: str, bcp47: str, expected_msgvs: list[MsgV], nterms: int):
     msgvs = vocab.extract_msgv(msg, bcp47)
     for msgv in msgvs:
         print(msgv)
-    assert len(msgvs) == 5
-    expected_msgvs = [
-        MsgV(bcp47=bcp47, term="went", pos="verb", udefn=""),
-        MsgV(bcp47=bcp47, term="store", pos="noun", udefn=""),
-        MsgV(bcp47=bcp47, term="bought", pos="verb", udefn=""),
-        MsgV(bcp47=bcp47, term="milk", pos="noun", udefn=""),
-    ]
+    assert len(msgvs) == nterms, "Got different number of terms than expected."
     matched = 0
     for msgv in msgvs:
         for mv in expected_msgvs:
             if msgv.term == mv.term:
                 matched += 1
-                assert msgv.pos == mv.pos
-                assert msgv.udefn == mv.udefn
-                assert msgv.bcp47 == mv.bcp47
-    assert matched >= len(expected_msgvs)
+                assert msgv.pos == mv.pos, "Got different part of speech for the same term."
+    assert matched == len(expected_msgvs), "Failed to extract some expected vocab terms."
 
 # TODO update for response_format JSON
 @pytest.mark.openai
