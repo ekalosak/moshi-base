@@ -236,16 +236,23 @@ def extract_verb_conjugation(verbs: list[str]) -> dict[str, str]:
     logger.success(f"Extracted verb conjugations: {cons}")
     return cons
 
-# TODO update for response_format JSON
 @traced
 def synonyms(msg: str, term: str) -> list[str]:
     """ Get synonyms for the term. """
     pro = Prompt.from_file(SYNO_PROMPT_FILE)
-    msg = message('usr', f"{msg}; {term}")
+    pld = str({'msg': msg, 'term': term})
+    msg = message('usr', pld)
     pro.msgs.append(msg)
-    synos = pro.complete().body.split(", ")
-    logger.success(f"Extracted synonyms: {synos}")
-    return synos
+    _syns = pro.complete(
+        model=JSON_COMPAT_MODEL_3,
+        response_format={'type': 'json_object'},
+    ).body
+    try:
+        syns: list[str] = json.loads(_syns)
+    except json.JSONDecodeError as exc:
+        raise VocabParseError(f"Failed to parse vocabulary terms: {_syns}") from exc
+    logger.success(f"Extracted synonyms for '{term}': {syns}")
+    return syns
 
 # TODO update for response_format JSON
 def _extract_all_async(terms: list[str], verbs: list[str], lang: str):

@@ -1,5 +1,5 @@
-sys: Provide synonyms for the term provided.
-sys: For example, "George is cool; cool" -> "stylish, admired"
-sys: For example, "Naranjas son frutas; naranjas" -> "peras, membrillos"
-sys: For example, "Naranjas son frutas; frutas" -> "verduras, plantas"
-sys: Format the outputs as in the examples above. Respond only with the formatted output.
+sys: Give synonyms for the term, in the same language, given its usage in the message.
+sys: For example, "{'msg': 'George is cool', 'term': 'cool'}" should yield "{'cool': ['stylish', 'admired']}".
+sys: For example, "{'msg': 'Naranjas son frutas', 'term': 'naranjas'}" should yield "{'naranjas': ['peras', 'membrillos']}".
+sys: For example, "{'msg': 'Naranjas son frutas', 'term': 'frutas'}" should yield "{'frutas': ['verduras', 'plantas']}".
+sys: Respond only with the synonyms in valid JSON, formatted as the examples above.

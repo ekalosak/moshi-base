@@ -132,12 +132,28 @@ def test_vocab_extract_verb_conjugation():
         con: str = cons[verb]
         assert utils.similar(con, econ) == 1.0 or con.startswith(econ), "Got different conjugation than expected for '{verb}': got='{con}', expected='{econ}'."
 
-# TODO update for response_format JSON
 @pytest.mark.openai
-@pytest.mark.parametrize('term', ["行った", "明るく"])
-def test_synonym(term):
-    synos: list[str] = vocab.synonyms(term)
-    print(synos)
+@pytest.mark.parametrize(
+    'msg,term',
+    [
+        (
+            '店に行った',
+            '行った',
+        ),
+        (
+            '明るく笑顔が素敵です。',
+            '明るく',
+        ),
+        (
+            'Mrs. Dalloway said she would buy the flowers herself.',
+            'flowers',
+        ),
+    ],
+    ids=['ja1', 'ja2', 'en'],
+)
+def test_synonym(msg: str, term: str):
+    synos: list[str] = vocab.synonyms(msg, term)
+    print(f'{msg}: {term} -> {synos}')
     assert len(synos) > 0
     assert all([isinstance(syno, str) for syno in synos])
 
