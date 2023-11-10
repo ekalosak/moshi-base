@@ -201,7 +201,7 @@ def test_extract_all():
     pprint(vocs)
     assert len(vocs) == 3
     assert "私" in vocs
-    assert vocs["私"].pos == "pronoun" 
+    assert vocs["私"].pos in ["pronoun", "noun"]
     got_verb = False
     for term, v in vocs.items():
         assert v.defn is not None

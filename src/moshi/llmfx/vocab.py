@@ -133,7 +133,6 @@ def extract_defn(msg: str, terms: list[str], lang: str) -> dict[str, str]:
     _defns = pro.complete(
         model=JSON_COMPAT_MODEL_3,
         response_format={'type': 'json_object'},
-        vocab=terms,
         stop=None,
         max_tokens=1028,
     ).body
@@ -293,7 +292,8 @@ def extract_msgv(msg: str, bcp47: str) -> list[MsgV]:
 
 # TODO extract also: detail, phonetic, examples, level, and grade
 # TODO implement get_examples, get_level, get_grade, get_phonetic
-def _extract_curric_async(msg: str, terms: list[str], lang: str) -> list[CurricV]:
+# TODO soft matching for result dict keys e.g. term returned is 'Hola' -> 'hola'
+def _extract_curric_async(msg: str, terms: list[str], bcp74: str) -> list[CurricV]:
     """ 
     Args:
         msg: The message to extract vocabulary from.
@@ -301,27 +301,28 @@ def _extract_curric_async(msg: str, terms: list[str], lang: str) -> list[CurricV
         verbs: The verbs as subset of terms.
         lang: The language to extract definitions in e.g. 'English'.
     """
+    lang = Language(bcp74)
     async def _get_pos_and_conju(terms: list[str]) -> tuple[dict[str, str], dict[str, str]]:
         poss = await asyncio.to_thread(extract_pos, msg, terms)
         verbs = [term for term in terms if poss.get(term) == 'verb']
         cons = await asyncio.to_thread(extract_verb_conjugation, verbs)
         return poss, cons
-    async def _get_curricv(msg: str, terms: list[str], lang: str) -> list[CurricV]:
+    async def _get_curricv(msg: str, terms: list[str], lang: Language) -> list[CurricV]:
         async with asyncio.TaskGroup() as tg:
-            t1 = tg.create_task(asyncio.to_thread(extract_defn, msg, terms, lang), name="defn")
-            t2 = tg.create_task(asyncio.to_thread(extract_udefn, msg, terms, lang), name="udefn")
+            t1 = tg.create_task(asyncio.to_thread(extract_defn, msg, terms, lang.name), name="defn")
+            t2 = tg.create_task(asyncio.to_thread(extract_udefn, msg, terms, lang.name), name="udefn")
             t3 = tg.create_task(asyncio.to_thread(extract_root, terms), name="root")
             t4 = tg.create_task(_get_pos_and_conju(terms), name="pos_conju")
         defns, udefs, roots, (poss, cons) = t1.result(), t2.result(), t3.result(), t4.result() 
         currics = []
         for term in terms:
             currics.append(CurricV(
-                bcp47=lang,
+                bcp47=lang.bcp47,
                 term=term,
-                defn=defns.get(term),
-                udefn=udefs.get(term),
-                root=roots.get(term),
-                pos=poss.get(term),
+                defn=defns.get(term, ''),
+                udefn=udefs.get(term, ''),
+                root=roots.get(term, ''),
+                pos=poss.get(term, ''),
                 conju=cons.get(term, ''),
             ))
         return currics
@@ -336,7 +337,6 @@ def extract_all(msg: str, bcp47: str) -> dict[str, CurricV]:
     Returns:
         list[CurricV]: A list of vocabulary terms with their definitions, parts of speech, roots, conjugations, and details.
     """
-    lang = Language(bcp47).name
     terms = extract_terms(msg)
-    currics = _extract_curric_async(msg, terms, lang) 
+    currics = _extract_curric_async(msg, terms, bcp47) 
     return {curric.term: curric for curric in currics}
