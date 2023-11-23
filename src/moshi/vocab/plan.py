@@ -23,9 +23,12 @@ def select_vocabulary(vocs: dict[str, UsageV], n=16, max_usg=4, recent: datetime
         recent = datetime.now(UTC)
     terms = []
     for term, usg in vocs.items():
+        if usg.last > recent:
+            continue  # skip terms used too recently
         if usg.count < max_usg:
             terms.append(term)
     if len(terms) < n:
         return terms
     else:
-        return sorted(terms, key=lambda t: (vocs[t].last - recent).total_seconds())[:n]
+        terms = sorted(terms, key=lambda t: vocs[t].last, reverse=True)
+        return terms[:n]
