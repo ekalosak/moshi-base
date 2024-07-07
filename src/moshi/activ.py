@@ -3,8 +3,9 @@ For design terms, see: https://refactoring.guru/design-patterns/catalog
 """
 import enum
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
+from typing import ClassVar, Generic, TypeVar
 
+from google.cloud import firestore
 from google.cloud.firestore import Client
 from loguru import logger
 from pydantic import field_validator, Field, ValidationInfo, computed_field
@@ -130,7 +131,7 @@ class UnstrPl(Plan[ActT.UNSTRUCTURED]):
 class Act(FB, Generic[T], ABC):
     """ Implement session logic. """
     aid: str
-    atp: ActT
+    atp: ClassVar[ActT]
     bcp47: str
     prompt: Prompt
     source: str = "builtin"
@@ -144,6 +145,38 @@ class Act(FB, Generic[T], ABC):
     def get_docpath(cls, atp: ActT | str, bcp47: str, aid: str) -> DocPath:
         atp = ActT(atp)
         return DocPath(f'acts/{atp.value}/{bcp47}/{aid}')
+
+    @classmethod
+    def get_n(cls, bcp47: str, db: Client, n=16) -> list['Act']:
+        """ Get most recent activities of a given type and language.
+        Args:
+            bcp47: Language code.
+            db: Firestore client.
+            n: Max of activities to return.
+        """
+        acts_path = f"acts/{cls.atp.value}/{bcp47}"
+        logger.debug(f"Querying {acts_path} for latest {n} activities.")
+        acts_ref = db.collection(acts_path)
+        query = acts_ref.order_by('created_at', direction=firestore.Query.DESCENDING).limit(n)
+        # TODO this is a blocking call, should be async
+        # TODO could return as query.strem i.e. a generator
+        # TODO include retry and timeout config in the query.get() call
+        docs = query.get()
+        acts = []
+        for doc in docs:
+            dat = doc.to_dict()
+            dat['aid'] = doc.id
+            acts.append(cls(**dat))
+        return acts
+
+    @classmethod
+    def get_latest(cls, bcp47: str, db: Client) -> list['Act[T]']:
+        """ Get latest activity of a given type and language.
+        Args:
+            bcp47: Language code.
+            db: Firestore client.
+        """
+        return cls.get_n(bcp47, db, n=1)[0]
 
     @property
     def docpath(self) -> DocPath:
@@ -179,11 +212,11 @@ class Act(FB, Generic[T], ABC):
     @abstractmethod
     def reply(self, msgs: list[Message], plan: Plan[T]) -> str:
         """ This is to be called when a user message arrives. """
-        ...
+        pass
 
 class MinA(Act[ActT.MIN]):
     """ Most basic activity implementation. Has no session logic. """
-    atp: ActT = ActT.MIN
+    atp = ActT.MIN
     aid: str = '000000-mina'  # a singular min activity
     prompt: Prompt = Prompt(msgs=[Message.from_string("Hello, world!", 'ast')])
     source: str = "builtin"
@@ -196,7 +229,7 @@ class MinA(Act[ActT.MIN]):
 
 class UnstrA(Act[ActT.UNSTRUCTURED]):
     """ Most basic "functional" activity. Uses completion to generate a reply. """
-    atp: ActT = ActT.MIN
+    atp = ActT.MIN
     aid: str = Field(help="Activity ID.", default_factory=lambda: default_aid(ActT.UNSTRUCTURED))
     source: str = "builtin"
 
